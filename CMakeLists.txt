@@ -78,3 +78,6 @@ endif()
 if(MYAPP_LIBRARY_MODE)
     include(${PROJECT_SOURCE_DIR}/cmake/Install.cmake)
 endif()
+
+# ---- distclean: `cmake --build --preset <name> --target distclean` ----
+include(${PROJECT_SOURCE_DIR}/cmake/DistClean.cmake)

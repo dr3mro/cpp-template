@@ -405,14 +405,28 @@
       ]
     },
     {
+      "label": "clean",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "debug",
+        "--target",
+        "clean"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
       "label": "clean all",
       "type": "shell",
       "command": "cmake",
       "args": [
-        "-E",
-        "rm",
-        "-rf",
-        "build"
+        "-P",
+        "cmake/DistClean.cmake"
       ],
       "problemMatcher": [],
       "presentation": {

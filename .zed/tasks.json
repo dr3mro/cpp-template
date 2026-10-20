@@ -16,5 +16,6 @@
   { "label": "docs", "command": "cmake --workflow --preset docs", "hide": "on_success" },
   { "label": "class diagrams", "command": "cmake --workflow --preset diagrams", "hide": "on_success" },
   { "label": "diagrams", "command": "cmake --preset release && cmake --build --preset release --target diagrams", "hide": "on_success" },
-  { "label": "clean all", "command": "rm -rf build", "hide": "on_success" }
+  { "label": "clean", "command": "cmake --build --preset debug --target clean", "hide": "on_success" },
+  { "label": "clean all", "command": "cmake -P cmake/DistClean.cmake", "hide": "on_success" }
 ]
