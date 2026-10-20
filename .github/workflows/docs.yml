@@ -1,0 +1,66 @@
+name: Publish Doxygen documentation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install vcpkg
+        # Only the toolchain file is needed: the docs build has tests off,
+        # so VCPKG_MANIFEST_INSTALL=OFF skips installing vcpkg.json.
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+          "$HOME/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y doxygen graphviz ninja-build
+
+      - name: Generate documentation
+        run: |
+          cmake --preset release -DMYAPP_BUILD_TESTS=OFF -DVCPKG_MANIFEST_INSTALL=OFF
+          cmake --build --preset release --target docs
+
+      - name: Mark documentation as static HTML
+        run: touch docs/.nojekyll
+
+      - name: Configure GitHub Pages
+        # This workflow deploys the uploaded Doxygen artifact directly.
+        # The repository Pages source must be set to "GitHub Actions"; if it
+        # is set to a branch, GitHub starts a separate Jekyll build instead.
+        uses: actions/configure-pages@v5
+
+      - name: Upload documentation artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

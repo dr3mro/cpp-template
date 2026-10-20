@@ -1,0 +1,50 @@
+# clang-format rules for the project (matches the existing code style)
+# Needs clang-format 20 or newer (Homebrew LLVM, or `pip install clang-format`).
+BasedOnStyle: Microsoft
+Language: Cpp
+Standard: c++17
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+NamespaceIndentation: All
+AccessModifierOffset: -4
+IndentCaseLabels: true
+
+# Braces on their own line (Allman style)
+BreakBeforeBraces: Allman
+
+# Line length and wrapping
+ColumnLimit: 160
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+LambdaBodyIndentation: OuterScope
+
+# Pointers and references stick to the type: const std::string &key
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Constructor initializer lists
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 4
+
+# Templates
+AlwaysBreakTemplateDeclarations: Yes
+
+# Includes: keep project headers grouped, sorted case-sensitively
+SortIncludes:
+  IgnoreCase: false
+IncludeBlocks: Regroup
+
+# Spacing
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false
+SpaceInEmptyParentheses: false
+
+# Comments
+FixNamespaceComments: true
+SpacesBeforeTrailingComments: 1
+ReflowComments: Always

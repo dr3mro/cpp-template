@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug myapp",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug-nosan/myapp",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build debug-nosan"
+    },
+    {
+      "name": "Debug tests",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug-nosan/myapp_tests",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build debug-nosan"
+    }
+  ]
+}

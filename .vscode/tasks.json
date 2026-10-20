@@ -1,0 +1,251 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "configure release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "release"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "build release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "release"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure release"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "configure debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "debug"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "build debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "debug"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "configure debug-nosan",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "debug-nosan"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "build debug-nosan",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "debug-nosan"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure debug-nosan"
+      ]
+    },
+    {
+      "label": "run",
+      "type": "shell",
+      "command": "./build/release/myapp",
+      "args": [],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "dependsOn": [
+        "build release"
+      ]
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--preset",
+        "debug"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "build debug"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "release",
+        "--target",
+        "format"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure release"
+      ]
+    },
+    {
+      "label": "tidy",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "release",
+        "--target",
+        "tidy"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure release"
+      ]
+    },
+    {
+      "label": "docs",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "release",
+        "--target",
+        "docs"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure release"
+      ]
+    },
+    {
+      "label": "class diagrams",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "release",
+        "--target",
+        "class-diagrams"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure release"
+      ]
+    },
+    {
+      "label": "diagrams",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "release",
+        "--target",
+        "diagrams"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure release"
+      ]
+    },
+    {
+      "label": "clean all",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-E",
+        "rm",
+        "-rf",
+        "build"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+# clang-tidy settings (read by clangd in Zed and by the `tidy` CMake target)
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -misc-non-private-member-variables-in-classes,
+  -misc-include-cleaner,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-function-cognitive-complexity,
+  -performance-avoid-endl
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*/(include|src)/myapp/.*'
+FormatStyle: file

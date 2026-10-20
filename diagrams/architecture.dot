@@ -1,0 +1,15 @@
+// Rendered to architecture.png by `cmake --build --preset release --target diagrams`.
+digraph Architecture {
+    graph [bgcolor="white", fontname="Helvetica", rankdir=TB, nodesep=0.45, ranksep=0.55, pad=0.25,
+           labelloc="t", label="myapp - Architecture", fontsize=22];
+    node  [shape=box, style="rounded,filled", fillcolor="#EAF2F8", color="#2874A6",
+           fontname="Helvetica", fontsize=11, margin="0.16,0.10"];
+    edge  [color="#566573", fontname="Helvetica", fontsize=10, arrowsize=0.75];
+
+    main    [label="main.cpp\nentry point", fillcolor="#D5F5E3", color="#1E8449"];
+    greeter [label="myapp::core::Greeter\nbuilds greetings"];
+    tests   [label="tests/\ndoctest unit tests", fillcolor="#FCF3CF", color="#B7950B"];
+
+    main  -> greeter [label="uses"];
+    tests -> greeter [label="tests", style=dashed];
+}

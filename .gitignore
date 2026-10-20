@@ -1,0 +1,52 @@
+# Build output
+/build/
+/bin/
+/obj/
+# vcpkg (in-tree) output
+/vcpkg_installed/
+/vcpkg-binary-cache/
+# Created by IDEs when editing presets
+CMakeUserPresets.json
+*.o
+*.obj
+*.d
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Generated documentation
+/docs/
+
+# Debugger and profiling output
+*.dSYM/
+*.gdb_history
+*.lldb
+*.prof
+*.profraw
+
+# IDE and editor files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vs/
+.idea/
+*.swp
+*.swo
+# Zed / clangd
+.cache/
+compile_commands.json
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Temporary files
+*.tmp
+*.temp
+*~

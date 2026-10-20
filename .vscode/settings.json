@@ -1,0 +1,8 @@
+{
+  "cmake.useCMakePresets": "always",
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.arguments": [
+    "--background-index",
+    "--clang-tidy"
+  ]
+}

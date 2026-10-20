@@ -1,0 +1,3 @@
+# CMake links build/compile_commands.json to the database of the last configured preset.
+CompileFlags:
+  CompilationDatabase: build

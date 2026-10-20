@@ -1,0 +1,28 @@
+# Doxygen configuration. CMake fills the @...@ values; run `cmake --build --preset release --target docs`.
+# Only non-default settings are listed; run `doxygen -x` on the generated file to see everything.
+PROJECT_NAME           = "@PROJECT_NAME@"
+PROJECT_NUMBER         = "@PROJECT_VERSION@"
+PROJECT_BRIEF          = "C++ application"
+OUTPUT_DIRECTORY       = @CMAKE_SOURCE_DIR@/docs
+HTML_OUTPUT            = .
+INPUT                  = @CMAKE_SOURCE_DIR@/main.cpp @CMAKE_SOURCE_DIR@/include @CMAKE_SOURCE_DIR@/src @CMAKE_SOURCE_DIR@/README.md
+USE_MDFILE_AS_MAINPAGE = @CMAKE_SOURCE_DIR@/README.md
+IMAGE_PATH             = @CMAKE_SOURCE_DIR@/diagrams
+STRIP_FROM_PATH        = @CMAKE_SOURCE_DIR@
+STRIP_FROM_INC_PATH    = @CMAKE_SOURCE_DIR@/include
+FILE_PATTERNS          = *.hpp *.cpp *.md
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */build/* */docs/* */.git/*
+EXTRACT_ALL            = YES
+BUILTIN_STL_SUPPORT    = YES
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_INCOMPLETE_DOC = YES
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+HTML_COLORSTYLE        = AUTO_LIGHT
+HTML_COLORSTYLE_HUE    = 220
+HTML_DYNAMIC_MENUS     = YES
+HAVE_DOT               = @MYAPP_DOXY_HAVE_DOT@
+UML_LOOK               = YES
+DOT_IMAGE_FORMAT       = svg
