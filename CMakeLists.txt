@@ -36,6 +36,17 @@ include(cmake/Version.cmake)
 include(cmake/ArchitectureDiagram.cmake)
 include(cmake/Tooling.cmake)
 
+# ---- position-independent code (PIE/PIC) ----
+# Independent of hardening: CMAKE_POSITION_INDEPENDENT_CODE plus
+# check_pie_supported() lets CMake pick the right flag per target (-fPIC for
+# libraries, -fPIE/-pie for executables) instead of forcing -fPIE/-pie onto
+# everything, which breaks a shared library with "undefined reference to main".
+# Must run before the first target is defined.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+include(CheckPIESupported)
+check_pie_supported()
+message(STATUS "Hardening: position-independent code ON (PIE/PIC added by CMake per target)")
+
 # ---- library: everything under src/, so tests and the app can both link it ----
 file(GLOB_RECURSE MYAPP_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_library(${PROJECT_NAME}_lib ${MYAPP_SOURCES})

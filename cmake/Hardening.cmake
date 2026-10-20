@@ -7,15 +7,6 @@ if(NOT MYAPP_ENABLE_HARDENING)
     return()
 endif()
 
-# Position-independent code so the hardening below (and a shared build) links
-# correctly. CMAKE_POSITION_INDEPENDENT_CODE plus check_pie_supported() let
-# CMake choose the right flag per target: -fPIC for libraries and -fPIE/-pie
-# for executables, instead of forcing -fPIE/-pie onto everything (which breaks
-# a shared libmyapp with "undefined reference to main").
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-include(CheckPIESupported)
-check_pie_supported()
-
 # The optimised configs that get hardened; Debug and the sanitizers do not.
 set(_myapp_hardened_configs "Release,RelWithDebInfo,MinSizeRel")
 set(_myapp_hardening_flags "")
@@ -104,8 +95,6 @@ int main() { return 0; }
 endif()
 
 # One status line so a build log shows exactly which hardening flags landed.
-# PIE/PIC is intentionally absent: check_pie_supported() lets CMake add the
-# right per-target flag (-fPIC for libraries, -fPIE/-pie for executables).
+# PIE/PIC is set up in CMakeLists.txt (before the targets exist), not here.
 list(JOIN _myapp_hardening_flags " " _myapp_hardening_summary)
 message(STATUS "Hardening (optimised configs): ${_myapp_hardening_summary}")
-message(STATUS "Hardening: position-independent code ON (PIE/PIC added by CMake per target)")
