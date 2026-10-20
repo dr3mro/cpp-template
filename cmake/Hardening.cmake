@@ -1,3 +1,99 @@
-# Security hardening flags. Default ON, but the flags themselves only apply to
-# optimised builds (see below); see SECURITY.md and README.md for the rationale.
+# Security hardening. Default ON, but the flags only apply to optimised builds:
+# _FORTIFY_SOURCE needs -O, and the extra instructions would just bloat a debug
+# binary that the sanitizers already instrument heavily.
 option(MYAPP_ENABLE_HARDENING "Enable security hardening flags (optimised builds only)" ON)
+
+if(NOT MYAPP_ENABLE_HARDENING)
+    return()
+endif()
+
+# The optimised configs that get hardened; Debug and the sanitizers do not.
+set(_myapp_hardened_configs "Release,RelWithDebInfo,MinSizeRel")
+set(_myapp_hardening_flags "")
+
+if(MSVC)
+    # Compiler-side: buffer-overrun check and Control-flow Guard instrumentation.
+    target_compile_options(myapp_options INTERFACE
+        $<$<CONFIG:${_myapp_hardened_configs}>:/GS>
+        $<$<CONFIG:${_myapp_hardened_configs}>:/guard:cf>)
+    # Linker-side: ASLR, DEP/non-executable stack, and (x64 only) CET.
+    target_link_options(myapp_options INTERFACE
+        $<$<CONFIG:${_myapp_hardened_configs}>:/DYNAMICBASE>
+        $<$<CONFIG:${_myapp_hardened_configs}>:/HIGHENTROPYVA>
+        $<$<CONFIG:${_myapp_hardened_configs}>:/NXCOMPAT>)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        target_link_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:/CETCOMPAT>)
+        list(APPEND _myapp_hardening_flags "/CETCOMPAT")
+    endif()
+    list(APPEND _myapp_hardening_flags "/GS /guard:cf /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT")
+else()
+    # _FORTIFY_SOURCE is set by some distros already; undefine it first so the
+    # redefinition below does not warn, then set it to level 3 (optimised only).
+    target_compile_options(myapp_options INTERFACE
+        $<$<CONFIG:${_myapp_hardened_configs}>:-U_FORTIFY_SOURCE>
+        $<$<CONFIG:${_myapp_hardened_configs}>:-D_FORTIFY_SOURCE=3>
+        $<$<CONFIG:${_myapp_hardened_configs}>:-fstack-protector-strong>
+        $<$<CONFIG:${_myapp_hardened_configs}>:-fPIE>)
+    # -fPIE is enough on macOS (PIE is the default and -pie warns as unused);
+    # Linux still needs the link-side -pie to actually produce a PIE.
+    if(NOT APPLE)
+        target_link_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:-pie>)
+    endif()
+    list(APPEND _myapp_hardening_flags "-fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE")
+
+    # Clash protection and Intel CET are not available on every compiler (Apple
+    # Clang on arm64 accepts the flag name but warns it is unused, which would
+    # fail a -Werror build). Probe with -Werror so only flags the compiler truly
+    # honours are added.
+    include(CheckCXXCompilerFlag)
+    set(CMAKE_REQUIRED_FLAGS "-Werror")
+    check_cxx_compiler_flag("-fstack-clash-protection" MYAPP_HAS_STACK_CLASH)
+    check_cxx_compiler_flag("-fcf-protection=full" MYAPP_HAS_CF_PROTECTION)
+    unset(CMAKE_REQUIRED_FLAGS)
+    if(MYAPP_HAS_STACK_CLASH)
+        target_compile_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:-fstack-clash-protection>)
+        list(APPEND _myapp_hardening_flags "-fstack-clash-protection")
+    endif()
+    check_cxx_compiler_flag("-fcf-protection=full" MYAPP_HAS_CF_PROTECTION)
+    if(MYAPP_HAS_CF_PROTECTION)
+        target_compile_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:-fcf-protection=full>)
+        list(APPEND _myapp_hardening_flags "-fcf-protection=full")
+    endif()
+
+    # Standard-library hardening: detect the library actually in use rather than
+    # guessing from the OS, so a libc++ build on Linux is hardened the libc++ way.
+    include(CheckCXXSourceCompiles)
+    check_cxx_source_compiles(
+        "#include <cstdint>
+#if defined(_LIBCPP_VERSION)
+int main() { return 0; }
+#else
+#error not libc++
+#endif"
+        MYAPP_USING_LIBCXX)
+    if(MYAPP_USING_LIBCXX)
+        target_compile_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST>)
+        list(APPEND _myapp_hardening_flags "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST")
+    else()
+        # libstdc++ (GCC/Clang on most Linux distributions).
+        target_compile_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:-D_GLIBCXX_ASSERTIONS>)
+        list(APPEND _myapp_hardening_flags "-D_GLIBCXX_ASSERTIONS")
+    endif()
+
+    # Full RELRO + non-executable stack are Linux linker options.
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:-Wl,-z,relro,-z,now,-z,noexecstack>)
+        list(APPEND _myapp_hardening_flags "-Wl,-z,relro,-z,now,-z,noexecstack")
+    endif()
+endif()
+
+# One status line so a build log shows exactly which hardening flags landed.
+list(JOIN _myapp_hardening_flags " " _myapp_hardening_summary)
+message(STATUS "Hardening (optimised configs): ${_myapp_hardening_summary}")

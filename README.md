@@ -73,6 +73,20 @@ Re-run `cmake --preset debug`. The first configure downloads and builds the libr
 
 Run `vcpkg search <name>` to find package names. After a package installs, vcpkg prints the exact `find_package` and `target_link_libraries` lines to use.
 
+## Security hardening
+
+Release builds (and other optimised configs) are compiled with defence-in-depth flags. Debug builds skip them so the debugger and sanitizers stay usable. The flags applied are:
+
+- `-fstack-protector-strong` — canary-protected stack buffers.
+- `-D_FORTIFY_SOURCE=3` — checked libc buffer operations (optimised builds only).
+- `-fPIE` / `-pie` — position-independent executable, so ASLR applies.
+- `-fstack-clash-protection` and `-fcf-protection=full` — only when the compiler supports them (probed with `check_cxx_compiler_flag`).
+- Standard library, detected automatically: libc++ gets `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST`; libstdc++ gets `-D_GLIBCXX_ASSERTIONS`.
+- Linux linker: `-Wl,-z,relro,-z,now,-z,noexecstack` (full RELRO, non-executable stack).
+- MSVC: `/GS /guard:cf /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT`, plus `/CETCOMPAT` on x64.
+
+Turn it off with `-DMYAPP_ENABLE_HARDENING=OFF`. See `SECURITY.md` for how to report a vulnerability.
+
 ## Troubleshooting
 
 ```text
