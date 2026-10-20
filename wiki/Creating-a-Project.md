@@ -69,12 +69,48 @@ the template uses it.
    `fuzz/fuzz_greeter.cpp` and `fuzz/corpus/fuzz_greeter/`) with your own code.
    See [Writing code](Writing-Code).
 2. Write the description at the top of `README.md` and `main.cpp`.
-3. Put it on GitHub:
+3. Put it on GitHub: see the next section.
+
+## Publishing the project on GitHub
+
+`new-project.sh` already made a git repository with a first commit on `main`
+(unless you passed `--no-git`). All that's left is an empty repository on
+GitHub to push it to.
+
+> **Don't use GitHub's "Use this template" button** for this. It copies the
+> template's files without running `new-project.sh`, so everything would
+> still be called `myapp`.
+
+### Option A: GitHub CLI (one command)
+
+Install it once (`brew install gh`, or see <https://cli.github.com>) and log in
+with `gh auth login`. Then, inside the project folder:
+
+```bash
+gh repo create bank_app --public --source=. --push      # or --private
+```
+
+This creates the repository, adds it as `origin` and pushes `main`.
+
+### Option B: the website
+
+1. Go to <https://github.com/new>, enter the name (`bank_app`) and choose
+   public or private.
+2. Leave **Add a README**, **.gitignore** and **license** unset; the project
+   already has them, and a non-empty repository rejects the first push.
+3. Click **Create repository**, then in the project folder:
 
    ```bash
-   git remote add origin https://github.com/<you>/<name>.git
+   git remote add origin https://github.com/<you>/bank_app.git
    git push -u origin main
    ```
 
-   Then turn on GitHub Pages for the docs: **Settings → Pages → Source:
-   GitHub Actions** (see [CI and releases](CI-and-Releases)).
+### After the first push
+
+- CI starts by itself; watch it in the **Actions** tab.
+- Turn on the docs website: **Settings → Pages → Build and deployment →
+  Source: GitHub Actions**. It appears at `https://<you>.github.io/bank_app/`
+  after the next push to `main` (the link in the README already points there
+  if you used `--github-user`).
+- Optional: protect `main` so pull requests must pass CI
+  (see [CI and releases](CI-and-Releases#pull-requests)).
