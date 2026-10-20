@@ -14,6 +14,7 @@
  */
 
 #include "myapp/core/greeter.hpp"
+#include "myapp/version.hpp"
 
 #include <exception>
 #include <iostream>
@@ -31,7 +32,7 @@ int main(int argc, char* argv[])
     {
         if (argc > 1 && std::string_view{argv[1]} == "--version")
         {
-            std::cout << "myapp " << MYAPP_VERSION << '\n';
+            std::cout << "myapp " << myapp::kVersion << " (" << myapp::kGitHash << ")\n";
             return 0;
         }
 
