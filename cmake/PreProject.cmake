@@ -24,6 +24,19 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE AND DEFINED ENV{VCPKG_ROOT}
         CACHE FILEPATH "vcpkg toolchain")
 endif()
 
+# Without the toolchain there is no way to fetch the manifest dependencies, so
+# stop with the setup instructions instead of a confusing "package not found".
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(FATAL_ERROR
+        "vcpkg is not set up: VCPKG_ROOT is unset or does not point at a "
+        "bootstrapped clone, and no CMAKE_TOOLCHAIN_FILE was given.\n"
+        "One-time setup:\n"
+        "  git clone --depth 1 https://github.com/microsoft/vcpkg.git ~/.vcpkg\n"
+        "  ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics\n"
+        "  echo 'export VCPKG_ROOT=\"$HOME/.vcpkg\"' >> ~/.zshrc\n"
+        "Then open a new terminal (or run 'source ~/.zshrc') and configure again.")
+endif()
+
 # doctest is a vcpkg manifest *feature*, so it is only downloaded and installed
 # when the tests are actually built. The toolchain reads the manifest during
 # project(), so this has to happen before that call.
