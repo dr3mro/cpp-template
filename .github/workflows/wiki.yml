@@ -1,0 +1,59 @@
+name: Publish wiki
+
+# The wiki's source lives in wiki/ in this repository, so pages are reviewed
+# and versioned like code. On every push to main that touches it, this job
+# mirrors wiki/ into the GitHub wiki (a separate git repository,
+# <repo>.wiki.git). Edits made in the GitHub web editor are overwritten.
+#
+# One-time setup: enable Settings -> General -> Features -> Wikis, then create
+# any first page in the Wiki tab; GitHub only creates the wiki repository then.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "wiki/**"
+      - ".github/workflows/wiki.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # pushing to the wiki repository needs write access
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # Only the template repository has a wiki/ folder; generated projects
+    # don't ship this workflow.
+    if: github.repository == 'dr3mro/cpp-template'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Mirror wiki/ into the GitHub wiki
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          wiki_url="https://x-access-token:${TOKEN}@github.com/${REPO}.wiki.git"
+          if ! git clone --quiet --depth 1 "$wiki_url" /tmp/wiki; then
+            echo "::error::Could not clone ${REPO}.wiki.git. Enable Wikis under Settings -> General -> Features and create any first page in the Wiki tab, then re-run this workflow."
+            exit 1
+          fi
+
+          # Make the wiki an exact copy of wiki/ (deleted pages disappear too).
+          rsync -a --delete --exclude .git wiki/ /tmp/wiki/
+
+          cd /tmp/wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki is already up to date."
+            exit 0
+          fi
+          git commit --quiet -m "Sync from ${REPO}@${GITHUB_SHA::7}"
+          git push --quiet origin HEAD

@@ -34,6 +34,9 @@ All notable changes to this template are documented here. The format follows
 - `--github-user` in `new-project.sh` fills in the GitHub Pages docs link.
 - README tutorials for linking a library to an app (installed or from source)
   and for adding dependencies; a corpus guide in `FUZZING.md`.
+- A wiki with in-depth guides (recipes, testing, debugging and sanitizers,
+  CMake internals, CI and releases, maintaining the template, FAQ). Its
+  source lives in `wiki/` and the `wiki` workflow publishes it.
 
 ### Changed
 
@@ -50,6 +53,10 @@ All notable changes to this template are documented here. The format follows
 
 ### Fixed
 
+- UndefinedBehaviorSanitizer findings now abort (`-fno-sanitize-recover=undefined`),
+  so a test or fuzz input that hits undefined behaviour fails instead of passing.
+- A pushed `v*` tag published its GitHub Release under a new `build-<n>` tag
+  instead of the pushed one.
 - Shared library builds failed to link because `-pie` was applied to every
   target.
 - `new-project.sh` copied untracked build output into new projects, and then

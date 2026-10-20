@@ -8,6 +8,7 @@ setup and is tuned for Zed, VS Code and clangd on an Apple Silicon Mac, but
 works on Linux and Windows too.
 
 📖 **Documentation:** <https://dr3mro.github.io/cpp-template/>
+📚 **Wiki** (in-depth guides, recipes, FAQ): <https://github.com/dr3mro/cpp-template/wiki>
 
 ## Quick start
 

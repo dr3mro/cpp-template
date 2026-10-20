@@ -57,11 +57,15 @@ else
     (cd "$TEMPLATE_DIR" && tar --exclude='./.git' --exclude='./build' --exclude='./docs' \
         --exclude='./install' --exclude='./install-*' --exclude='./vcpkg_installed' \
         --exclude='./.cache' --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' \
-        --exclude='./.github/workflows/template-test.yml' -cf - .) | (cd "$DEST" && tar -xf -)
+        --exclude='./.github/workflows/template-test.yml' --exclude='./wiki' \
+        --exclude='./.github/workflows/wiki.yml' -cf - .) | (cd "$DEST" && tar -xf -)
 fi
 rm -f "$DEST/scripts/new-project.sh"
 rmdir "$DEST/scripts" 2>/dev/null || true
 rm -f "$DEST/.github/workflows/template-test.yml"
+# The wiki pages describe the template itself, so new projects start without
+# them (and without the workflow that publishes them).
+rm -rf "$DEST/wiki" "$DEST/.github/workflows/wiki.yml"
 
 # Rename folders: include/myapp -> include/<name>, src/myapp -> src/<name>.
 mv "$DEST/include/myapp" "$DEST/include/$NAME"
