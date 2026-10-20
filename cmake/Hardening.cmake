@@ -7,6 +7,15 @@ if(NOT MYAPP_ENABLE_HARDENING)
     return()
 endif()
 
+# Position-independent code so the hardening below (and a shared build) links
+# correctly. CMAKE_POSITION_INDEPENDENT_CODE plus check_pie_supported() let
+# CMake choose the right flag per target: -fPIC for libraries and -fPIE/-pie
+# for executables, instead of forcing -fPIE/-pie onto everything (which breaks
+# a shared libmyapp with "undefined reference to main").
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+include(CheckPIESupported)
+check_pie_supported()
+
 # The optimised configs that get hardened; Debug and the sanitizers do not.
 set(_myapp_hardened_configs "Release,RelWithDebInfo,MinSizeRel")
 set(_myapp_hardening_flags "")
@@ -41,15 +50,8 @@ else()
     target_compile_options(myapp_options INTERFACE
         $<$<CONFIG:${_myapp_hardened_configs}>:-U_FORTIFY_SOURCE>
         $<$<CONFIG:${_myapp_hardened_configs}>:-D_FORTIFY_SOURCE=3>
-        $<$<CONFIG:${_myapp_hardened_configs}>:-fstack-protector-strong>
-        $<$<CONFIG:${_myapp_hardened_configs}>:-fPIE>)
-    # -fPIE is enough on macOS (PIE is the default and -pie warns as unused);
-    # Linux still needs the link-side -pie to actually produce a PIE.
-    if(NOT APPLE)
-        target_link_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:-pie>)
-    endif()
-    list(APPEND _myapp_hardening_flags "-fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE")
+        $<$<CONFIG:${_myapp_hardened_configs}>:-fstack-protector-strong>)
+    list(APPEND _myapp_hardening_flags "-fstack-protector-strong -D_FORTIFY_SOURCE=3")
 
     # Clash protection and Intel CET are not available on every compiler (Apple
     # Clang on arm64 accepts the flag name but warns it is unused, which would
@@ -102,5 +104,8 @@ int main() { return 0; }
 endif()
 
 # One status line so a build log shows exactly which hardening flags landed.
+# PIE/PIC is intentionally absent: check_pie_supported() lets CMake add the
+# right per-target flag (-fPIC for libraries, -fPIE/-pie for executables).
 list(JOIN _myapp_hardening_flags " " _myapp_hardening_summary)
 message(STATUS "Hardening (optimised configs): ${_myapp_hardening_summary}")
+message(STATUS "Hardening: position-independent code ON (PIE/PIC added by CMake per target)")
