@@ -24,10 +24,13 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install vcpkg
-        # Only the toolchain file is needed: the docs build has tests off,
-        # so VCPKG_MANIFEST_INSTALL=OFF skips installing vcpkg.json.
+        # Pin vcpkg to the same baseline commit the manifest records, so CI
+        # resolves identical dependency versions to a local machine.
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+          BASELINE="$(python3 -c 'import json;print(json.load(open("vcpkg.json"))["builtin-baseline"])')"
+          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+          git -C "$HOME/vcpkg" fetch --quiet --depth 1 origin "$BASELINE"
+          git -C "$HOME/vcpkg" checkout --quiet FETCH_HEAD
           "$HOME/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
           echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
 
@@ -36,7 +39,7 @@ jobs:
 
       - name: Generate documentation
         run: |
-          cmake --preset release -DMYAPP_BUILD_TESTS=OFF -DVCPKG_MANIFEST_INSTALL=OFF
+          cmake --preset release -DMYAPP_BUILD_TESTS=OFF
           cmake --build --preset release --target docs
 
       - name: Mark documentation as static HTML

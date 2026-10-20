@@ -49,14 +49,6 @@ if [[ -f "$DEST/vcpkg.json" ]]; then
     perl -pi -e "s/\"name\": \"[^\"]+\"/\"name\": \"$VCPKG_NAME\"/" "$DEST/vcpkg.json"
 fi
 
-# Re-render diagrams: the committed PNGs still show the template name after renaming.
-if command -v dot >/dev/null; then
-    for dot_file in "$DEST"/diagrams/*.dot "$DEST"/diagrams/classes/*.dot; do
-        [[ -e "$dot_file" ]] || continue
-        dot -Tpng "$dot_file" -o "${dot_file%.dot}.png"
-    done
-fi
-
 # C++ standard.
 perl -pi -e "s/CMAKE_CXX_STANDARD 17/CMAKE_CXX_STANDARD $STD/" "$DEST/CMakeLists.txt"
 perl -pi -e "s/^Standard: c\+\+17/Standard: c++$STD/" "$DEST/.clang-format"
@@ -89,9 +81,9 @@ if [[ $VCPKG_READY -eq 0 ]]; then
 vcpkg is not set up yet (VCPKG_ROOT missing or invalid), so the first build
 will fail. One-time setup first:
 
-  git clone --depth 1 https://github.com/microsoft/vcpkg.git ~/vcpkg
-  ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
-  echo 'export VCPKG_ROOT="\$HOME/vcpkg"' >> ~/.zshrc
+  git clone --depth 1 https://github.com/microsoft/vcpkg.git ~/.vcpkg
+  ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics
+  echo 'export VCPKG_ROOT="\$HOME/.vcpkg"' >> ~/.zshrc
 
 See README.md for details.
 MSG

@@ -75,12 +75,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      # Releases build with tests off, so vcpkg only has to provide the
-      # toolchain file; VCPKG_MANIFEST_INSTALL=OFF skips installing vcpkg.json.
+      # Pin vcpkg to the same baseline commit the manifest records, so CI
+      # resolves identical dependency versions to a local machine.
       - name: Install vcpkg (Unix)
         if: runner.os != 'Windows'
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+          BASELINE="$(python3 -c 'import json;print(json.load(open("vcpkg.json"))["builtin-baseline"])')"
+          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+          git -C "$HOME/vcpkg" fetch --quiet --depth 1 origin "$BASELINE"
+          git -C "$HOME/vcpkg" checkout --quiet FETCH_HEAD
           "$HOME/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
           echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
 
@@ -88,7 +91,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$env:USERPROFILE\vcpkg"
+          $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
+          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$env:USERPROFILE\vcpkg"
+          git -C "$env:USERPROFILE\vcpkg" fetch --quiet --depth 1 origin $baseline
+          git -C "$env:USERPROFILE\vcpkg" checkout --quiet FETCH_HEAD
           & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
           "VCPKG_ROOT=$env:USERPROFILE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -117,7 +123,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cmake --preset release -DMYAPP_BUILD_TESTS=OFF -DVCPKG_MANIFEST_INSTALL=OFF ${{ matrix.cmake_args }}
+          cmake --preset release -DMYAPP_BUILD_TESTS=OFF ${{ matrix.cmake_args }}
           cmake --build --preset release
           cp "build/release/myapp${{ matrix.extension }}" "dist/myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
 

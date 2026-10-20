@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 
+# doctest is a vcpkg manifest *feature*, so it is only downloaded and installed
+# when the tests are actually built. The toolchain reads the manifest during
+# project(), so this has to happen before that call.
+option(MYAPP_BUILD_TESTS "Build the doctest unit tests" ON)
+if(MYAPP_BUILD_TESTS)
+    set(VCPKG_MANIFEST_FEATURES tests)
+endif()
+
 project(myapp VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- language ----
@@ -15,7 +23,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # ---- options ----
-option(MYAPP_BUILD_TESTS "Build the doctest unit tests" ON)
+# MYAPP_BUILD_TESTS is declared above project() so the vcpkg toolchain can see
+# it; MYAPP_ENABLE_SANITIZERS is only read after the toolchain has run.
 option(MYAPP_ENABLE_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
 # ---- warnings (shared by every target via this interface target) ----

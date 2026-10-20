@@ -1,7 +1,14 @@
 {
   "name": "myapp",
   "version": "0.1.0",
-  "dependencies": [
-    "doctest"
-  ]
+  "default-features": [],
+  "features": {
+    "tests": {
+      "description": "Unit test framework",
+      "dependencies": [
+        "doctest"
+      ]
+    }
+  },
+  "builtin-baseline": "f02d946abddc239688a43aadcb6d6404d035c834"
 }

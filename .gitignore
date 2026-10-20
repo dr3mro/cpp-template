@@ -20,6 +20,10 @@ CMakeUserPresets.json
 # Generated documentation
 /docs/
 
+# Generated diagrams (render with the `diagrams` / `class-diagrams` targets)
+/diagrams/classes/
+/diagrams/*.png
+
 # Debugger and profiling output
 *.dSYM/
 *.gdb_history
