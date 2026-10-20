@@ -144,8 +144,8 @@ if [[ $LIB -eq 1 ]]; then
     # consumer linked against it would fail without matching sanitizer flags.
     BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug
   cmake --preset release && cmake --build --preset release
-  cmake --install build/release --prefix ./install
-  cmake -S examples -B examples/build -DCMAKE_PREFIX_PATH=\$PWD/install && cmake --build examples/build"
+  cmake --install build/release
+  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=\$PWD/build/install/release && cmake --build build/examples"
 else
     BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug"
 fi

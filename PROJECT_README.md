@@ -101,9 +101,9 @@ Then install it and build the bundled consumer example:
 
 ```bash
 cmake --preset release && cmake --build --preset release
-cmake --install build/release --prefix ./install
-cmake -S examples -B examples/build -DCMAKE_PREFIX_PATH=$PWD/install
-cmake --build examples/build && ./examples/build/example
+cmake --install build/release          # installs into build/install/release
+cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=$PWD/build/install/release
+cmake --build build/examples && ./build/examples/example
 ```
 
 Consumers link the exported `myapp::myapp` target. `CPack` also builds a `.tar.gz`

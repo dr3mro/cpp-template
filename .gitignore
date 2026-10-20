@@ -2,8 +2,6 @@
 /build/
 /bin/
 /obj/
-# Local install prefix (cmake --install ... --prefix ./install)
-/install/
 # vcpkg (in-tree) output
 /vcpkg_installed/
 /vcpkg-binary-cache/
