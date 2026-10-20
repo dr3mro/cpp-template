@@ -51,7 +51,13 @@ if(RUN_CLANG_TIDY_EXE)
         list(APPEND _myapp_tidy_args "-warnings-as-errors=*")
     endif()
     add_custom_target(tidy
-        COMMAND ${RUN_CLANG_TIDY_EXE} -quiet ${_myapp_tidy_args} -p ${CMAKE_BINARY_DIR} "${CMAKE_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
+        COMMAND ${RUN_CLANG_TIDY_EXE} -quiet ${_myapp_tidy_args} -p ${CMAKE_BINARY_DIR}
+                # Anchored at the source tree so the generated
+                # build/**/generated/include/<name>/ headers can never match;
+                # .clang-tidy's HeaderFilterRegex alone cannot express that
+                # exclusion in POSIX extended regex.
+                -header-filter=^${CMAKE_SOURCE_DIR}/(include|src)/myapp/
+                "${CMAKE_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-tidy on the project"
         VERBATIM)

@@ -19,8 +19,11 @@ Checks: >
   -performance-avoid-endl
 
 WarningsAsErrors: ''
-# Only analyse our own headers under include/ and src/ (the trailing slash
-# plus a word boundary keeps the generated include/<name>/ folder out).
+# Only analyse our own headers under include/ and src/. This is a POSIX
+# extended regex (no lookahead), so it cannot exclude the generated
+# build/**/generated/include/<name>/ tree on its own; the tidy target passes
+# an -header-filter anchored at the absolute source directory instead, which
+# keeps generated headers out. (ExcludeHeaderFilterRegex, which would let this
+# file do the exclusion, needs clang-tidy 19+; CI ships 18.)
 HeaderFilterRegex: '.*/(include|src)/myapp/.*'
-ExcludeHeaderFilterRegex: '.*/generated/.*'
 FormatStyle: file
