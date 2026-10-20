@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
 
       - name: Configure MSVC
@@ -47,7 +47,7 @@ jobs:
     name: version matches vcpkg.json (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
       - name: Compare the CMake project version with vcpkg.json
         # vcpkg.json is the single source of truth; the configure-time
@@ -67,7 +67,7 @@ jobs:
     name: thread sanitizer (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
       - run: |
           cmake --preset tsan
@@ -82,7 +82,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
 
       - name: Install LLVM (for llvm-profdata/llvm-cov)
@@ -110,7 +110,7 @@ jobs:
     name: clang-tidy (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
       - name: Install clang-tidy
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang-tidy
@@ -125,7 +125,7 @@ jobs:
     name: fuzz (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
       - name: Install LLVM (for a fuzzer-capable clang)
         # libclang-rt provides the libFuzzer/ASan runtimes the runner does not
@@ -143,7 +143,7 @@ jobs:
     name: format (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
       - name: Install current clang-format (.clang-format needs v20+)
         run: pipx install clang-format

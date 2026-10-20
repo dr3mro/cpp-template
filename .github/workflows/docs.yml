@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Install Doxygen
         # ubuntu-latest already ships CMake 3.25+, which the workflow presets
