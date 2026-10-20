@@ -23,12 +23,14 @@ if(MSVC)
     list(APPEND _myapp_hardening_flags "/GS /guard:cf /DYNAMICBASE /NXCOMPAT")
     # High-entropy ASLR only applies to 64-bit builds; /CETCOMPAT only exists on
     # x64 (not ARM64). CMAKE_SIZEOF_VOID_P is 8 on both, so use the architecture.
+    # Only the compiler's own architecture ID is trustworthy here: an ARM64
+    # cross-build running on an AMD64 host reports CMAKE_SYSTEM_PROCESSOR=AMD64.
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         target_link_options(myapp_options INTERFACE
             $<$<CONFIG:${_myapp_hardened_configs}>:/HIGHENTROPYVA>)
         list(APPEND _myapp_hardening_flags "/HIGHENTROPYVA")
     endif()
-    if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
+    if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64")
         target_link_options(myapp_options INTERFACE
             $<$<CONFIG:${_myapp_hardened_configs}>:/CETCOMPAT>)
         list(APPEND _myapp_hardening_flags "/CETCOMPAT")
