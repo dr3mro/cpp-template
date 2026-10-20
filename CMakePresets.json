@@ -122,7 +122,8 @@
     { "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true } },
     { "name": "debug-nosan", "configurePreset": "debug-nosan", "output": { "outputOnFailure": true } },
     { "name": "tsan", "configurePreset": "tsan", "output": { "outputOnFailure": true } },
-    { "name": "ci", "configurePreset": "ci", "output": { "outputOnFailure": true } }
+    { "name": "ci", "configurePreset": "ci", "output": { "outputOnFailure": true } },
+    { "name": "coverage", "configurePreset": "coverage", "output": { "outputOnFailure": true } }
   ],
   "workflowPresets": [
     {
