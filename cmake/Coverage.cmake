@@ -31,11 +31,11 @@ add_custom_target(coverage
     COMMAND ${MYAPP_LLVM_COV} report
             $<TARGET_FILE:${PROJECT_NAME}_tests>
             -instr-profile=${_myapp_cov_dir}/merged.profdata
-            "--ignore-filename-regex=${PROJECT_SOURCE_DIR}/(tests|vcpkg_installed)/"
+            "--ignore-filename-regex=${PROJECT_SOURCE_DIR}/(tests|vcpkg_installed|fuzz)/|${PROJECT_BINARY_DIR}/vcpkg_installed/"
     COMMAND ${MYAPP_LLVM_COV} show
             $<TARGET_FILE:${PROJECT_NAME}_tests>
             -instr-profile=${_myapp_cov_dir}/merged.profdata
-            "--ignore-filename-regex=${PROJECT_SOURCE_DIR}/(tests|vcpkg_installed)/"
+            "--ignore-filename-regex=${PROJECT_SOURCE_DIR}/(tests|vcpkg_installed|fuzz)/|${PROJECT_BINARY_DIR}/vcpkg_installed/"
             -format=html -output-dir=${_myapp_cov_dir}/html
     DEPENDS ${PROJECT_NAME}_tests
     COMMENT "Running tests and generating coverage report (output: build/coverage/html/)"
