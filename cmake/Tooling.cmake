@@ -16,8 +16,20 @@ file(GLOB_RECURSE MYAPP_ALL_FILES CONFIGURE_DEPENDS
 if(EXISTS ${CMAKE_SOURCE_DIR}/main.cpp)
     list(APPEND MYAPP_ALL_FILES ${CMAKE_SOURCE_DIR}/main.cpp)
 endif()
+# fuzz/ ships with the template; examples/ only exists in library mode.
+if(EXISTS ${CMAKE_SOURCE_DIR}/fuzz)
+    file(GLOB _myapp_fuzz_files CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/fuzz/*.cpp)
+    list(APPEND MYAPP_ALL_FILES ${_myapp_fuzz_files})
+endif()
+if(EXISTS ${CMAKE_SOURCE_DIR}/examples)
+    file(GLOB _myapp_example_files CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/examples/*.cpp)
+    list(APPEND MYAPP_ALL_FILES ${_myapp_example_files})
+endif()
 
-find_program(CLANG_FORMAT_EXE clang-format)
+# .clang-format needs clang-format 20+. Prefer Homebrew LLVM's copy so the
+# target uses the same version CI and pre-commit do.
+find_program(CLANG_FORMAT_EXE NAMES clang-format
+             HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
 if(CLANG_FORMAT_EXE)
     add_custom_target(format
         COMMAND ${CLANG_FORMAT_EXE} -i ${MYAPP_ALL_FILES}

@@ -114,8 +114,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-vcpkg
       - name: Install current clang-format (.clang-format needs v20+)
         run: pipx install clang-format
       - name: Check formatting
+        # The format-check target owns the file list, so CI and a local run
+        # cannot drift apart.
         run: |
-          find main.cpp include src tests fuzz -name '*.cpp' -o -name '*.hpp' | xargs clang-format --dry-run --Werror
+          cmake --preset release
+          cmake --build --preset release --target format-check
