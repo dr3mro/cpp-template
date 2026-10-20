@@ -38,8 +38,8 @@ All notable changes to this template are documented here. The format follows
   layout, building, editor setup, writing code, dependencies, the library +
   app tutorial, testing, debugging and sanitizers, fuzzing, code quality,
   documentation, recipes, options, security, CI and releases, CMake
-  internals, maintenance, troubleshooting, FAQ and a glossary. It is included
-  as a git submodule in `wiki/`.
+  internals, maintenance, troubleshooting, FAQ and a glossary. Its source
+  lives in `wiki/` and the `wiki` workflow publishes it.
 
 ### Changed
 

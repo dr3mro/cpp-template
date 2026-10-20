@@ -1,0 +1,49 @@
+# Options reference
+
+Every switch the template offers. Pass any of them when configuring, for example
+`cmake --preset debug -DMYAPP_WARNINGS_AS_ERRORS=ON` (in a generated project,
+`MYAPP` is your project's name in capitals). They are all defined in
+`cmake/Options.cmake` and `cmake/PreProject.cmake`.
+
+| Option                     | Default | Meaning                                                              |
+| -------------------------- | ------- | -------------------------------------------------------------------- |
+| `MYAPP_BUILD_TESTS`        | `ON`    | build the unit tests (and let vcpkg fetch doctest)                   |
+| `MYAPP_LIBRARY_MODE`       | `OFF`   | build an installable library instead of an app (`--lib` sets it)     |
+| `MYAPP_BUILD_FUZZERS`      | `OFF`   | build the fuzzers (the `fuzz` preset sets it)                        |
+| `MYAPP_SANITIZER`          | empty   | `address` (with UBSan), `thread` or `memory`                         |
+| `MYAPP_WARNINGS_AS_ERRORS` | `OFF`   | fail the build on any warning (the `ci` preset sets it)              |
+| `MYAPP_ENABLE_HARDENING`   | `ON`    | security flags in release builds                                     |
+| `MYAPP_ENABLE_COVERAGE`    | `OFF`   | coverage instrumentation (the `coverage` preset sets it)             |
+| `MYAPP_USE_LLVM_CLANG`     | `OFF`   | use LLVM clang++ (Homebrew's on macOS)                               |
+| `MYAPP_USE_CCACHE`         | `ON`    | use ccache when it is installed                                      |
+| `MYAPP_TIDY_WERROR`        | `OFF`   | make `tidy` fail on findings                                         |
+| `MYAPP_FUZZ_SECONDS`       | `10`    | how long `fuzz-run` runs each fuzzer                                 |
+| `BUILD_SHARED_LIBS`        | `OFF`   | standard CMake option: build the library as shared instead of static |
+
+Options are remembered per build folder; `cmake --preset <name> --fresh` resets
+a folder to the preset's values. Add your own options as shown in
+[Recipes](Recipes#add-your-own-build-option).
+
+## Tool locations
+
+If CMake picks the wrong copy of a tool, point it at the right one:
+
+| Variable | Tool |
+| --- | --- |
+| `MYAPP_CLANG_FORMAT` | `clang-format` (version 20+) |
+| `MYAPP_RUN_CLANG_TIDY` | `run-clang-tidy` |
+| `MYAPP_LLVM_PROFDATA`, `MYAPP_LLVM_COV` | coverage tools |
+| `MYAPP_CCACHE_PROGRAM` | `ccache` |
+| `MYAPP_DOT_EXECUTABLE` | Graphviz `dot` |
+
+Example: `cmake --preset debug -DMYAPP_CLANG_FORMAT=/opt/homebrew/opt/llvm/bin/clang-format`.
+
+## Standard CMake variables worth knowing
+
+| Variable | Meaning |
+| --- | --- |
+| `CMAKE_BUILD_TYPE` | `Debug`, `Release`, `RelWithDebInfo` or `MinSizeRel` (set by the presets) |
+| `CMAKE_CXX_COMPILER` | the compiler; only on the first configure of a folder (or with `--fresh`) |
+| `CMAKE_PREFIX_PATH` | extra folders to search for packages, e.g. your own installed libraries |
+| `CMAKE_INSTALL_PREFIX` | where `cmake --install` puts files (default `build/install/<preset>`) |
+| `BUILD_SHARED_LIBS` | `ON` builds the library as shared |
