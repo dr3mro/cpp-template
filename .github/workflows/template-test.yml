@@ -94,7 +94,10 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd /tmp/app20
-          cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON
+          # Generated projects rename the MYAPP_ option prefix, so derive it
+          # from the project name instead of hard-coding the template's.
+          PREFIX="$(echo app20 | tr '[:lower:]' '[:upper:]')"
+          cmake --preset debug-nosan -D"${PREFIX}_TIDY_WERROR=ON"
           cmake --build --preset debug-nosan --target tidy
 
       - name: Coverage (Linux)
@@ -109,6 +112,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd /tmp/app20
-          cmake --preset fuzz -DMYAPP_FUZZ_SECONDS=10
+          # Same renaming applies to the fuzz option prefix.
+          PREFIX="$(echo app20 | tr '[:lower:]' '[:upper:]')"
+          cmake --preset fuzz -D"${PREFIX}_FUZZ_SECONDS=10"
           cmake --build --preset fuzz
           cmake --build --preset fuzz --target fuzz-run
