@@ -27,6 +27,12 @@ function(_myapp_use_sanitizer compile_flag link_flag what)
     endif()
     target_compile_options(${PROJECT_NAME}_options INTERFACE ${compile_flag} -fno-omit-frame-pointer)
     target_link_options(${PROJECT_NAME}_options INTERFACE ${link_flag})
+    # UBSan only prints a report and carries on by default, so a test (or a
+    # fuzz input) that hits undefined behaviour would still pass. Make every
+    # UBSan finding abort the program, like ASan and TSan findings do.
+    if(compile_flag MATCHES "undefined")
+        target_compile_options(${PROJECT_NAME}_options INTERFACE -fno-sanitize-recover=undefined)
+    endif()
 endfunction()
 
 # ---- validate the choice -------------------------------------------------------
