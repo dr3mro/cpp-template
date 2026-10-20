@@ -67,7 +67,11 @@ jobs:
 
       - name: Install LLVM (for llvm-profdata/llvm-cov)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y llvm
+        # libclang-rt provides the profile/sanitizer runtimes the runner does not
+        # guarantee; keep it in step with the clang version apt installs.
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y llvm libclang-rt-dev
 
       - name: Generate coverage report
         run: |
@@ -104,7 +108,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-vcpkg
       - name: Install LLVM (for a fuzzer-capable clang)
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y llvm
+        # libclang-rt provides the libFuzzer/ASan runtimes the runner does not
+        # guarantee.
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y llvm libclang-rt-dev
       - name: Run fuzzers
         run: |
           cmake --preset fuzz -DMYAPP_FUZZ_SECONDS=30

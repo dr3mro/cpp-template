@@ -16,17 +16,23 @@ if(MSVC)
     target_compile_options(myapp_options INTERFACE
         $<$<CONFIG:${_myapp_hardened_configs}>:/GS>
         $<$<CONFIG:${_myapp_hardened_configs}>:/guard:cf>)
-    # Linker-side: ASLR, DEP/non-executable stack, and (x64 only) CET.
+    # Linker-side: ASLR and DEP/non-executable stack on every build.
     target_link_options(myapp_options INTERFACE
         $<$<CONFIG:${_myapp_hardened_configs}>:/DYNAMICBASE>
-        $<$<CONFIG:${_myapp_hardened_configs}>:/HIGHENTROPYVA>
         $<$<CONFIG:${_myapp_hardened_configs}>:/NXCOMPAT>)
+    list(APPEND _myapp_hardening_flags "/GS /guard:cf /DYNAMICBASE /NXCOMPAT")
+    # High-entropy ASLR only applies to 64-bit builds; /CETCOMPAT only exists on
+    # x64 (not ARM64). CMAKE_SIZEOF_VOID_P is 8 on both, so use the architecture.
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        target_link_options(myapp_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:/HIGHENTROPYVA>)
+        list(APPEND _myapp_hardening_flags "/HIGHENTROPYVA")
+    endif()
+    if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
         target_link_options(myapp_options INTERFACE
             $<$<CONFIG:${_myapp_hardened_configs}>:/CETCOMPAT>)
         list(APPEND _myapp_hardening_flags "/CETCOMPAT")
     endif()
-    list(APPEND _myapp_hardening_flags "/GS /guard:cf /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT")
 else()
     # _FORTIFY_SOURCE is set by some distros already; undefine it first so the
     # redefinition below does not warn, then set it to level 3 (optimised only).
@@ -57,7 +63,6 @@ else()
             $<$<CONFIG:${_myapp_hardened_configs}>:-fstack-clash-protection>)
         list(APPEND _myapp_hardening_flags "-fstack-clash-protection")
     endif()
-    check_cxx_compiler_flag("-fcf-protection=full" MYAPP_HAS_CF_PROTECTION)
     if(MYAPP_HAS_CF_PROTECTION)
         target_compile_options(myapp_options INTERFACE
             $<$<CONFIG:${_myapp_hardened_configs}>:-fcf-protection=full>)

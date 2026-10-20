@@ -1,23 +1,25 @@
-# Generate the version header so the git hash is captured at configure time.
-# The header lands in <build>/generated/include/<name>/version.hpp, which keeps
-# it out of the source tree and always in sync with the current commit.
-find_package(Git QUIET)
-if(GIT_FOUND)
-    execute_process(
-        COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        OUTPUT_VARIABLE MYAPP_GIT_HASH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
-endif()
-if(NOT MYAPP_GIT_HASH)
-    set(MYAPP_GIT_HASH "unknown")
-endif()
+# Generate the version header at build time so the git hash never goes stale
+# between commits. A custom target runs cmake -P cmake/WriteVersion.cmake, which
+# only rewrites the header when the hash actually changed (so it does not cause
+# a full rebuild on every build). myapp_lib depends on this target; the top-level
+# CMakeLists.txt adds that dependency once the library exists.
 
-configure_file(
-    "${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/version.hpp.in"
-    "${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/version.hpp"
-    @ONLY)
+set(MYAPP_VERSION_HEADER "${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/version.hpp")
+
+add_custom_target(myapp_version
+    COMMAND ${CMAKE_COMMAND}
+            -DTEMPLATE=${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/version.hpp.in
+            -DOUTPUT=${MYAPP_VERSION_HEADER}
+            -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+            -DPROJECT_NAME=${PROJECT_NAME}
+            -DPROJECT_VERSION=${PROJECT_VERSION}
+            -DPROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+            -DPROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+            -DPROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+            -P ${CMAKE_SOURCE_DIR}/cmake/WriteVersion.cmake
+    BYPRODUCTS ${MYAPP_VERSION_HEADER}
+    COMMENT "Writing ${PROJECT_NAME}/version.hpp"
+    VERBATIM)
 
 # Expose the generated header to every target that links myapp_options, which
 # is the whole project. This is also what lets clangd find it via the -I flag in

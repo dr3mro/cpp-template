@@ -23,25 +23,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Install vcpkg
-        # Pin vcpkg to the same baseline commit the manifest records, so CI
-        # resolves identical dependency versions to a local machine.
-        run: |
-          BASELINE="$(python3 -c 'import json;print(json.load(open("vcpkg.json"))["builtin-baseline"])')"
-          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
-          git -C "$HOME/vcpkg" fetch --quiet --depth 1 origin "$BASELINE"
-          git -C "$HOME/vcpkg" checkout --quiet FETCH_HEAD
-          "$HOME/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
-          echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
-
       - name: Install Doxygen
         # ubuntu-latest already ships CMake 3.25+, which the workflow presets
         # require; ninja-build, doxygen and graphviz are the only extra tools.
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y doxygen graphviz ninja-build
 
       - name: Generate documentation
-        # The docs preset turns off tests, fuzzers and vcpkg installation, so
-        # the toolchain file alone is enough for this build.
+        # The docs preset uses its own base without the vcpkg toolchain and turns
+        # off tests and fuzzers, so no dependencies or VCPKG_ROOT are needed.
         run: cmake --workflow --preset docs
 
       - name: Mark documentation as static HTML

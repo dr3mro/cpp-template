@@ -54,6 +54,8 @@ include(cmake/Tooling.cmake)
 # ---- library: everything under src/, so tests and the app can both link it ----
 file(GLOB_RECURSE MYAPP_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp)
 add_library(${PROJECT_NAME}_lib ${MYAPP_SOURCES})
+# Refresh the build-time version header before the library compiles.
+add_dependencies(${PROJECT_NAME}_lib myapp_version)
 # BUILD_INTERFACE keeps the source path out of the installed export set.
 target_include_directories(${PROJECT_NAME}_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
