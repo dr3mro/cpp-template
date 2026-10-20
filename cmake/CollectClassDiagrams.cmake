@@ -1,6 +1,6 @@
 # Collects the class graphs Doxygen generated into ${DEST_DIR} and renders a
-# PNG beside every .dot file, so diagrams/classes/ matches the layout of the
-# hand-written diagrams/ directory and can be committed the same way.
+# PNG beside every .dot file, so the classes/ folder under docs/diagrams/
+# matches the layout of the architecture diagram rendered next to it.
 #
 # Run from a custom target as:
 #   cmake -DDOT_EXECUTABLE=... -DOUTPUT_DIR=... -DDEST_DIR=... -P CollectClassDiagrams.cmake

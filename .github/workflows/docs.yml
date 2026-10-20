@@ -28,9 +28,13 @@ jobs:
         # require; ninja-build, doxygen and graphviz are the only extra tools.
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y doxygen graphviz ninja-build
 
+      - name: Set up vcpkg
+        # The docs preset builds the full app + library + tests configuration so
+        # the architecture diagram includes every target, so the toolchain (and
+        # doctest) must be available.
+        uses: ./.github/actions/setup-vcpkg
+
       - name: Generate documentation
-        # The docs preset uses its own base without the vcpkg toolchain and turns
-        # off tests and fuzzers, so no dependencies or VCPKG_ROOT are needed.
         run: cmake --workflow --preset docs
 
       - name: Mark documentation as static HTML

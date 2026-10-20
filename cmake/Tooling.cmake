@@ -72,27 +72,6 @@ if(RUN_CLANG_TIDY_EXE)
 endif()
 
 find_program(DOT_EXECUTABLE dot)
-if(DOT_EXECUTABLE)
-    # Every diagrams/*.dot file is rendered to a PNG beside it.
-    file(GLOB DIAGRAM_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/diagrams/*.dot)
-    # architecture.dot may only be written at the end of this configure.
-    if(MYAPP_GENERATE_ARCHITECTURE)
-        list(APPEND DIAGRAM_SOURCES ${MYAPP_ARCHITECTURE_DOT})
-        list(REMOVE_DUPLICATES DIAGRAM_SOURCES)
-    endif()
-    set(DIAGRAM_PNGS "")
-    foreach(dot_file IN LISTS DIAGRAM_SOURCES)
-        string(REGEX REPLACE "\\.dot$" ".png" png_file ${dot_file})
-        get_filename_component(name ${dot_file} NAME_WE)
-        add_custom_command(
-            OUTPUT ${png_file}
-            COMMAND ${DOT_EXECUTABLE} -Tpng ${dot_file} -o ${png_file}
-            DEPENDS ${dot_file}
-            COMMENT "Rendering ${name}.png")
-        list(APPEND DIAGRAM_PNGS ${png_file})
-    endforeach()
-    add_custom_target(diagrams DEPENDS ${DIAGRAM_PNGS})
-endif()
 
 # Doxygen draws class/include graphs only when Graphviz is installed.
 if(DOT_EXECUTABLE)
@@ -100,6 +79,12 @@ if(DOT_EXECUTABLE)
 else()
     set(MYAPP_DOXY_HAVE_DOT NO)
 endif()
+
+# All diagrams are generated output under docs/diagrams/ (never committed):
+# the architecture graph written by ArchitectureDiagram.cmake, plus every class
+# graph Doxygen produces. The docs target builds them so the Doxygen site can
+# embed them.
+set(MYAPP_DIAGRAMS_DIR ${PROJECT_BINARY_DIR}/docs/diagrams)
 
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
@@ -111,38 +96,35 @@ if(DOXYGEN_FOUND)
         set(MYAPP_DOXY_EXTRA_INPUT "")
     endif()
     configure_file(${PROJECT_SOURCE_DIR}/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY)
+
     add_custom_target(docs
         COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Generating documentation with Doxygen (output: docs/)"
         VERBATIM)
 
-    # Render diagrams/*.dot first so the README/docs images are always current.
-    if(TARGET diagrams)
-        add_dependencies(docs diagrams)
-    endif()
-
-    # Class diagrams are dot graphs that Doxygen renders and then normally
-    # deletes, so this target needs Graphviz as well as Doxygen to exist.
     if(DOT_EXECUTABLE)
         configure_file(${PROJECT_SOURCE_DIR}/Doxyfile.classes.in
                        ${PROJECT_BINARY_DIR}/Doxyfile.classes @ONLY)
-
-        add_custom_target(class-diagrams
-            # Wipe both outputs first so graphs from renamed or removed classes
-            # cannot linger in Doxygen's output and get copied back.
-            COMMAND ${CMAKE_COMMAND} -E rm -rf
-                    ${PROJECT_BINARY_DIR}/class-diagrams
-                    ${PROJECT_SOURCE_DIR}/diagrams/classes
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/diagrams/classes
+        # Render every diagram into docs/diagrams/ before Doxygen runs, so the
+        # README's \image and the class graphs always reference current files.
+        add_custom_target(docs-diagrams
+            # Wipe first so graphs from renamed or removed classes cannot
+            # linger (the architecture .dot is written by the configure step).
+            COMMAND ${CMAKE_COMMAND} -E rm -rf ${MYAPP_DIAGRAMS_DIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${MYAPP_DIAGRAMS_DIR}
+            COMMAND ${DOT_EXECUTABLE} -Tpng ${MYAPP_ARCHITECTURE_DOT}
+                    -o ${MYAPP_DIAGRAMS_DIR}/architecture.png
+            COMMAND ${CMAKE_COMMAND} -E rm -rf ${PROJECT_BINARY_DIR}/class-diagrams
             COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile.classes
             COMMAND ${CMAKE_COMMAND}
                     -DDOT_EXECUTABLE=${DOT_EXECUTABLE}
                     -DOUTPUT_DIR=${PROJECT_BINARY_DIR}/class-diagrams
-                    -DDEST_DIR=${PROJECT_SOURCE_DIR}/diagrams/classes
+                    -DDEST_DIR=${MYAPP_DIAGRAMS_DIR}/classes
                     -P ${PROJECT_SOURCE_DIR}/cmake/CollectClassDiagrams.cmake
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-            COMMENT "Generating class diagrams (output: diagrams/classes/)"
+            COMMENT "Rendering architecture and class diagrams (output: docs/diagrams/)"
             VERBATIM)
+        add_dependencies(docs docs-diagrams)
     endif()
 endif()

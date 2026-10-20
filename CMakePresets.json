@@ -9,12 +9,6 @@
       "binaryDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
     },
-    {
-      "name": "docs-base",
-      "hidden": true,
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}"
-    },
 
     {
       "name": "release",
@@ -28,8 +22,7 @@
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "MYAPP_SANITIZER": "address",
-        "MYAPP_GENERATE_ARCHITECTURE": "ON"
+        "MYAPP_SANITIZER": "address"
       }
     },
     {
@@ -61,10 +54,10 @@
     {
       "name": "docs",
       "displayName": "Doxygen docs (Ninja)",
-      "inherits": "docs-base",
+      "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "MYAPP_BUILD_TESTS": "OFF",
+        "MYAPP_BUILD_TESTS": "ON",
         "MYAPP_BUILD_FUZZERS": "OFF"
       }
     },
@@ -124,7 +117,6 @@
     { "name": "coverage", "configurePreset": "coverage" },
     { "name": "fuzz", "configurePreset": "fuzz" },
     { "name": "docs", "configurePreset": "docs", "targets": ["docs"] },
-    { "name": "diagrams", "configurePreset": "docs", "targets": ["class-diagrams"] },
     { "name": "vs2022", "configurePreset": "vs2022", "configuration": "Debug" },
     { "name": "vs2026", "configurePreset": "vs2026", "configuration": "Debug" }
   ],
@@ -138,18 +130,10 @@
   "workflowPresets": [
     {
       "name": "docs",
-      "displayName": "Configure and build Doxygen docs",
+      "displayName": "Configure and build Doxygen docs and diagrams",
       "steps": [
         { "type": "configure", "name": "docs" },
         { "type": "build", "name": "docs" }
-      ]
-    },
-    {
-      "name": "diagrams",
-      "displayName": "Configure and render class diagrams",
-      "steps": [
-        { "type": "configure", "name": "docs" },
-        { "type": "build", "name": "diagrams" }
       ]
     }
   ]

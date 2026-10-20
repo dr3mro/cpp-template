@@ -19,13 +19,8 @@ CMakeUserPresets.json
 *.dll
 *.exe
 
-# Generated documentation
+# Generated documentation (includes docs/diagrams/)
 /docs/
-
-# Generated diagrams. The hand-written diagrams/*.png are committed (README
-# references them); only Doxygen's class graphs under diagrams/classes/ are
-# regenerated and ignored.
-/diagrams/classes/
 
 # Debugger and profiling output
 *.dSYM/

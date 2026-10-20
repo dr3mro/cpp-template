@@ -25,11 +25,8 @@ endif()
 get_filename_component(_root "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
 set(_generated
-    build              # all preset build trees
-    install            # local install prefix
-    examples/build     # example consumer build
+    build              # all preset build trees (including generated docs/diagrams)
     docs               # Doxygen HTML
-    diagrams/classes   # Doxygen class graphs
     vcpkg_installed    # in-tree vcpkg packages (re-downloaded on next configure)
 )
 

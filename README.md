@@ -124,7 +124,7 @@ If CMake reports `VCPKG_ROOT is empty`, the `export VCPKG_ROOT=...` line is miss
 - **Security hardening**: defence-in-depth flags for optimised builds, documented in `SECURITY.md`.
 - **clangd ready**: `build/compile_commands.json` always points at the last configured preset.
 - **Your style and checks**: the Grocery `.clang-format` (Microsoft/Allman, 4 spaces), `.clang-tidy` rules and a `.editorconfig`.
-- **Tooling targets**: `format`, `format-check`, `tidy`, `docs` (Doxygen, also `cmake --workflow --preset docs`), `class-diagrams` (Doxygen + Graphviz, also `cmake --workflow --preset diagrams`) and `diagrams` (Graphviz).
+- **Tooling targets**: `format`, `format-check`, `tidy` and `docs` (Doxygen with the architecture and class diagrams, also `cmake --workflow --preset docs`).
 - **Zed and VS Code**: build, run, test, format, tidy and docs tasks, plus CodeLLDB debug configs for the app and the tests.
 - **GitHub Actions**: CI (Linux, macOS, Windows), ThreadSanitizer, coverage, clang-tidy, fuzzing, formatting, CodeQL and a template self-test; Dependabot keeps actions and vcpkg current.
 
@@ -161,16 +161,23 @@ In Zed, run tasks with `Cmd+Shift+P` → **task: spawn** (for example `test`), a
 | `ci` | Warnings-as-errors build, used by CI | `build/ci/` |
 | `coverage` | Instrumented build for coverage reporting | `build/coverage/` |
 | `fuzz` | Debug build with libFuzzer, ASan and UBSan (LLVM clang) | `build/fuzz/` |
-| `docs` | Release build for Doxygen, no tests or packages | `build/docs/` |
+| `docs` | Release build for Doxygen (also renders the diagrams) | `build/docs/` |
 | `vs2022` / `vs2026` | Visual Studio solution (Windows only) | `build/vs20xx/` |
 
-Generate the Doxygen site (and the class diagrams) with a workflow preset, which
-configures and builds in one command:
+Generate the Doxygen site (with the architecture and class diagrams) with a
+workflow preset, which configures and builds in one command:
 
 ```bash
-cmake --workflow --preset docs      # output: docs/index.html
-cmake --workflow --preset diagrams  # output: diagrams/classes/
+cmake --workflow --preset docs   # output: docs/index.html, diagrams in docs/diagrams/
 ```
+
+## Architecture
+
+\image html architecture.png "Target architecture"
+
+The diagram is generated from the CMake targets — do not hand-edit it. It is
+rendered by the `docs` target (along with the class diagrams) into
+`docs/diagrams/`, which is generated output and never committed.
 
 ## Changes from the Grocery setup
 

@@ -164,9 +164,7 @@ Run these with `cmake --build --preset release --target <name>`:
 | `format` | Format all sources with clang-format |
 | `format-check` | Fail if any file is not formatted |
 | `tidy` | Run clang-tidy across the project |
-| `docs` | Generate Doxygen HTML in `docs/` |
-| `class-diagrams` | Generate Graphviz class diagrams into `diagrams/classes/` |
-| `diagrams` | Render every `diagrams/*.dot` file to PNG |
+| `docs` | Generate Doxygen HTML in `docs/`, including the architecture and class diagrams in `docs/diagrams/` |
 | `coverage` | Build the coverage report (with the `coverage` preset) |
 | `fuzz-run` | Run every fuzzer for `MYAPP_FUZZ_SECONDS` (with the `fuzz` preset) |
 
@@ -178,12 +176,11 @@ Run these with `cmake --build --preset release --target <name>`:
 ├── src/myapp/          Implementations (built into the myapp_lib library)
 ├── tests/              doctest unit tests (one file per component)
 ├── main.cpp            Thin entry point
-├── diagrams/           Graphviz sources and rendered PNGs
 ├── CMakeLists.txt      Build, test and tooling targets
 ├── CMakePresets.json   release / debug / debug-nosan / Visual Studio presets
 ├── vcpkg.json          Dependency manifest (installed by vcpkg at configure)
 ├── Doxyfile.in         Doxygen config (filled in by CMake)
-├── Doxyfile.classes.in Doxygen config for the class-diagrams target
+├── Doxyfile.classes.in Doxygen config for the class diagrams built by `docs`
 ├── cmake/              Helper scripts run with `cmake -P`
 ├── .clang-format       Code style (Allman, 4 spaces)
 ├── .clang-tidy         Static-analysis checks
@@ -194,11 +191,16 @@ Run these with `cmake --build --preset release --target <name>`:
 
 ## Architecture
 
-![Architecture](diagrams/architecture.png)
+\image html architecture.png "Target architecture"
 
-The diagram is generated from the CMake targets — do not edit
-`diagrams/architecture.dot` by hand. `cmake --preset debug` regenerates it, and
-the `diagrams` and `docs` targets render it to the PNG above.
+The diagram is generated from the CMake targets — do not hand-edit it. Build it
+with the `docs` workflow preset (output: `docs/diagrams/`):
+
+```bash
+cmake --workflow --preset docs
+```
+
+Class diagrams are generated into `docs/diagrams/classes/` by the same target.
 
 ## Releases
 
@@ -211,13 +213,12 @@ git tag v0.1.0 && git push origin v0.1.0
 ## Documentation
 
 Build the Doxygen site with the `docs` workflow preset, which configures and
-builds in one command (no packages or tests are needed):
+builds in one command (the architecture and class diagrams are generated into
+`docs/diagrams/` as part of it):
 
 ```bash
 cmake --workflow --preset docs   # output: docs/index.html
 ```
-
-`cmake --workflow --preset diagrams` does the same for the class diagrams.
 
 Pushes to `main` publish the Doxygen site to GitHub Pages. Enable it once under
 **Settings → Pages → Build and deployment → Source: GitHub Actions**.
