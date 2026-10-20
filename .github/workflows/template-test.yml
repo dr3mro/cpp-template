@@ -17,19 +17,98 @@ jobs:
     # Only run in the template repository itself; generated projects carry a
     # different name (and do not ship this workflow at all).
     if: github.repository == 'dr3mro/cpp-template'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-vcpkg
 
-      - name: Generate a project from the template
-        run: ./scripts/new-project.sh ci_probe /tmp/ci_probe --std 20 --no-git
-
-      # The ci preset is warnings-as-errors + ASan, so this fails on any warning
-      # the template introduces.
-      - name: Build and test the generated project
-        working-directory: /tmp/ci_probe
+      - name: Install extra tools (Linux)
+        if: runner.os == 'Linux'
         run: |
-          cmake --preset ci
-          cmake --build --preset ci
-          ctest --preset ci
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang llvm libclang-rt-dev clang-tidy doxygen graphviz
+          pipx install clang-format
+
+      - name: Install extra tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install llvm doxygen graphviz
+
+      - name: Generate projects from the template
+        run: |
+          ./scripts/new-project.sh app17 /tmp/app17 --std 17 --no-git
+          ./scripts/new-project.sh app20 /tmp/app20 --std 20 --no-git
+          ./scripts/new-project.sh mylib /tmp/mylib --no-git --lib
+
+      - name: No placeholder names left behind
+        # Every MYAPP/myapp must have been renamed; a miss means the script
+        # (or a new file) still hard-codes the template name.
+        run: |
+          if grep -rIl 'myapp\|MYAPP' /tmp/app17 /tmp/app20 /tmp/mylib --exclude-dir=.git; then
+            echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
+            exit 1
+          fi
+
+      - name: Build and test every project
+        # The ci preset is warnings-as-errors + ASan, so this fails on any
+        # warning the template introduces.
+        run: |
+          for project in /tmp/app17 /tmp/app20 /tmp/mylib; do
+            echo "::group::$project ci"
+            (cd "$project" && cmake --preset ci && cmake --build --preset ci && ctest --preset ci)
+            echo "::endgroup::"
+
+            echo "::group::$project format-check"
+            (cd "$project" && cmake --build --preset ci --target format-check)
+            echo "::endgroup::"
+          done
+
+      - name: Library mode install and consume
+        run: |
+          cd /tmp/mylib
+          cmake --preset release
+          cmake --build --preset release
+          cmake --install build/release --prefix "$PWD/install"
+          cmake -S examples -B examples/build -DCMAKE_PREFIX_PATH="$PWD/install"
+          cmake --build examples/build
+          ./examples/build/example
+
+      - name: Library mode shared build
+        # Uses the vcpkg toolchain so doctest is available and the tests link
+        # against the shared library (exercising symbol visibility).
+        run: |
+          cd /tmp/mylib
+          cmake -S . -B build/shared -G Ninja -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          cmake --build build/shared
+          ctest --test-dir build/shared --output-on-failure
+
+      - name: Doxygen docs workflow
+        run: (cd /tmp/app20 && cmake --workflow --preset docs)
+
+      - name: clang-tidy (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd /tmp/app20
+          cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON
+          cmake --build --preset debug-nosan --target tidy
+
+      - name: Coverage (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd /tmp/app20
+          cmake --preset coverage
+          cmake --build --preset coverage
+          cmake --build --preset coverage --target coverage
+
+      - name: Fuzz (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd /tmp/app20
+          cmake --preset fuzz -DMYAPP_FUZZ_SECONDS=10
+          cmake --build --preset fuzz
+          cmake --build --preset fuzz --target fuzz-run

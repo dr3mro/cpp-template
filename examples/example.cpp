@@ -3,9 +3,8 @@
  * @brief Minimal consumer of the installed library.
  */
 
-#include <myapp/core/greeter.hpp>
-
 #include <iostream>
+#include <myapp/core/greeter.hpp>
 
 int main()
 {
