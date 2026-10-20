@@ -1,12 +1,15 @@
-# Full clean: deletes every generated folder so the next configure starts from
-# scratch. `--target clean` only removes compiled files inside one build dir, so
-# this file works two ways:
+# =============================================================================
+# DistClean.cmake - delete every generated folder (a full clean)
+#
+# `--target clean` only removes compiled files inside one build dir, so this
+# file works two ways:
 #
 #   cmake -P cmake/DistClean.cmake                      # script mode: deletes now
 #   cmake --build --preset debug --target distclean     # via the target below
 #
-# When include()d from CMakeLists.txt it only defines the distclean target;
-# nothing is deleted at configure time.
+# When include()d it only defines the distclean target; nothing is deleted at
+# configure time.
+# =============================================================================
 
 if(NOT CMAKE_SCRIPT_MODE_FILE)
     # Only the top-level project gets the target, so a parent project that pulls

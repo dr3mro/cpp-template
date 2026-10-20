@@ -1,11 +1,20 @@
-# Library target properties and the generated export header. Expects the
-# ${PROJECT_NAME}_lib target to exist and to already have its include
-# directories and link libraries set (the include comes right after those).
+# =============================================================================
+# ExportHeader.cmake - shared-library properties and <name>_export.h
+#
+# Included from src/CMakeLists.txt right after the library target is created.
+#
+#   - EXPORT_NAME/OUTPUT_NAME: installed as lib<name>.a/.so and exported as
+#     <name>::<name> (without the in-tree "_lib" suffix).
+#   - VERSION/SOVERSION: shared builds get a soname (lib<name>.so.<major>).
+#   - Hidden visibility: a shared library only exports what is marked with
+#     <NAME>_EXPORT, which keeps the ABI small and deliberate.
+#   - generate_export_header(): defines <NAME>_EXPORT as the right
+#     visibility/dllexport attribute for shared builds and as nothing for
+#     static ones (signalled with <NAME>_STATIC_DEFINE).
+# =============================================================================
+include_guard(DIRECTORY)
+include(GenerateExportHeader)
 
-# Exported as <name>::<name> so consumers write a clean target_link_libraries.
-# OUTPUT_NAME drops the _lib suffix from the installed file (libmyapp.a), and
-# VERSION/SOVERSION give shared builds a soname. Hidden visibility means only
-# MYAPP_EXPORT classes are visible from a shared library.
 set_target_properties(${PROJECT_NAME}_lib PROPERTIES
     EXPORT_NAME ${PROJECT_NAME}
     OUTPUT_NAME ${PROJECT_NAME}
@@ -14,12 +23,13 @@ set_target_properties(${PROJECT_NAME}_lib PROPERTIES
     CXX_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN ON)
 
-# Export header: produces <name>_EXPORT, empty for static builds and
-# import/export annotations for shared ones (needed for Windows DLLs).
-include(GenerateExportHeader)
+set(MYAPP_EXPORT_HEADER "${MYAPP_GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${PROJECT_NAME}_export.h")
 generate_export_header(${PROJECT_NAME}_lib
     BASE_NAME MYAPP
-    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/generated/include/${PROJECT_NAME}/${PROJECT_NAME}_export.h)
+    EXPORT_FILE_NAME "${MYAPP_EXPORT_HEADER}")
+
+# PUBLIC, so consumers of a static library (in-tree and installed) see the
+# same empty <NAME>_EXPORT the library was compiled with.
 get_target_property(_myapp_lib_type ${PROJECT_NAME}_lib TYPE)
 if(_myapp_lib_type STREQUAL "STATIC_LIBRARY")
     target_compile_definitions(${PROJECT_NAME}_lib PUBLIC MYAPP_STATIC_DEFINE)

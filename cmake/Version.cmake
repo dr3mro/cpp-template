@@ -1,39 +1,34 @@
-# Generate the version header at build time so the git hash never goes stale
-# between commits. A custom target runs cmake -P cmake/WriteVersion.cmake, which
-# only rewrites the header when the hash actually changed (so it does not cause
-# a full rebuild on every build). myapp_lib depends on this target; the top-level
-# CMakeLists.txt adds that dependency once the library exists.
+# =============================================================================
+# Version.cmake - the generated <name>/version.hpp header
+#
+# The header carries the project version (from vcpkg.json) and the git hash.
+# It is written:
+#   - once at configure time, so clangd and clang-tidy find it right away, and
+#   - again before every build by the ${PROJECT_NAME}_version target, so the
+#     hash never goes stale between commits (src/CMakeLists.txt makes the
+#     library depend on that target).
+# Both paths use the same function in WriteVersion.cmake.
+#
+# Provides: target ${PROJECT_NAME}_version, MYAPP_VERSION_HEADER, and the
+#           generated include directory on ${PROJECT_NAME}_options.
+# =============================================================================
+include_guard(DIRECTORY)
+include(WriteVersion)
 
-set(MYAPP_VERSION_HEADER "${PROJECT_BINARY_DIR}/generated/include/${PROJECT_NAME}/version.hpp")
+set(MYAPP_GENERATED_INCLUDE_DIR "${PROJECT_BINARY_DIR}/generated/include")
+set(MYAPP_VERSION_HEADER "${MYAPP_GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/version.hpp")
+set(_myapp_version_template "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/version.hpp.in")
 
-# Write the header once at configure time too, so clangd and clang-tidy find
-# it immediately after configuring (the CI tidy job only configures before it
-# builds the tidy target). The custom target below refreshes the hash at build
-# time; configure_file plus copy-only-if-different keeps reconfigures from
-# touching a header whose contents did not change.
-set(MYAPP_GIT_HASH "unknown")
-find_package(Git QUIET)
-if(GIT_FOUND)
-    execute_process(
-        COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
-        # git walks up from here, so a copy embedded in a parent repository
-        # still gets that repository's hash.
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-        OUTPUT_VARIABLE MYAPP_GIT_HASH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
-endif()
-if(NOT MYAPP_GIT_HASH)
-    set(MYAPP_GIT_HASH "unknown")
-endif()
-configure_file("${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/version.hpp.in"
-               "${MYAPP_VERSION_HEADER}.tmp" @ONLY)
-file(COPY_FILE "${MYAPP_VERSION_HEADER}.tmp" "${MYAPP_VERSION_HEADER}" ONLY_IF_DIFFERENT)
-file(REMOVE "${MYAPP_VERSION_HEADER}.tmp")
+# Configure time.
+myapp_write_version_header(
+    TEMPLATE "${_myapp_version_template}"
+    OUTPUT "${MYAPP_VERSION_HEADER}"
+    SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
-add_custom_target(myapp_version
+# Build time: the same function, run as a script with the values it needs.
+add_custom_target(${PROJECT_NAME}_version
     COMMAND ${CMAKE_COMMAND}
-            -DTEMPLATE=${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/version.hpp.in
+            -DTEMPLATE=${_myapp_version_template}
             -DOUTPUT=${MYAPP_VERSION_HEADER}
             -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
             -DPROJECT_NAME=${PROJECT_NAME}
@@ -46,7 +41,7 @@ add_custom_target(myapp_version
     COMMENT "Writing ${PROJECT_NAME}/version.hpp"
     VERBATIM)
 
-# Expose the generated header to every target that links myapp_options, which
-# is the whole project. This is also what lets clangd find it via the -I flag in
-# compile_commands.json.
-target_include_directories(myapp_options INTERFACE "${PROJECT_BINARY_DIR}/generated/include")
+# Every target links ${PROJECT_NAME}_options, so they all see the generated
+# headers (version.hpp here, the export header from ExportHeader.cmake). This
+# is also what puts the -I flag into compile_commands.json for clangd.
+target_include_directories(${PROJECT_NAME}_options INTERFACE "${MYAPP_GENERATED_INCLUDE_DIR}")

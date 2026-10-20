@@ -1,100 +1,97 @@
-# Security hardening. Default ON, but the flags only apply to optimised builds:
-# _FORTIFY_SOURCE needs -O, and the extra instructions would just bloat a debug
-# binary that the sanitizers already instrument heavily.
-option(MYAPP_ENABLE_HARDENING "Enable security hardening flags (optimised builds only)" ON)
+# =============================================================================
+# Hardening.cmake - security hardening flags for optimised builds
+#
+# Adds exploit mitigations (stack protector, FORTIFY_SOURCE, CET, RELRO, ...)
+# to ${PROJECT_NAME}_options. Only Release, RelWithDebInfo and MinSizeRel are
+# hardened: _FORTIFY_SOURCE needs optimisation, and Debug builds are already
+# instrumented by the sanitizers. PIC/PIE is set in ProjectDefaults.cmake.
+#
+# Reads: MYAPP_ENABLE_HARDENING (Options.cmake)
+# =============================================================================
+include_guard(DIRECTORY)
 
 if(NOT MYAPP_ENABLE_HARDENING)
     return()
 endif()
 
-# The optimised configs that get hardened; Debug and the sanitizers do not.
+include(CheckCXXCompilerFlag)
+include(CheckCXXSourceCompiles)
+
 set(_myapp_hardened_configs "Release,RelWithDebInfo,MinSizeRel")
-set(_myapp_hardening_flags "")
+set(_myapp_hardening_summary "")
+
+# _myapp_harden([COMPILE <flag>...] [LINK <flag>...])
+#
+# Adds each flag to ${PROJECT_NAME}_options for the hardened configurations
+# only, and records it for the status line printed at the end.
+function(_myapp_harden)
+    cmake_parse_arguments(ARG "" "" "COMPILE;LINK" ${ARGN})
+    foreach(_flag IN LISTS ARG_COMPILE)
+        target_compile_options(${PROJECT_NAME}_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:${_flag}>)
+    endforeach()
+    foreach(_flag IN LISTS ARG_LINK)
+        target_link_options(${PROJECT_NAME}_options INTERFACE
+            $<$<CONFIG:${_myapp_hardened_configs}>:${_flag}>)
+    endforeach()
+    list(APPEND _myapp_hardening_summary ${ARG_COMPILE} ${ARG_LINK})
+    set(_myapp_hardening_summary "${_myapp_hardening_summary}" PARENT_SCOPE)
+endfunction()
 
 if(MSVC)
-    # Compiler-side: buffer-overrun check and Control-flow Guard instrumentation.
-    target_compile_options(myapp_options INTERFACE
-        $<$<CONFIG:${_myapp_hardened_configs}>:/GS>
-        $<$<CONFIG:${_myapp_hardened_configs}>:/guard:cf>)
-    # Linker-side: ASLR and DEP/non-executable stack on every build.
-    target_link_options(myapp_options INTERFACE
-        $<$<CONFIG:${_myapp_hardened_configs}>:/DYNAMICBASE>
-        $<$<CONFIG:${_myapp_hardened_configs}>:/NXCOMPAT>)
-    list(APPEND _myapp_hardening_flags "/GS /guard:cf /DYNAMICBASE /NXCOMPAT")
-    # High-entropy ASLR only applies to 64-bit builds; /CETCOMPAT only exists on
-    # x64 (not ARM64). CMAKE_SIZEOF_VOID_P is 8 on both, so use the architecture.
-    # Only the compiler's own architecture ID is trustworthy here: an ARM64
-    # cross-build running on an AMD64 host reports CMAKE_SYSTEM_PROCESSOR=AMD64.
+    # Buffer-overrun checks and Control Flow Guard; ASLR and DEP at link time.
+    _myapp_harden(COMPILE /GS /guard:cf
+                  LINK /DYNAMICBASE /NXCOMPAT)
+    # High-entropy ASLR needs a 64-bit image.
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        target_link_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:/HIGHENTROPYVA>)
-        list(APPEND _myapp_hardening_flags "/HIGHENTROPYVA")
+        _myapp_harden(LINK /HIGHENTROPYVA)
     endif()
+    # /CETCOMPAT only exists on x64 (not ARM64). Use the compiler's own
+    # architecture: an ARM64 cross-build on an AMD64 host still reports
+    # CMAKE_SYSTEM_PROCESSOR=AMD64.
     if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64")
-        target_link_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:/CETCOMPAT>)
-        list(APPEND _myapp_hardening_flags "/CETCOMPAT")
+        _myapp_harden(LINK /CETCOMPAT)
     endif()
 else()
-    # _FORTIFY_SOURCE is set by some distros already; undefine it first so the
-    # redefinition below does not warn, then set it to level 3 (optimised only).
-    target_compile_options(myapp_options INTERFACE
-        $<$<CONFIG:${_myapp_hardened_configs}>:-U_FORTIFY_SOURCE>
-        $<$<CONFIG:${_myapp_hardened_configs}>:-D_FORTIFY_SOURCE=3>
-        $<$<CONFIG:${_myapp_hardened_configs}>:-fstack-protector-strong>)
-    list(APPEND _myapp_hardening_flags "-fstack-protector-strong -D_FORTIFY_SOURCE=3")
+    # Some distributions predefine _FORTIFY_SOURCE; undefine it first so level 3
+    # does not trigger a redefinition warning.
+    _myapp_harden(COMPILE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fstack-protector-strong)
 
-    # Clash protection and Intel CET are not available on every compiler (Apple
-    # Clang on arm64 accepts the flag name but warns it is unused, which would
-    # fail a -Werror build). Probe with -Werror so only flags the compiler truly
-    # honours are added.
-    include(CheckCXXCompilerFlag)
+    # Stack-clash protection and Intel CET are not available everywhere (Apple
+    # Clang on arm64 accepts the flag but warns it is unused, which would fail a
+    # -Werror build), so probe with -Werror and only add what really works.
     set(CMAKE_REQUIRED_FLAGS "-Werror")
     check_cxx_compiler_flag("-fstack-clash-protection" MYAPP_HAS_STACK_CLASH)
     check_cxx_compiler_flag("-fcf-protection=full" MYAPP_HAS_CF_PROTECTION)
     unset(CMAKE_REQUIRED_FLAGS)
     if(MYAPP_HAS_STACK_CLASH)
-        target_compile_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:-fstack-clash-protection>)
-        list(APPEND _myapp_hardening_flags "-fstack-clash-protection")
+        _myapp_harden(COMPILE -fstack-clash-protection)
     endif()
     if(MYAPP_HAS_CF_PROTECTION)
-        target_compile_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:-fcf-protection=full>)
-        list(APPEND _myapp_hardening_flags "-fcf-protection=full")
+        _myapp_harden(COMPILE -fcf-protection=full)
     endif()
 
-    # Standard-library hardening: detect the library actually in use rather than
-    # guessing from the OS, so a libc++ build on Linux is hardened the libc++ way.
-    include(CheckCXXSourceCompiles)
-    check_cxx_source_compiles(
-        "#include <cstdint>
-#if defined(_LIBCPP_VERSION)
-int main() { return 0; }
-#else
-#error not libc++
-#endif"
-        MYAPP_USING_LIBCXX)
+    # Standard-library assertions (cheap bounds checks in operator[], front(),
+    # ...). Detect the library in use rather than guessing from the OS, so a
+    # libc++ build on Linux is hardened the libc++ way.
+    check_cxx_source_compiles([[
+        #include <cstdint>
+        #if !defined(_LIBCPP_VERSION)
+        #error not libc++
+        #endif
+        int main() { return 0; }]] MYAPP_USING_LIBCXX)
     if(MYAPP_USING_LIBCXX)
-        target_compile_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST>)
-        list(APPEND _myapp_hardening_flags "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST")
+        _myapp_harden(COMPILE -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST)
     else()
-        # libstdc++ (GCC/Clang on most Linux distributions).
-        target_compile_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:-D_GLIBCXX_ASSERTIONS>)
-        list(APPEND _myapp_hardening_flags "-D_GLIBCXX_ASSERTIONS")
+        _myapp_harden(COMPILE -D_GLIBCXX_ASSERTIONS)
     endif()
 
-    # Full RELRO + non-executable stack are Linux linker options.
+    # Full RELRO and a non-executable stack (GNU linker options).
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_link_options(myapp_options INTERFACE
-            $<$<CONFIG:${_myapp_hardened_configs}>:-Wl,-z,relro,-z,now,-z,noexecstack>)
-        list(APPEND _myapp_hardening_flags "-Wl,-z,relro,-z,now,-z,noexecstack")
+        _myapp_harden(LINK -Wl,-z,relro,-z,now,-z,noexecstack)
     endif()
 endif()
 
-# One status line so a build log shows exactly which hardening flags landed.
-# PIE/PIC is set up in CMakeLists.txt (before the targets exist), not here.
-list(JOIN _myapp_hardening_flags " " _myapp_hardening_summary)
+# One line in the configure log shows exactly which flags landed.
+list(JOIN _myapp_hardening_summary " " _myapp_hardening_summary)
 message(STATUS "Hardening (optimised configs): ${_myapp_hardening_summary}")

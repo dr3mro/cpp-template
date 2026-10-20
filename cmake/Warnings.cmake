@@ -1,17 +1,26 @@
-# Shared warning flags. Every target links myapp_options so a single place
-# controls the warning level for the whole project.
-add_library(myapp_options INTERFACE)
-
-option(MYAPP_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+# =============================================================================
+# Warnings.cmake - compiler warning flags for the whole project
+#
+# Adds the warning set to ${PROJECT_NAME}_options, which every in-tree target
+# links, so this is the single place that controls the warning level.
+#
+# Reads: MYAPP_WARNINGS_AS_ERRORS (Options.cmake)
+# =============================================================================
+include_guard(DIRECTORY)
 
 if(MSVC)
-    target_compile_options(myapp_options INTERFACE /W4 /permissive-)
+    target_compile_options(${PROJECT_NAME}_options INTERFACE
+        /W4             # high warning level
+        /permissive-)   # standards conformance
     if(MYAPP_WARNINGS_AS_ERRORS)
-        target_compile_options(myapp_options INTERFACE /WX)
+        target_compile_options(${PROJECT_NAME}_options INTERFACE /WX)
     endif()
 else()
-    target_compile_options(myapp_options INTERFACE -Wall -Wextra -pedantic -Wshadow -Wconversion)
+    target_compile_options(${PROJECT_NAME}_options INTERFACE
+        -Wall -Wextra -pedantic
+        -Wshadow        # a local hides an outer name
+        -Wconversion)   # implicit narrowing conversions
     if(MYAPP_WARNINGS_AS_ERRORS)
-        target_compile_options(myapp_options INTERFACE -Werror)
+        target_compile_options(${PROJECT_NAME}_options INTERFACE -Werror)
     endif()
 endif()

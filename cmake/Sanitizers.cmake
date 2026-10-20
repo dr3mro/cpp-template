@@ -1,58 +1,80 @@
-# Sanitizers: at most one at a time, selected with -DMYAPP_SANITIZER=<name>.
-# An empty value enables none, which is what the debugger-friendly presets use.
-set(MYAPP_SANITIZER "" CACHE STRING "Sanitizer to enable: address, thread or memory")
-set_property(CACHE MYAPP_SANITIZER PROPERTY STRINGS "" address thread memory)
+# =============================================================================
+# Sanitizers.cmake - runtime error detectors (ASan/UBSan, TSan, MSan, fuzzing)
+#
+# Adds -fsanitize flags to ${PROJECT_NAME}_options so the library, app, tests
+# and fuzzers are all instrumented the same way.
+#
+# Reads (Options.cmake):
+#   MYAPP_SANITIZER      "", address (+UBSan), thread or memory - one at a time
+#   MYAPP_BUILD_FUZZERS  instrument for libFuzzer (+ASan/UBSan); clang only
+# =============================================================================
+include_guard(DIRECTORY)
+include(CheckCXXSourceCompiles)
 
+# _myapp_use_sanitizer(<compile-flag> <link-flag> <what>)
+#
+# Compiles AND links a probe program with the flags first: not every compiler
+# supports every sanitizer (Apple Clang has no -fsanitize=memory), and a
+# compile-only check would miss a missing runtime library. Fails with a clear
+# message, or adds the flags (plus frame pointers for readable stack traces).
+function(_myapp_use_sanitizer compile_flag link_flag what)
+    string(MAKE_C_IDENTIFIER "MYAPP_HAS_${compile_flag}" _result)
+    set(CMAKE_REQUIRED_FLAGS "${compile_flag}")
+    set(CMAKE_REQUIRED_LINK_OPTIONS "${link_flag}")
+    check_cxx_source_compiles("int main() { return 0; }" ${_result})
+    if(NOT ${_result})
+        message(FATAL_ERROR "This compiler cannot build with ${compile_flag} (${what}).")
+    endif()
+    target_compile_options(${PROJECT_NAME}_options INTERFACE ${compile_flag} -fno-omit-frame-pointer)
+    target_link_options(${PROJECT_NAME}_options INTERFACE ${link_flag})
+endfunction()
+
+# ---- validate the choice -------------------------------------------------------
+if(NOT MYAPP_SANITIZER MATCHES "^(|address|thread|memory)$")
+    message(FATAL_ERROR
+        "MYAPP_SANITIZER must be empty or exactly one of: address, thread, memory "
+        "(got \"${MYAPP_SANITIZER}\"). Only one sanitizer can be enabled at a time.")
+endif()
+
+# ---- fuzzing -------------------------------------------------------------------
+# Everything is compiled with -fsanitize=fuzzer-no-link (coverage feedback for
+# libFuzzer) plus ASan/UBSan. Only the fuzz binaries themselves link
+# -fsanitize=fuzzer (fuzz/CMakeLists.txt), because libFuzzer brings its own
+# main() and would break every other executable.
+if(MYAPP_BUILD_FUZZERS)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR
+            "MYAPP_BUILD_FUZZERS needs clang (libFuzzer); the compiler is "
+            "${CMAKE_CXX_COMPILER_ID}. Use the fuzz preset or -DMYAPP_USE_LLVM_CLANG=ON.")
+    endif()
+    if(MYAPP_SANITIZER AND NOT MYAPP_SANITIZER STREQUAL "address")
+        message(FATAL_ERROR "Fuzzing already uses ASan/UBSan; it cannot be combined "
+                            "with MYAPP_SANITIZER=${MYAPP_SANITIZER}.")
+    endif()
+    _myapp_use_sanitizer("-fsanitize=fuzzer-no-link,address,undefined"
+                         "-fsanitize=address,undefined" "libFuzzer")
+    return()
+endif()
+
+# ---- one regular sanitizer -----------------------------------------------------
 if(MYAPP_SANITIZER STREQUAL "")
     return()
 endif()
 
-# Catch combinations like "address,thread" with a message that names the fix.
-if(NOT MYAPP_SANITIZER MATCHES "^(address|thread|memory)$")
-    message(FATAL_ERROR
-        "MYAPP_SANITIZER must be exactly one of: address, thread, memory "
-        "(got \"${MYAPP_SANITIZER}\"). Only a single sanitizer can be enabled "
-        "at a time; pick one.")
-endif()
-
 if(MSVC)
-    if(MYAPP_SANITIZER STREQUAL "address")
-        target_compile_options(myapp_options INTERFACE /fsanitize=address)
-    else()
+    if(NOT MYAPP_SANITIZER STREQUAL "address")
         message(FATAL_ERROR
-            "MYAPP_SANITIZER=${MYAPP_SANITIZER} is not supported with MSVC; "
-            "only address is.")
+            "MYAPP_SANITIZER=${MYAPP_SANITIZER} is not supported with MSVC; only address is.")
     endif()
+    target_compile_options(${PROJECT_NAME}_options INTERFACE /fsanitize=address)
     return()
 endif()
 
-# Map the friendly name to the -fsanitize value. address also gets UBSan so the
-# common debug preset catches both memory errors and undefined behaviour.
+# address also gets UBSan, so the everyday debug preset catches both memory
+# errors and undefined behaviour.
 if(MYAPP_SANITIZER STREQUAL "address")
     set(_myapp_san_flag "-fsanitize=address,undefined")
-elseif(MYAPP_SANITIZER STREQUAL "thread")
-    set(_myapp_san_flag "-fsanitize=thread")
-elseif(MYAPP_SANITIZER STREQUAL "memory")
-    set(_myapp_san_flag "-fsanitize=memory")
+else()
+    set(_myapp_san_flag "-fsanitize=${MYAPP_SANITIZER}")
 endif()
-
-# Not every compiler supports every sanitizer (Apple Clang has no -fsanitize=memory),
-# so probe rather than assume and fail with a clear message when it is missing.
-# check_cxx_compiler_flag only feeds the compile step, but sanitizers need the
-# flag at link time as well, so compile AND link a test program with the flag in
-# both CMAKE_REQUIRED_FLAGS and CMAKE_REQUIRED_LINK_OPTIONS.
-include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_FLAGS "${_myapp_san_flag}")
-set(CMAKE_REQUIRED_LINK_OPTIONS "${_myapp_san_flag}")
-check_cxx_source_compiles("int main() { return 0; }"
-                          MYAPP_HAS_${MYAPP_SANITIZER}_SANITIZER)
-unset(CMAKE_REQUIRED_FLAGS)
-unset(CMAKE_REQUIRED_LINK_OPTIONS)
-if(NOT MYAPP_HAS_${MYAPP_SANITIZER}_SANITIZER)
-    message(FATAL_ERROR
-        "This compiler does not support ${_myapp_san_flag} "
-        "(MYAPP_SANITIZER=${MYAPP_SANITIZER}).")
-endif()
-
-target_compile_options(myapp_options INTERFACE ${_myapp_san_flag} -fno-omit-frame-pointer)
-target_link_options(myapp_options INTERFACE ${_myapp_san_flag})
+_myapp_use_sanitizer("${_myapp_san_flag}" "${_myapp_san_flag}" "MYAPP_SANITIZER=${MYAPP_SANITIZER}")

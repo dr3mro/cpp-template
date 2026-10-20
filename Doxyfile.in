@@ -1,15 +1,15 @@
-# Doxygen configuration. CMake fills the @...@ values; run `cmake --build --preset release --target docs`.
+# Doxygen configuration. CMake fills the @...@ values; run `cmake --workflow --preset docs`.
 # Only non-default settings are listed; run `doxygen -x` on the generated file to see everything.
 PROJECT_NAME           = "@PROJECT_NAME@"
 PROJECT_NUMBER         = "@PROJECT_VERSION@"
 PROJECT_BRIEF          = "C++ application"
-OUTPUT_DIRECTORY       = @CMAKE_SOURCE_DIR@/docs
+OUTPUT_DIRECTORY       = @MYAPP_DOCS_DIR@
 HTML_OUTPUT            = .
-INPUT                  = @CMAKE_SOURCE_DIR@/include @CMAKE_SOURCE_DIR@/src @CMAKE_SOURCE_DIR@/README.md @CMAKE_SOURCE_DIR@/FUZZING.md @MYAPP_DOXY_EXTRA_INPUT@
-USE_MDFILE_AS_MAINPAGE = @CMAKE_SOURCE_DIR@/README.md
-IMAGE_PATH             = @CMAKE_BINARY_DIR@/docs/diagrams
-STRIP_FROM_PATH        = @CMAKE_SOURCE_DIR@
-STRIP_FROM_INC_PATH    = @CMAKE_SOURCE_DIR@/include
+INPUT                  = @PROJECT_SOURCE_DIR@/include @PROJECT_SOURCE_DIR@/src @PROJECT_SOURCE_DIR@/README.md @PROJECT_SOURCE_DIR@/FUZZING.md @PROJECT_SOURCE_DIR@/SECURITY.md @MYAPP_DOXY_EXTRA_INPUT@
+USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/README.md
+IMAGE_PATH             = @MYAPP_DIAGRAMS_DIR@
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@
+STRIP_FROM_INC_PATH    = @PROJECT_SOURCE_DIR@/include
 FILE_PATTERNS          = *.hpp *.cpp *.md
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */build/* */docs/* */.git/*

@@ -1,10 +1,18 @@
-# ccache transparently caches compiler invocations. It is optional; opt out with
-# -DMYAPP_USE_CCACHE=OFF if it misbehaves or you want a clean compile.
-option(MYAPP_USE_CCACHE "Use ccache when it is installed" ON)
+# =============================================================================
+# Ccache.cmake - cache compiler results with ccache, when it is installed
+#
+# Speeds up rebuilds (switching branches, clean builds) by reusing earlier
+# compiler output. Affects targets created after this point.
+#
+# Reads: MYAPP_USE_CCACHE (Options.cmake); turn it OFF if ccache misbehaves.
+# =============================================================================
+include_guard(DIRECTORY)
 
-if(MYAPP_USE_CCACHE)
-    find_program(CCACHE_PROGRAM ccache)
-    if(CCACHE_PROGRAM)
-        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-    endif()
+if(NOT MYAPP_USE_CCACHE)
+    return()
+endif()
+
+find_program(MYAPP_CCACHE_PROGRAM ccache)
+if(MYAPP_CCACHE_PROGRAM)
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${MYAPP_CCACHE_PROGRAM}")
 endif()
