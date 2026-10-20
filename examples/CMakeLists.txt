@@ -4,7 +4,7 @@
 #   cmake --install build/release          # installs into build/install/release
 #   cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=$PWD/build/install/release
 #   cmake --build build/examples && ./build/examples/example
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 project(myapp_example LANGUAGES CXX)
 
 find_package(myapp CONFIG REQUIRED)
