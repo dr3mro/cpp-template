@@ -158,5 +158,7 @@ jobs:
         with:
           files: dist/*.tar.gz
           generate_release_notes: true
-          tag_name: ${{ inputs.release_tag || format('build-{0}', github.run_number) }}
+          # A pushed tag (v1.2.0) names the release after itself; a manual run
+          # uses the release_tag input, or build-<run number> when that is blank.
+          tag_name: ${{ inputs.release_tag || (github.ref_type == 'tag' && github.ref_name) || format('build-{0}', github.run_number) }}
           target_commitish: ${{ github.sha }}
