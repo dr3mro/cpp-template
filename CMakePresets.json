@@ -97,7 +97,7 @@
     },
     {
       "name": "vs2026",
-      "displayName": "Visual Studio 2026 (Windows only)",
+      "displayName": "Visual Studio 2026 (Windows only, CMake 4.2+)",
       "generator": "Visual Studio 18 2026",
       "architecture": { "value": "x64", "strategy": "set" },
       "binaryDir": "${sourceDir}/build/vs2026",
