@@ -1,6 +1,8 @@
 # Fuzz targets. Only built when MYAPP_BUILD_FUZZERS is ON (the fuzz preset),
-# which also supplies a fuzzer-capable clang and -fsanitize=fuzzer via
-# CMAKE_CXX_FLAGS / CMAKE_EXE_LINKER_FLAGS.
+# which also supplies a fuzzer-capable clang. The preset compiles with
+# -fsanitize=fuzzer-no-link and links ASan/UBSan; -fsanitize=fuzzer is added
+# here so it applies only to these binaries (libFuzzer provides its own main(),
+# which would otherwise break CMake's compiler check).
 
 set(MYAPP_FUZZ_SECONDS "10" CACHE STRING
     "Seconds each fuzz target runs in the fuzz-run target")
@@ -11,6 +13,9 @@ foreach(fuzz_source IN LISTS MYAPP_FUZZ_SOURCES)
     get_filename_component(fuzz_name ${fuzz_source} NAME_WE)
     add_executable(${fuzz_name} ${fuzz_source})
     target_link_libraries(${fuzz_name} PRIVATE ${PROJECT_NAME}_lib)
+    # Only the fuzz binaries get the libFuzzer driver (main()).
+    target_compile_options(${fuzz_name} PRIVATE -fsanitize=fuzzer)
+    target_link_options(${fuzz_name} PRIVATE -fsanitize=fuzzer)
     # Keep the binaries at the top of the build dir so fuzz-run finds them.
     set_target_properties(${fuzz_name} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
