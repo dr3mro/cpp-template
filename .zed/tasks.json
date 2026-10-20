@@ -14,6 +14,6 @@
   { "label": "format", "command": "cmake --preset release && cmake --build --preset release --target format", "hide": "on_success" },
   { "label": "tidy", "command": "cmake --preset release && cmake --build --preset release --target tidy", "hide": "never" },
   { "label": "docs", "command": "cmake --workflow --preset docs", "hide": "on_success" },
-  { "label": "clean", "command": "cmake --build --preset debug --target clean", "hide": "on_success" },
+  { "label": "clean", "command": "cmake --preset debug && cmake --build --preset debug --target clean", "hide": "on_success" },
   { "label": "clean all", "command": "cmake -P cmake/DistClean.cmake", "hide": "on_success" }
 ]

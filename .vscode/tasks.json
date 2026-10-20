@@ -385,7 +385,10 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always"
-      }
+      },
+      "dependsOn": [
+        "configure debug"
+      ]
     },
     {
       "label": "clean all",
