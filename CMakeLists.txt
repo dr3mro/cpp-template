@@ -79,6 +79,11 @@ set(MYAPP_PACKAGE_DEPENDENCIES "" CACHE STRING
 if(NOT MYAPP_LIBRARY_MODE)
     add_executable(${PROJECT_NAME} main.cpp)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+
+    # Install the app too, so `cmake --install build/release` produces a usable
+    # binary under build/install/<preset>/bin.
+    include(GNUInstallDirs)
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # ---- tests and fuzzers ----
