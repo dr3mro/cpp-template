@@ -55,7 +55,56 @@ ctest --preset debug                                        # run unit tests
 | `release` | Optimised build | `build/release/` |
 | `debug` | Debug build with AddressSanitizer and UndefinedBehaviorSanitizer | `build/debug/` |
 | `debug-nosan` | Plain debug build, used by the debugger | `build/debug-nosan/` |
+| `tsan` | Debug build with ThreadSanitizer | `build/tsan/` |
+| `ci` | Warnings-as-errors build, used by CI | `build/ci/` |
+| `coverage` | Instrumented build for coverage reporting | `build/coverage/` |
+| `fuzz` | Release build with the libFuzzer harness | `build/fuzz/` |
+| `docs` | Release build for Doxygen, no tests or packages | `build/docs/` |
 | `vs2022` / `vs2026` | Visual Studio solution (Windows only) | `build/vs20xx/` |
+
+## Fuzzing
+
+The `fuzz/` folder holds a libFuzzer harness that links the same library as the
+tests. Build and run it with the `fuzz` preset and the `fuzz-run` target:
+
+```bash
+cmake --preset fuzz && cmake --build --preset fuzz
+cmake --build --preset fuzz --target fuzz-run   # runs each harness for MYAPP_FUZZ_SECONDS
+```
+
+Seed inputs live in `fuzz/corpus/`. Set `-DMYAPP_FUZZ_SECONDS=<n>` to change
+how long each harness runs.
+
+## Coverage
+
+The `coverage` preset instruments the build; the `coverage` target produces
+both a text summary and an HTML report:
+
+```bash
+cmake --preset coverage && cmake --build --preset coverage
+cmake --build --preset coverage --target coverage
+open build/coverage/html/index.html
+```
+
+## Library mode
+
+Generate an installable library package instead of an app:
+
+```bash
+~/Templates/cpp-template/scripts/new-project.sh mylib --lib
+```
+
+Then install it and build the bundled consumer example:
+
+```bash
+cmake --preset release && cmake --build --preset release
+cmake --install build/release --prefix ./install
+cmake -S examples -B examples/build -DCMAKE_PREFIX_PATH=$PWD/install
+cmake --build examples/build && ./examples/build/example
+```
+
+Consumers link the exported `myapp::myapp` target. `CPack` also builds a `.tar.gz`
+with `cmake --build build/release --target package`.
 
 ## Adding a library
 
@@ -107,6 +156,8 @@ Run these with `cmake --build --preset release --target <name>`:
 | `docs` | Generate Doxygen HTML in `docs/` |
 | `class-diagrams` | Generate Graphviz class diagrams into `diagrams/classes/` |
 | `diagrams` | Render every `diagrams/*.dot` file to PNG |
+| `coverage` | Build the coverage report (with the `coverage` preset) |
+| `fuzz-run` | Run every fuzzer for `MYAPP_FUZZ_SECONDS` (with the `fuzz` preset) |
 
 ## Project structure
 
@@ -143,6 +194,15 @@ git tag v0.1.0 && git push origin v0.1.0
 ```
 
 ## Documentation
+
+Build the Doxygen site with the `docs` workflow preset, which configures and
+builds in one command (no packages or tests are needed):
+
+```bash
+cmake --workflow --preset docs   # output: docs/index.html
+```
+
+`cmake --workflow --preset diagrams` does the same for the class diagrams.
 
 Pushes to `main` publish the Doxygen site to GitHub Pages. Enable it once under
 **Settings → Pages → Build and deployment → Source: GitHub Actions**.

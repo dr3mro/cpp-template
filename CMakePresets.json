@@ -1,6 +1,6 @@
 {
-  "version": 3,
-  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
   "configurePresets": [
     {
       "name": "base",
@@ -48,6 +48,18 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "MYAPP_SANITIZER": "address",
         "MYAPP_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+
+    {
+      "name": "docs",
+      "displayName": "Doxygen docs (Ninja)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MYAPP_BUILD_TESTS": "OFF",
+        "MYAPP_BUILD_FUZZERS": "OFF",
+        "VCPKG_MANIFEST_INSTALL": "OFF"
       }
     },
 
@@ -155,6 +167,8 @@
     { "name": "ci", "configurePreset": "ci" },
     { "name": "coverage", "configurePreset": "coverage" },
     { "name": "fuzz", "configurePreset": "fuzz" },
+    { "name": "docs", "configurePreset": "docs", "targets": ["docs"] },
+    { "name": "diagrams", "configurePreset": "docs", "targets": ["class-diagrams"] },
     { "name": "vs2022", "configurePreset": "vs2022", "configuration": "Debug" },
     { "name": "vs2026", "configurePreset": "vs2026", "configuration": "Debug" }
   ],
@@ -164,5 +178,23 @@
     { "name": "debug-nosan", "configurePreset": "debug-nosan", "output": { "outputOnFailure": true } },
     { "name": "tsan", "configurePreset": "tsan", "output": { "outputOnFailure": true } },
     { "name": "ci", "configurePreset": "ci", "output": { "outputOnFailure": true } }
+  ],
+  "workflowPresets": [
+    {
+      "name": "docs",
+      "displayName": "Configure and build Doxygen docs",
+      "steps": [
+        { "type": "configure", "name": "docs" },
+        { "type": "build", "name": "docs" }
+      ]
+    },
+    {
+      "name": "diagrams",
+      "displayName": "Configure and render class diagrams",
+      "steps": [
+        { "type": "configure", "name": "docs" },
+        { "type": "build", "name": "diagrams" }
+      ]
+    }
   ]
 }

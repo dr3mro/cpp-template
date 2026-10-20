@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 
 # doctest is a vcpkg manifest *feature*, so it is only downloaded and installed
 # when the tests are actually built. The toolchain reads the manifest during

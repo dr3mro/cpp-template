@@ -1,6 +1,6 @@
 # C++ Project Template
 
-A CMake + Ninja template for C++ console projects, built from the Grocery (CS-210) project setup and tuned for Zed and clangd on an Apple Silicon Mac.
+A CMake + Ninja template for C++ console projects and libraries, built from the Grocery (CS-210) project setup and tuned for Zed and clangd on an Apple Silicon Mac.
 
 ## Create a new project
 
@@ -8,6 +8,7 @@ A CMake + Ninja template for C++ console projects, built from the Grocery (CS-21
 ~/Templates/cpp-template/scripts/new-project.sh bank_app            # creates ./bank_app
 ~/Templates/cpp-template/scripts/new-project.sh bank_app ~/dev/bank  # choose the folder
 ~/Templates/cpp-template/scripts/new-project.sh bank_app --std 20    # C++20 instead of C++17
+~/Templates/cpp-template/scripts/new-project.sh bank_app --lib       # installable library, no app
 ```
 
 The script copies the template and renames the `myapp` placeholder to your name everywhere: the CMake project, the executable, the namespace (`bank_app::core`), the `include/bank_app/` and `src/bank_app/` folders, the option names, the vcpkg manifest name, the editor tasks and the CI workflows. It also re-renders the diagrams, swaps in a project README and makes the first git commit.
@@ -20,7 +21,7 @@ echo 'alias newcpp="$HOME/Templates/cpp-template/scripts/new-project.sh"' >> ~/.
 
 ## Requirements
 
-- CMake 3.21+
+- CMake 3.25+
 - Ninja
 - A C++ compiler (Clang, GCC or MSVC)
 - vcpkg with `VCPKG_ROOT` set (dependencies are declared in `vcpkg.json`)
@@ -105,21 +106,63 @@ If CMake reports `VCPKG_ROOT is empty`, the `export VCPKG_ROOT=...` line is miss
 
 ## What you get
 
-- **CMake presets**: `release`, `debug` (ASan + UBSan), `debug-nosan` (for the debugger) and Visual Studio 2022/2026.
-- **Library + executable split**: code in `src/` builds into `<name>_lib`, so `main.cpp` and the tests both link it.
-- **vcpkg dependencies**: declared in `vcpkg.json` and installed by vcpkg at configure time, wired into every preset, with binary caching in CI.
-- **doctest unit tests**: installed by vcpkg from `vcpkg.json`, with each `TEST_CASE` registered in CTest.
+- **CMake presets**: `release`, `debug` (ASan + UBSan), `debug-nosan` (for the debugger), `tsan` (ThreadSanitizer), `ci` (warnings-as-errors), `coverage`, `fuzz`, `docs` (Doxygen) and Visual Studio 2022/2026.
+- **Library + executable split**: code in `src/` builds into `<name>_lib`, so `main.cpp` and the tests both link it. Pass `--lib` to `new-project.sh` to build an installable library package instead of an app (with `install(EXPORT)`, a CMake package config, CPack and a consumer example under `examples/`).
+- **vcpkg dependencies**: pinned to a registry baseline, declared in `vcpkg.json` and installed by vcpkg at configure time, wired into every preset, with binary caching in CI.
+- **doctest unit tests**: installed by vcpkg from `vcpkg.json` as the `tests` feature, with each `TEST_CASE` registered in CTest.
+- **Sanitizers**: `debug` runs ASan + UBSan, `tsan` runs ThreadSanitizer; both are probed before use so unsupported flags are skipped.
+- **Fuzzing**: a libFuzzer harness under `fuzz/` with seed corpora and a `fuzz-run` target.
+- **Coverage**: the `coverage` preset plus a `coverage` target that writes a text summary and HTML to `build/coverage/html/`.
+- **Security hardening**: defence-in-depth flags for optimised builds, documented in `SECURITY.md`.
 - **clangd ready**: `build/compile_commands.json` always points at the last configured preset.
-- **Your style and checks**: the Grocery `.clang-format` (Microsoft/Allman, 4 spaces) and `.clang-tidy` rules.
-- **Tooling targets**: `format`, `format-check`, `tidy`, `docs` (Doxygen), `class-diagrams` (Doxygen + Graphviz) and `diagrams` (Graphviz).
+- **Your style and checks**: the Grocery `.clang-format` (Microsoft/Allman, 4 spaces), `.clang-tidy` rules and a `.editorconfig`.
+- **Tooling targets**: `format`, `format-check`, `tidy`, `docs` (Doxygen, also `cmake --workflow --preset docs`), `class-diagrams` (Doxygen + Graphviz, also `cmake --workflow --preset diagrams`) and `diagrams` (Graphviz).
 - **Zed and VS Code**: build, run, test, format, tidy and docs tasks, plus CodeLLDB debug configs for the app and the tests.
-- **GitHub Actions**: CI tests on Linux, macOS and Windows; Doxygen docs to GitHub Pages; release binaries for 8 OS/architecture combinations on tag push.
+- **GitHub Actions**: CI (Linux, macOS, Windows), ThreadSanitizer, coverage, clang-tidy, fuzzing, formatting, CodeQL and a template self-test; Dependabot keeps actions and vcpkg current.
+
+## Quality gates
+
+The `ci` preset enables `-Werror` so the build fails on any warning. CI runs these
+checks on every push and pull request:
+
+- build and test on Linux, macOS and Windows;
+- ThreadSanitizer on Linux and macOS;
+- coverage with an uploaded HTML report;
+- `clang-tidy` and `clang-format --dry-run --Werror`;
+- a short fuzz run of every harness;
+- CodeQL static analysis.
+
+Enable the `pre-commit` hooks once per clone with `pre-commit install` to run the
+formatters and fixers before each commit.
+
 
 ## Using it day to day
 
 Add a module by creating a matching pair of files, such as `include/<name>/io/reader.hpp` and `src/<name>/io/reader.cpp`, then a test in `tests/test_reader.cpp`. The CMake globs pick up new files when you reconfigure, so you don't edit `CMakeLists.txt`.
 
 In Zed, run tasks with `Cmd+Shift+P` → **task: spawn** (for example `test`), and debug with `F4`.
+
+## Build presets and documentation
+
+| Preset | What it builds | Output folder |
+| --- | --- | --- |
+| `release` | Optimised build | `build/release/` |
+| `debug` | Debug build with AddressSanitizer and UndefinedBehaviorSanitizer | `build/debug/` |
+| `debug-nosan` | Plain debug build, used by the debugger | `build/debug-nosan/` |
+| `tsan` | Debug build with ThreadSanitizer | `build/tsan/` |
+| `ci` | Warnings-as-errors build, used by CI | `build/ci/` |
+| `coverage` | Instrumented build for coverage reporting | `build/coverage/` |
+| `fuzz` | Release build with the libFuzzer harness | `build/fuzz/` |
+| `docs` | Release build for Doxygen, no tests or packages | `build/docs/` |
+| `vs2022` / `vs2026` | Visual Studio solution (Windows only) | `build/vs20xx/` |
+
+Generate the Doxygen site (and the class diagrams) with a workflow preset, which
+configures and builds in one command:
+
+```bash
+cmake --workflow --preset docs      # output: docs/index.html
+cmake --workflow --preset diagrams  # output: diagrams/classes/
+```
 
 ## Changes from the Grocery setup
 

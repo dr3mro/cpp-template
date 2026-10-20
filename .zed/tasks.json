@@ -13,8 +13,8 @@
   { "label": "fuzz run", "command": "cmake --preset fuzz && cmake --build --preset fuzz --target fuzz-run", "use_new_terminal": true },
   { "label": "format", "command": "cmake --preset release && cmake --build --preset release --target format", "hide": "on_success" },
   { "label": "tidy", "command": "cmake --preset release && cmake --build --preset release --target tidy", "hide": "never" },
-  { "label": "docs", "command": "cmake --preset release && cmake --build --preset release --target docs", "hide": "on_success" },
-  { "label": "class diagrams", "command": "cmake --preset release && cmake --build --preset release --target class-diagrams", "hide": "on_success" },
+  { "label": "docs", "command": "cmake --workflow --preset docs", "hide": "on_success" },
+  { "label": "class diagrams", "command": "cmake --workflow --preset diagrams", "hide": "on_success" },
   { "label": "diagrams", "command": "cmake --preset release && cmake --build --preset release --target diagrams", "hide": "on_success" },
   { "label": "clean all", "command": "rm -rf build", "hide": "on_success" }
 ]

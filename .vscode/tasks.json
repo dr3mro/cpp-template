@@ -362,38 +362,28 @@
       "type": "shell",
       "command": "cmake",
       "args": [
-        "--build",
+        "--workflow",
         "--preset",
-        "release",
-        "--target",
         "docs"
       ],
       "problemMatcher": [],
       "presentation": {
         "reveal": "always"
-      },
-      "dependsOn": [
-        "configure release"
-      ]
+      }
     },
     {
       "label": "class diagrams",
       "type": "shell",
       "command": "cmake",
       "args": [
-        "--build",
+        "--workflow",
         "--preset",
-        "release",
-        "--target",
-        "class-diagrams"
+        "diagrams"
       ],
       "problemMatcher": [],
       "presentation": {
         "reveal": "always"
-      },
-      "dependsOn": [
-        "configure release"
-      ]
+      }
     },
     {
       "label": "diagrams",
