@@ -105,7 +105,7 @@ function(_myapp_write_architecture)
     foreach(ext IN LISTS externals)
         _myapp_dot_id(${ext} ext_id)
         string(APPEND nodes
-            "    ${ext_id} [label=\"${ext}\\nexternal (vcpkg)\", fillcolor=\"#F2F3F4\", color=\"#7B7D7D\"];\n")
+            "    ${ext_id} [label=\"${ext}\\nexternal package\", fillcolor=\"#F2F3F4\", color=\"#7B7D7D\"];\n")
     endforeach()
 
     set(content
