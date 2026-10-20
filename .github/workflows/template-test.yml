@@ -67,14 +67,16 @@ jobs:
           done
 
       - name: Library mode install and consume
+        # `cmake --install build/release` uses the preset's installDir
+        # (build/install/release); the consumer example builds into build/examples.
         run: |
           cd /tmp/mylib
           cmake --preset release
           cmake --build --preset release
-          cmake --install build/release --prefix "$PWD/install"
-          cmake -S examples -B examples/build -DCMAKE_PREFIX_PATH="$PWD/install"
-          cmake --build examples/build
-          ./examples/build/example
+          cmake --install build/release
+          cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/build/install/release"
+          cmake --build build/examples
+          ./build/examples/example
 
       - name: Library mode shared build
         # Uses the vcpkg toolchain so doctest is available and the tests link
