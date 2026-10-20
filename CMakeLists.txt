@@ -23,6 +23,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(MYAPP_BUILD_FUZZERS "Build fuzz targets" OFF)
+option(MYAPP_LIBRARY_MODE "Build as an installable library package (no app)" OFF)
 
 # ---- modules (Warnings first: it creates myapp_options that the rest extend) ----
 include(cmake/Warnings.cmake)
@@ -35,12 +36,33 @@ include(cmake/Tooling.cmake)
 # ---- library: everything under src/, so tests and the app can both link it ----
 file(GLOB_RECURSE MYAPP_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp)
 add_library(${PROJECT_NAME}_lib ${MYAPP_SOURCES})
-target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(${PROJECT_NAME}_lib PUBLIC myapp_options)
+# BUILD_INTERFACE keeps the source path out of the installed export set.
+target_include_directories(${PROJECT_NAME}_lib PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
+# PUBLIC + BUILD_INTERFACE: the warning/sanitizer options (and the generated
+# include dir they carry) reach the library and every in-tree consumer, but the
+# BUILD_INTERFACE wrapper keeps myapp_options out of the exported package.
+target_link_libraries(${PROJECT_NAME}_lib PUBLIC $<BUILD_INTERFACE:myapp_options>)
+# Exported as <name>::<name> so consumers write a clean target_link_libraries.
+set_target_properties(${PROJECT_NAME}_lib PROPERTIES EXPORT_NAME ${PROJECT_NAME})
 
-# ---- executable ----
-add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+# Export header: produces <name>_EXPORT, empty for static builds and
+# import/export annotations for shared ones (needed for Windows DLLs).
+include(GenerateExportHeader)
+generate_export_header(${PROJECT_NAME}_lib
+    BASE_NAME MYAPP
+    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/${PROJECT_NAME}_export.h)
+get_target_property(_myapp_lib_type ${PROJECT_NAME}_lib TYPE)
+if(_myapp_lib_type STREQUAL "STATIC_LIBRARY")
+    target_compile_definitions(${PROJECT_NAME}_lib PUBLIC MYAPP_STATIC_DEFINE)
+endif()
+
+# ---- executable (skipped in library mode) ----
+if(NOT MYAPP_LIBRARY_MODE)
+    add_executable(${PROJECT_NAME} main.cpp)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+endif()
 
 # ---- tests and fuzzers ----
 if(MYAPP_BUILD_TESTS)
@@ -53,4 +75,48 @@ include(cmake/Coverage.cmake)
 
 if(MYAPP_BUILD_FUZZERS)
     add_subdirectory(fuzz)
+endif()
+
+# ---- install, package config and CPack (library mode only) ----
+if(MYAPP_LIBRARY_MODE)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    install(TARGETS ${PROJECT_NAME}_lib
+        EXPORT ${PROJECT_NAME}Targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+    # Public headers plus the generated version and export headers (skip the
+    # .in template).
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            PATTERN "*.in" EXCLUDE)
+    install(FILES
+        ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/version.hpp
+        ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/${PROJECT_NAME}_export.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+    install(EXPORT ${PROJECT_NAME}Targets
+        FILE ${PROJECT_NAME}Targets.cmake
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+    configure_package_config_file(
+        ${CMAKE_SOURCE_DIR}/cmake/Config.cmake.in
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+    write_basic_package_version_file(
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+        COMPATIBILITY SameMajorVersion)
+    install(FILES
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+    set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    set(CPACK_GENERATOR "TGZ")
+    include(CPack)
 endif()

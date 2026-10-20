@@ -5,13 +5,15 @@
  * @brief Example component. Replace it with your project's first real class.
  */
 
+#include <myapp/myapp_export.h>
+
 #include <string>
 #include <string_view>
 
 namespace myapp::core
 {
     /** @brief Builds greeting messages. */
-    class Greeter
+    class MYAPP_EXPORT Greeter
     {
     public:
         /**

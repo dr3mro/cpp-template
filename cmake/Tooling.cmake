@@ -12,7 +12,10 @@ endif()
 
 file(GLOB_RECURSE MYAPP_ALL_FILES CONFIGURE_DEPENDS
      ${CMAKE_SOURCE_DIR}/include/*.hpp ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/tests/*.cpp)
-list(APPEND MYAPP_ALL_FILES ${CMAKE_SOURCE_DIR}/main.cpp)
+# main.cpp only exists in app mode; library mode has no executable.
+if(EXISTS ${CMAKE_SOURCE_DIR}/main.cpp)
+    list(APPEND MYAPP_ALL_FILES ${CMAKE_SOURCE_DIR}/main.cpp)
+endif()
 
 find_program(CLANG_FORMAT_EXE clang-format)
 if(CLANG_FORMAT_EXE)

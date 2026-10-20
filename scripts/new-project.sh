@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 # Create a new C++ project from this template.
 #
-#   scripts/new-project.sh <name> [destination-dir] [--std 17|20|23] [--no-git]
+#   scripts/new-project.sh <name> [destination-dir] [--std 17|20|23] [--no-git] [--lib]
 #
 # <name> must be a valid C++ identifier in lower_snake_case (for example: grocery, bank_app).
 # It becomes the CMake project, the executable, the namespace and the include/<name>/ folder.
+# Pass --lib to generate an installable library package (with examples/) instead of an app.
 set -euo pipefail
 
-usage() { sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
-NAME=""; DEST=""; STD="17"; GIT=1
+NAME=""; DEST=""; STD="17"; GIT=1; LIB=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --std) STD="${2:?}"; shift 2 ;;
         --no-git) GIT=0; shift ;;
+        --lib) LIB=1; shift ;;
         -h|--help) usage ;;
         *) if [[ -z "$NAME" ]]; then NAME="$1"; elif [[ -z "$DEST" ]]; then DEST="$1"; else usage; fi; shift ;;
     esac
@@ -58,6 +60,14 @@ perl -pi -e "s/^Standard: c\+\+17/Standard: c++$STD/" "$DEST/.clang-format"
 # Swap the template README for the project README.
 mv "$DEST/PROJECT_README.md" "$DEST/README.md"
 
+# App mode keeps main.cpp and drops the library example; --lib does the reverse.
+if [[ $LIB -eq 1 ]]; then
+    perl -pi -e 's/(option\(\w+_LIBRARY_MODE "[^"]*" )OFF\b/${1}ON/' "$DEST/CMakeLists.txt"
+    rm -f "$DEST/main.cpp"
+else
+    rm -rf "$DEST/examples"
+fi
+
 if [[ $GIT -eq 1 ]] && command -v git >/dev/null; then
     (cd "$DEST" && git init -q -b main && git add -A && git commit -qm "Initial commit from C++ template")
     echo "Initialised git repository on branch main"
@@ -69,11 +79,22 @@ if [[ -n "${VCPKG_ROOT:-}" && -f "${VCPKG_ROOT:-}/scripts/buildsystems/vcpkg.cma
     VCPKG_READY=1
 fi
 
+if [[ $LIB -eq 1 ]]; then
+    # Install from release: the debug preset is ASan-instrumented, so a
+    # consumer linked against it would fail without matching sanitizer flags.
+    BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug
+  cmake --preset release && cmake --build --preset release
+  cmake --install build/release --prefix ./install
+  cmake -S examples -B examples/build -DCMAKE_PREFIX_PATH=\$PWD/install && cmake --build examples/build"
+else
+    BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug"
+fi
+
 cat <<MSG
 
 Done. Next steps:
   cd "$DEST"
-  cmake --preset debug && cmake --build --preset debug && ctest --preset debug
+  $BUILD_HINT
   zed .
 MSG
 
