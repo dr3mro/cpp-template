@@ -48,6 +48,9 @@ if(MYAPP_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+# Coverage target (needs the test binary, so it comes after tests/).
+include(cmake/Coverage.cmake)
+
 if(MYAPP_BUILD_FUZZERS)
     add_subdirectory(fuzz)
 endif()

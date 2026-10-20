@@ -38,8 +38,16 @@ endif()
 
 # Not every compiler supports every sanitizer (Apple Clang has no -fsanitize=memory),
 # so probe rather than assume and fail with a clear message when it is missing.
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("${_myapp_san_flag}" MYAPP_HAS_${MYAPP_SANITIZER}_SANITIZER)
+# check_cxx_compiler_flag only feeds the compile step, but sanitizers need the
+# flag at link time as well, so compile AND link a test program with the flag in
+# both CMAKE_REQUIRED_FLAGS and CMAKE_REQUIRED_LINK_OPTIONS.
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_FLAGS "${_myapp_san_flag}")
+set(CMAKE_REQUIRED_LINK_OPTIONS "${_myapp_san_flag}")
+check_cxx_source_compiles("int main() { return 0; }"
+                          MYAPP_HAS_${MYAPP_SANITIZER}_SANITIZER)
+unset(CMAKE_REQUIRED_FLAGS)
+unset(CMAKE_REQUIRED_LINK_OPTIONS)
 if(NOT MYAPP_HAS_${MYAPP_SANITIZER}_SANITIZER)
     message(FATAL_ERROR
         "This compiler does not support ${_myapp_san_flag} "

@@ -9,6 +9,7 @@
       "binaryDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
     },
+
     {
       "name": "release",
       "displayName": "Release (Ninja)",
@@ -21,7 +22,7 @@
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "MYAPP_ENABLE_SANITIZERS": "ON"
+        "MYAPP_SANITIZER": "address"
       }
     },
     {
@@ -30,6 +31,103 @@
       "inherits": "base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
     },
+    {
+      "name": "tsan",
+      "displayName": "Debug + ThreadSanitizer (Ninja)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MYAPP_SANITIZER": "thread"
+      }
+    },
+    {
+      "name": "ci",
+      "displayName": "Debug + ASan, warnings as errors (Ninja)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MYAPP_SANITIZER": "address",
+        "MYAPP_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+
+    {
+      "name": "coverage-base",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MYAPP_ENABLE_COVERAGE": "ON",
+        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping",
+        "CMAKE_EXE_LINKER_FLAGS": "-fprofile-instr-generate -fcoverage-mapping"
+      }
+    },
+    {
+      "name": "coverage-darwin",
+      "hidden": true,
+      "inherits": "coverage-base",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": { "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++" }
+    },
+    {
+      "name": "coverage-linux",
+      "hidden": true,
+      "inherits": "coverage-base",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+      "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++" }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Debug + coverage (Ninja, clang)",
+      "inherits": ["coverage-darwin", "coverage-linux"],
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+          { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+        ]
+      }
+    },
+
+    {
+      "name": "fuzz-base",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MYAPP_BUILD_TESTS": "OFF",
+        "MYAPP_BUILD_FUZZERS": "ON",
+        "CMAKE_CXX_FLAGS": "-fsanitize=fuzzer,address,undefined",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=fuzzer,address,undefined"
+      }
+    },
+    {
+      "name": "fuzz-darwin",
+      "hidden": true,
+      "inherits": "fuzz-base",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": { "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++" }
+    },
+    {
+      "name": "fuzz-linux",
+      "hidden": true,
+      "inherits": "fuzz-base",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+      "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++" }
+    },
+    {
+      "name": "fuzz",
+      "displayName": "Debug + libFuzzer (Ninja, clang)",
+      "inherits": ["fuzz-darwin", "fuzz-linux"],
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+          { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+        ]
+      }
+    },
+
     {
       "name": "vs2022",
       "displayName": "Visual Studio 2022 (Windows only)",
@@ -53,12 +151,18 @@
     { "name": "release", "configurePreset": "release" },
     { "name": "debug", "configurePreset": "debug" },
     { "name": "debug-nosan", "configurePreset": "debug-nosan" },
+    { "name": "tsan", "configurePreset": "tsan" },
+    { "name": "ci", "configurePreset": "ci" },
+    { "name": "coverage", "configurePreset": "coverage" },
+    { "name": "fuzz", "configurePreset": "fuzz" },
     { "name": "vs2022", "configurePreset": "vs2022", "configuration": "Debug" },
     { "name": "vs2026", "configurePreset": "vs2026", "configuration": "Debug" }
   ],
   "testPresets": [
     { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true } },
     { "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true } },
-    { "name": "debug-nosan", "configurePreset": "debug-nosan", "output": { "outputOnFailure": true } }
+    { "name": "debug-nosan", "configurePreset": "debug-nosan", "output": { "outputOnFailure": true } },
+    { "name": "tsan", "configurePreset": "tsan", "output": { "outputOnFailure": true } },
+    { "name": "ci", "configurePreset": "ci", "output": { "outputOnFailure": true } }
   ]
 }

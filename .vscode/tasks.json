@@ -103,6 +103,137 @@
       ]
     },
     {
+      "label": "configure tsan",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "tsan"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "build tsan",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "tsan"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure tsan"
+      ]
+    },
+    {
+      "label": "configure ci",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "ci"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "build ci",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "ci"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure ci"
+      ]
+    },
+    {
+      "label": "test ci",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--preset",
+        "ci"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "build ci"
+      ]
+    },
+    {
+      "label": "configure coverage",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "coverage"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "build coverage",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "coverage"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure coverage"
+      ]
+    },
+    {
+      "label": "coverage report",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "coverage",
+        "--target",
+        "coverage"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "build coverage"
+      ]
+    },
+    {
       "label": "run",
       "type": "shell",
       "command": "./build/release/myapp",
