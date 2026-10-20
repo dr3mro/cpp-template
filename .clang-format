@@ -34,10 +34,19 @@ ConstructorInitializerIndentWidth: 4
 # Templates
 AlwaysBreakTemplateDeclarations: Yes
 
-# Includes: keep project headers grouped, sorted case-sensitively
+# Includes: keep project headers grouped, sorted case-sensitively. The category
+# split is by the "/" in "<name/header.hpp>" rather than the literal project
+# name, so a generated project keeps the same order whatever it is called.
 SortIncludes:
   IgnoreCase: false
 IncludeBlocks: Regroup
+IncludeCategories:
+  # Project and path-style headers, e.g. <myapp/core/greeter.hpp>.
+  - Regex: '^[<"][^/>]+/.*'
+    Priority: 1
+  # Everything else: standard library and single-name third-party headers.
+  - Regex: '.*'
+    Priority: 2
 
 # Spacing
 SpaceBeforeParens: ControlStatements

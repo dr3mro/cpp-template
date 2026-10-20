@@ -4,7 +4,6 @@
  */
 
 #include "myapp/core/greeter.hpp"
-
 #include <doctest/doctest.h>
 
 TEST_CASE("Greeter greets a name")

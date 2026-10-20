@@ -6,6 +6,7 @@
  */
 
 #include <myapp/myapp_export.h>
+
 #include <string>
 #include <string_view>
 
