@@ -5,10 +5,13 @@ if(NOT MYAPP_ENABLE_COVERAGE)
     return()
 endif()
 
+# Prefer the LLVM tools shipped next to the compiler we are actually using, so
+# llvm-profdata/llvm-cov always match the clang that instrumented the build.
+get_filename_component(_myapp_llvm_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
 find_program(MYAPP_LLVM_PROFDATA NAMES llvm-profdata
-             HINTS /opt/homebrew/opt/llvm/bin)
+             HINTS "${_myapp_llvm_dir}" /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
 find_program(MYAPP_LLVM_COV NAMES llvm-cov
-             HINTS /opt/homebrew/opt/llvm/bin)
+             HINTS "${_myapp_llvm_dir}" /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
 
 if(NOT (MYAPP_LLVM_PROFDATA AND MYAPP_LLVM_COV AND TARGET ${PROJECT_NAME}_tests))
     return()

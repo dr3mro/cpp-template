@@ -1,5 +1,23 @@
 cmake_minimum_required(VERSION 3.25)
 
+# The coverage and fuzz presets need LLVM's clang (for llvm-profdata/llvm-cov and
+# libFuzzer). Pick it here, before project(), because the compiler cannot be
+# changed once the language is enabled. Only CMAKE_HOST_* is available this
+# early: APPLE and UNIX are defined by project().
+option(MYAPP_USE_LLVM_CLANG "Prefer Homebrew LLVM clang++ as the compiler" OFF)
+if(MYAPP_USE_LLVM_CLANG AND NOT DEFINED CMAKE_CXX_COMPILER)
+    find_program(MYAPP_LLVM_CLANGXX
+        NAMES clang++
+        HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+    if(NOT MYAPP_LLVM_CLANGXX)
+        message(FATAL_ERROR
+            "MYAPP_USE_LLVM_CLANG is ON but clang++ was not found.\n"
+            "Install LLVM first: 'brew install llvm' (macOS) or "
+            "'apt install clang' (Linux).")
+    endif()
+    set(CMAKE_CXX_COMPILER "${MYAPP_LLVM_CLANGXX}" CACHE FILEPATH "C++ compiler")
+endif()
+
 # doctest is a vcpkg manifest *feature*, so it is only downloaded and installed
 # when the tests are actually built. The toolchain reads the manifest during
 # project(), so this has to happen before that call.
