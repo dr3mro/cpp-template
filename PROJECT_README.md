@@ -1,6 +1,8 @@
 # myapp
 
-One-paragraph description of what this program does.
+One-paragraph description of what this project does.
+
+📖 **Documentation:** <https://@GITHUB_USER@.github.io/myapp/>
 
 ## Features
 
@@ -9,219 +11,210 @@ One-paragraph description of what this program does.
 
 ## Requirements
 
-- CMake 3.21+
-- Ninja
-- A C++ compiler (Clang, GCC or MSVC)
-- vcpkg with `VCPKG_ROOT` set (the dependencies, currently doctest, are declared in `vcpkg.json` and installed automatically when CMake configures)
-- Optional: clang-format and clang-tidy (LLVM), Doxygen, Graphviz
+- CMake 3.25 or newer, and Ninja
+- a C++17 compiler (Clang, GCC or MSVC)
+- [vcpkg](https://vcpkg.io), with the `VCPKG_ROOT` environment variable pointing at it
+- optional: LLVM (clang-format 20+, clang-tidy; clang for fuzzing and coverage),
+  Doxygen and Graphviz (documentation and diagrams)
 
-On macOS: `brew install ninja cmake pkg-config llvm doxygen graphviz`
-
-`CMakePresets.json` hands vcpkg to CMake with `"toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"`, so `VCPKG_ROOT` must point at a bootstrapped vcpkg clone before you configure.
-
-### One-time machine setup
-
-Install vcpkg once per machine, and install Ninja with Homebrew:
+On macOS:
 
 ```bash
+brew install cmake ninja pkg-config llvm doxygen graphviz
 git clone https://github.com/microsoft/vcpkg ~/.vcpkg
 ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics
-brew install ninja cmake
+echo 'export VCPKG_ROOT="$HOME/.vcpkg"' >> ~/.zshrc      # then open a new terminal
 ```
 
-Add this to `~/.zshrc`:
+On Windows, clone vcpkg, run `bootstrap-vcpkg.bat`, set `VCPKG_ROOT` as a user
+environment variable and use the `vs2022` or `vs2026` preset.
 
-```bash
-export VCPKG_ROOT="$HOME/.vcpkg"
-export PATH="$VCPKG_ROOT:$PATH"
-```
-
-Then open a new terminal, or run `source ~/.zshrc`.
-
-On Windows: clone vcpkg, run `bootstrap-vcpkg.bat`, and set the `VCPKG_ROOT` user environment variable before using the Visual Studio presets.
+Libraries listed in `vcpkg.json` are downloaded and built automatically the
+first time you configure; that first run can take a few minutes.
 
 ## Build, run and test
 
-```bash
-cmake --preset release && cmake --build --preset release   # optimised build
-./build/release/myapp
+A **preset** is a named set of build settings from `CMakePresets.json`. Each
+preset builds into its own folder under `build/`.
 
-cmake --preset debug && cmake --build --preset debug       # debug + ASan/UBSan
-ctest --preset debug                                        # run unit tests
+```bash
+cmake --preset debug           # configure
+cmake --build --preset debug   # compile
+ctest --preset debug           # run the unit tests
+./build/debug/myapp            # run the app
 ```
 
-| Preset | What it builds | Output folder |
+| Preset | Use it for | Output folder |
 | --- | --- | --- |
-| `release` | Optimised build | `build/release/` |
-| `debug` | Debug build with AddressSanitizer and UndefinedBehaviorSanitizer | `build/debug/` |
-| `debug-nosan` | Plain debug build, used by the debugger | `build/debug-nosan/` |
-| `tsan` | Debug build with ThreadSanitizer | `build/tsan/` |
-| `ci` | Warnings-as-errors build, used by CI | `build/ci/` |
-| `coverage` | Instrumented build for coverage reporting | `build/coverage/` |
-| `fuzz` | Debug build with libFuzzer, ASan and UBSan (LLVM clang) | `build/fuzz/` |
-| `docs` | Release build for Doxygen, no tests or packages | `build/docs/` |
-| `vs2022` / `vs2026` | Visual Studio solution (Windows only) | `build/vs20xx/` |
+| `debug` | everyday development, with AddressSanitizer + UndefinedBehaviorSanitizer | `build/debug/` |
+| `debug-nosan` | the debugger (no sanitizers) | `build/debug-nosan/` |
+| `release` | the optimised, hardened build | `build/release/` |
+| `tsan` | finding data races (ThreadSanitizer) | `build/tsan/` |
+| `ci` | what CI builds: warnings are errors | `build/ci/` |
+| `coverage` | line coverage of the tests (clang) | `build/coverage/` |
+| `fuzz` | fuzzing with libFuzzer (clang) | `build/fuzz/` |
+| `docs` | the documentation site | `build/docs/` |
+| `vs2022` / `vs2026` | a Visual Studio solution (Windows) | `build/vs20xx/` |
 
-## Fuzzing
+**Adding code:** put a header in `include/myapp/<module>/` and its source in
+`src/myapp/<module>/`, and a test in `tests/`. New files are picked up on the
+next build automatically.
 
-The `fuzz/` folder holds a libFuzzer harness that links the same library as the
-tests. Build and run it with the `fuzz` preset and the `fuzz-run` target:
+**Installing:** `cmake --install build/release` copies the result into
+`build/install/release/`.
 
-```bash
-cmake --preset fuzz && cmake --build --preset fuzz
-cmake --build --preset fuzz --target fuzz-run   # runs each harness for MYAPP_FUZZ_SECONDS
-```
+**Cleaning:** `cmake --build --preset debug --target clean` removes one
+preset's compiled files; `cmake -P cmake/DistClean.cmake` removes everything
+generated.
 
-Seed inputs live in `fuzz/corpus/`. Set `-DMYAPP_FUZZ_SECONDS=<n>` to change
-how long each harness runs.
+## Adding dependencies
 
-New to fuzzing? [FUZZING.md](FUZZING.md) is a step-by-step tutorial: running the
-fuzzer, finding a real buffer overflow, reproducing the crash and keeping it fixed.
+Every third-party library is added in three steps, always in the same places:
 
-## Coverage
+1. **Declare** it in `vcpkg.json` under `"dependencies"`, for example
+   `"dependencies": ["fmt"]`. (Find names with `vcpkg search <word>`.)
+2. **Find** it in `cmake/Dependencies.cmake`:
+   `myapp_find_dependency(fmt CONFIG)`
+3. **Link** it in `src/CMakeLists.txt`:
+   `target_link_libraries(${PROJECT_NAME}_lib PRIVATE fmt::fmt)`
 
-The `coverage` preset instruments the build; the `coverage` target produces
-both a text summary and an HTML report:
+Use `PRIVATE` when only your `.cpp` files use the library and `PUBLIC` when
+your public headers include its headers. In a library project, a `PUBLIC`
+dependency is found with `myapp_find_dependency(fmt PUBLIC CONFIG)`, so that
+programs using the installed library find it too. Test-only libraries go in
+`features.tests` in `vcpkg.json` and are found in `tests/CMakeLists.txt`.
 
-```bash
-cmake --preset coverage && cmake --build --preset coverage
-cmake --build --preset coverage --target coverage
-open build/coverage/html/index.html
-```
+## Using a library made from the same template
 
-## Library mode
+Two projects made from the template link together in a few lines. Say this
+project uses a library `mathlib`:
 
-Generate an installable library package instead of an app:
+1. In `mathlib`: `cmake --preset release && cmake --build --preset release && cmake --install build/release`
+2. Here, in `cmake/Dependencies.cmake`: `myapp_find_dependency(mathlib CONFIG)`
+3. Here, in `src/CMakeLists.txt`: `target_link_libraries(${PROJECT_NAME}_lib PUBLIC mathlib::mathlib)`
+4. Tell CMake where `mathlib` was installed, in a `CMakeUserPresets.json`
+   (machine-specific, ignored by git):
 
-```bash
-~/Templates/cpp-template/scripts/new-project.sh mylib --lib
-```
+   ```json
+   {
+     "version": 6,
+     "configurePresets": [
+       { "name": "dev", "inherits": "debug",
+         "cacheVariables": { "CMAKE_PREFIX_PATH": "${sourceDir}/../mathlib/build/install/release" } }
+     ],
+     "buildPresets": [{ "name": "dev", "configurePreset": "dev" }],
+     "testPresets": [{ "name": "dev", "configurePreset": "dev" }]
+   }
+   ```
 
-Then install it and build the bundled consumer example:
+5. `#include <mathlib/...>` in your code, then
+   `cmake --preset dev && cmake --build --preset dev`.
+
+Static and shared builds of `mathlib` (`-DBUILD_SHARED_LIBS=ON`) work the same
+way. To build `mathlib` from source as part of this project instead, replace
+steps 1, 2 and 4 with
+`add_subdirectory("${PROJECT_SOURCE_DIR}/../mathlib" "${PROJECT_BINARY_DIR}/mathlib")`
+in `cmake/Dependencies.cmake`. The template's README has the full,
+step-by-step tutorial.
+
+## If this is a library: using it from another project
 
 ```bash
 cmake --preset release && cmake --build --preset release
-cmake --install build/release          # installs into build/install/release
+cmake --install build/release          # into build/install/release/
+```
+
+Another CMake project then uses it with:
+
+```cmake
+find_package(myapp CONFIG REQUIRED)
+target_link_libraries(their_app PRIVATE myapp::myapp)
+```
+
+configured with `-DCMAKE_PREFIX_PATH=<this folder>/build/install/release`. The
+bundled example does exactly that:
+
+```bash
 cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=$PWD/build/install/release
 cmake --build build/examples && ./build/examples/example
 ```
 
-Consumers link the exported `myapp::myapp` target. `CPack` also builds a `.tar.gz`
-with `cmake --build build/release --target package`.
+Mark every class or function that belongs to the public interface with
+`MYAPP_EXPORT` (from `<myapp/myapp_export.h>`), or a shared build hides it.
+`cmake --build build/release --target package` makes a `.tar.gz` with CPack.
 
-## Adding a library
+## Fuzzing
 
-Add the package name to the `dependencies` array in `vcpkg.json`, for example `"fmt"`:
-
-```json
-"dependencies": [
-  "doctest",
-  "fmt"
-]
-```
-
-In `CMakeLists.txt`, find the package and link it to your library:
-
-```cmake
-find_package(fmt CONFIG REQUIRED)
-target_link_libraries(myapp_lib PUBLIC fmt::fmt)
-```
-
-Re-run `cmake --preset debug`. The first configure downloads and builds the library, which can take a few minutes.
-
-If the package is linked `PUBLIC`, consumers of an installed library also need it. List it in `MYAPP_PACKAGE_DEPENDENCIES` so the generated package config repeats the lookup:
-
-```cmake
-set(MYAPP_PACKAGE_DEPENDENCIES fmt CONFIG CACHE STRING "" FORCE)
-```
-
-Each list entry becomes a `find_dependency()` call in `<name>Config.cmake` (use the same arguments you would pass to `find_package`, for example `fmt CONFIG` or `nlohmann_json`).
-
-Run `vcpkg search <name>` to find package names. After a package installs, vcpkg prints the exact `find_package` and `target_link_libraries` lines to use.
-
-## Troubleshooting
-
-```text
-CMake Error ... Could not find toolchain file:
-"/Users/<you>/.vcpkg/scripts/buildsystems/vcpkg.cmake"
-CMake was unable to find a build program corresponding to "Ninja".
-```
-
-This means vcpkg is not installed at `$VCPKG_ROOT`. The Ninja message is only a side effect of the missing toolchain file. Run the one-time machine setup above, then start from a clean build folder:
+Every `fuzz/fuzz_<name>.cpp` is a fuzzer; its seed inputs go in
+`fuzz/corpus/fuzz_<name>/`.
 
 ```bash
-rm -rf build && cmake --preset debug
+cmake --preset fuzz && cmake --build --preset fuzz
+cmake --build --preset fuzz --target fuzz-run   # each fuzzer for MYAPP_FUZZ_SECONDS (10)
 ```
 
-If CMake reports `VCPKG_ROOT is empty`, the `export VCPKG_ROOT=...` line is missing from `~/.zshrc`, or the terminal was opened before you added it. Add the line and open a new terminal.
+New to fuzzing? [FUZZING.md](FUZZING.md) walks through writing a fuzz target,
+building a good corpus, and finding, reproducing and fixing a real bug.
 
-## Tooling targets
+## Coverage, formatting, static analysis and docs
 
-Run these with `cmake --build --preset release --target <name>`:
-
-| Target | Description |
+| Command | What it does |
 | --- | --- |
-| `format` | Format all sources with clang-format |
-| `format-check` | Fail if any file is not formatted |
-| `tidy` | Run clang-tidy across the project |
-| `docs` | Generate Doxygen HTML in `docs/`, including the architecture and class diagrams in `docs/diagrams/` |
-| `coverage` | Build the coverage report (with the `coverage` preset) |
-| `fuzz-run` | Run every fuzzer for `MYAPP_FUZZ_SECONDS` (with the `fuzz` preset) |
+| `cmake --preset coverage && cmake --build --preset coverage --target coverage` | runs the tests and writes a coverage report to `build/coverage/html/index.html` |
+| `cmake --build --preset debug --target format` | formats every source file (`.clang-format`, clang-format 20+) |
+| `cmake --build --preset debug --target format-check` | fails if anything is unformatted |
+| `cmake --build --preset debug --target tidy` | runs clang-tidy (`.clang-tidy`) |
+| `cmake --workflow --preset docs` | builds the documentation into `docs/` |
+
+The docs are generated by Doxygen from the `/** ... */` comments, with this
+README as the front page. With Graphviz installed, the diagrams are rendered
+into `docs/diagrams/`: the architecture (drawn from the real CMake targets),
+the class diagrams, and any `.dot` file in a `diagrams/` folder. GitHub Actions
+publishes `docs/` to GitHub Pages on every push to `main`; enable it once
+under **Settings → Pages → Source: GitHub Actions**.
+
+![Architecture](https://@GITHUB_USER@.github.io/myapp/diagrams/architecture.png)
 
 ## Project structure
 
 ```text
 .
-├── include/myapp/      Public headers, one folder per module
-├── src/myapp/          Implementations (built into the myapp_lib library)
-├── tests/              doctest unit tests (one file per component)
-├── main.cpp            Thin entry point
-├── CMakeLists.txt      Build, test and tooling targets
-├── CMakePresets.json   release / debug / debug-nosan / Visual Studio presets
-├── vcpkg.json          Dependency manifest (installed by vcpkg at configure)
-├── Doxyfile.in         Doxygen config (filled in by CMake)
-├── Doxyfile.classes.in Doxygen config for the class diagrams built by `docs`
-├── cmake/              Helper scripts run with `cmake -P`
-├── .clang-format       Code style (Allman, 4 spaces)
-├── .clang-tidy         Static-analysis checks
-├── .clangd             Points clangd at build/compile_commands.json
-├── .zed/  .vscode/     Editor tasks and debugger configs
-└── .github/workflows/  CI tests, docs to GitHub Pages, release binaries
+├── include/myapp/        public headers, one folder per module
+├── src/                  the code: everything here builds into myapp_lib
+│   └── CMakeLists.txt    the library target
+├── tests/                doctest unit tests (one file per component)
+├── fuzz/                 libFuzzer targets and their seed corpora
+├── main.cpp              thin entry point (app projects)
+├── examples/             a program using the installed library (library projects)
+├── CMakeLists.txt        the build's table of contents
+├── CMakePresets.json     the presets above
+├── vcpkg.json            name, version and dependencies
+├── cmake/                one small module per build feature (each explains itself)
+│   ├── Options.cmake     every MYAPP_* option
+│   └── Dependencies.cmake  where third-party packages are found
+├── Doxyfile.in           documentation settings
+├── .clang-format         code style (Allman, 4 spaces)
+├── .clang-tidy           static-analysis checks
+├── .zed/  .vscode/       editor tasks and debugger configs
+└── .github/workflows/    CI, docs to GitHub Pages, releases
 ```
 
-## Architecture
-
-\image html architecture.png "Target architecture"
-
-The diagram is generated from the CMake targets — do not hand-edit it. Build it
-with the `docs` workflow preset (output: `docs/diagrams/`):
-
-```bash
-cmake --workflow --preset docs
-```
-
-Class diagrams are generated into `docs/diagrams/classes/` by the same target.
+The version lives in one place: `"version"` in `vcpkg.json`. Build options are
+listed, with descriptions, in `cmake/Options.cmake`.
 
 ## Releases
 
-Push a version tag to build binaries for Linux, macOS and Windows and attach them to a GitHub Release:
+Bump `"version"` in `vcpkg.json`, then push a matching tag. GitHub Actions
+builds Linux, macOS and Windows binaries and attaches them to a GitHub Release:
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-## Documentation
+## Security
 
-Build the Doxygen site with the `docs` workflow preset, which configures and
-builds in one command (the architecture and class diagrams are generated into
-`docs/diagrams/` as part of it):
-
-```bash
-cmake --workflow --preset docs   # output: docs/index.html
-```
-
-Pushes to `main` publish the Doxygen site to GitHub Pages. Enable it once under
-**Settings → Pages → Build and deployment → Source: GitHub Actions**.
+Release builds are hardened (see [SECURITY.md](SECURITY.md) for the flags and
+for how to report a vulnerability).
 
 ## License
 

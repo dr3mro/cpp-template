@@ -140,14 +140,19 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
 }
 ```
 
-**2c. Add a seed input.** Each fuzzer needs a folder named after it in
-`fuzz/corpus/`, otherwise `fuzz-run` stops with `No such file or directory`.
+**2c. Add a seed input.** Each fuzzer reads its starting inputs from a folder
+named after it in `fuzz/corpus/`. Without one it still runs (CMake prints a
+reminder), but it starts from nothing and is much slower to reach deep code.
 Put one or more valid examples in it:
 
 ```bash
 mkdir -p fuzz/corpus/fuzz_parse_age
 printf '42' > fuzz/corpus/fuzz_parse_age/two_digits
 ```
+
+Seed folders are read when CMake configures, which the next command does.
+The "Working with the corpus" section below explains how to choose
+good seeds.
 
 **2d. Run it.**
 
@@ -220,6 +225,108 @@ cp build/fuzz/fuzz/crash-58b60c14... fuzz/corpus/fuzz_parse_age/regression_overf
 It's also worth adding a normal doctest case for the same input in
 `tests/test_parse_age.cpp`, so `ctest` catches the bug even without fuzzing.
 
+## Working with the corpus
+
+The **corpus** is the fuzzer's collection of interesting inputs. There are two
+kinds, kept in different places on purpose:
+
+| Folder | Who writes it | Committed? | What it holds |
+| --- | --- | --- | --- |
+| `fuzz/corpus/fuzz_<name>/` | you | yes | **seeds**: a few hand-picked examples, plus regression inputs for bugs you fixed |
+| `build/fuzz/fuzz-corpus/fuzz_<name>/` | the fuzzer | no | every new input that reached new code during `fuzz-run` |
+
+`fuzz-run` passes both folders to each fuzzer. It reads the seeds and writes
+new finds only into the build folder, so your committed seeds never change
+behind your back.
+
+### Adding seed inputs
+
+A seed is just a file whose bytes are exactly what `LLVMFuzzerTestOneInput`
+receives. The file name doesn't matter; use one that says what it is.
+
+```bash
+# text input
+printf 'hello world' > fuzz/corpus/fuzz_<name>/simple_text
+
+# empty input (an important edge case)
+: > fuzz/corpus/fuzz_<name>/empty
+
+# a real sample file, such as a config file or a packet capture
+cp ~/samples/config.ini fuzz/corpus/fuzz_<name>/real_config
+
+# raw bytes, written as hex
+printf '\x00\xff\x10hello' > fuzz/corpus/fuzz_<name>/binary_header
+```
+
+If your fuzz target splits the input (the template's `fuzz_greeter.cpp` uses
+the first byte to pick a salutation and the rest as the name), the seed must
+follow the same layout. This seed means "salutation number 1, name Bob":
+
+```bash
+printf '\x01Bob' > fuzz/corpus/fuzz_greeter/hi_bob_seed
+```
+
+Good seeds are:
+
+- **small**: a few bytes to a few KB. Smaller inputs run faster, and the fuzzer
+  grows them as needed;
+- **valid**: real examples of what your code expects, so the fuzzer starts
+  deep inside the "happy path" instead of at the first input check;
+- **varied**: one example of each feature or format variant (each command,
+  each record type, ...), not ten copies of the same thing;
+- **few**: 5 to 50 files is plenty. The fuzzer finds the rest.
+
+After adding seeds, reconfigure once (`cmake --preset fuzz`) if the folder is
+new, then run `fuzz-run`.
+
+### Growing the corpus over time
+
+After a long fuzzing session, the build folder holds inputs that reach code
+your seeds don't. Merge the best of them into the committed seeds, keeping
+only inputs that add coverage:
+
+```bash
+mkdir -p /tmp/merged
+./build/fuzz/fuzz_<name> -merge=1 /tmp/merged \
+    fuzz/corpus/fuzz_<name> build/fuzz/fuzz-corpus/fuzz_<name>
+rm -rf fuzz/corpus/fuzz_<name> && mv /tmp/merged fuzz/corpus/fuzz_<name>
+git add fuzz/corpus/fuzz_<name>
+```
+
+`-merge=1` writes to the first folder a minimal set of inputs that covers
+everything the other folders cover, so the committed corpus stays small.
+
+### Keeping fixed bugs fixed
+
+Whenever the fuzzer finds a crash, copy the crash file into the seeds (Step 3
+shows this). Every later `fuzz-run`, locally and in CI, retries it first.
+Before committing a large crash input, shrink it:
+
+```bash
+./build/fuzz/fuzz_<name> -minimize_crash=1 -runs=10000 \
+    -exact_artifact_path=fuzz/corpus/fuzz_<name>/regression_short crash-<hash>
+```
+
+### Dictionaries for structured input
+
+For formats with keywords (JSON, HTTP, a command language), a dictionary helps
+the fuzzer produce valid-looking input quickly. Write one keyword per line:
+
+```text
+# fuzz/fuzz_<name>.dict
+"GET"
+"POST"
+"Content-Length:"
+"\x0D\x0A"
+```
+
+Inside the quotes, only three escapes are allowed: a backslash, a double
+quote, and a byte written as backslash-x plus two hex digits. That is why the
+line break above is written as two hex bytes.
+
+and pass it when running the fuzzer directly:
+`./build/fuzz/fuzz_<name> -dict=fuzz/fuzz_<name>.dict build/fuzz/fuzz-corpus/fuzz_<name> fuzz/corpus/fuzz_<name>`.
+
 ## Writing good fuzz targets
 
 - **Fuzz one entry point per target.** Call the function that receives outside
@@ -264,12 +371,18 @@ The first folder you pass is where new interesting inputs are saved;
 
 ## How it's wired up
 
-- **`fuzz` preset**: Debug build with LLVM clang, `-fsanitize=fuzzer-no-link,address,undefined`,
-  tests turned off.
+- **`fuzz` preset**: a Debug build with LLVM clang, `MYAPP_BUILD_FUZZERS=ON` and
+  the tests turned off.
+- **`cmake/Sanitizers.cmake`**: when `MYAPP_BUILD_FUZZERS` is on, compiles all
+  the code with `-fsanitize=fuzzer-no-link,address,undefined`, so the fuzzer
+  gets coverage feedback and ASan/UBSan catch memory errors and undefined
+  behaviour.
 - **`fuzz/CMakeLists.txt`**: builds every `fuzz/fuzz_*.cpp` against the project
   library and adds `-fsanitize=fuzzer` (libFuzzer's own `main()`) to those binaries
   only.
-- **`fuzz-run` target**: runs each fuzzer for `MYAPP_FUZZ_SECONDS` (default 10).
+- **`fuzz-run` target**: runs each fuzzer for `MYAPP_FUZZ_SECONDS` (default 10),
+  with `build/fuzz/fuzz-corpus/<name>/` as the writable corpus and
+  `fuzz/corpus/<name>/` as the seeds.
 - **CI**: the `fuzz` job in `.github/workflows/ci.yml` runs every fuzzer on each
   push, so a regression input you commit to the corpus is retried automatically.
 
