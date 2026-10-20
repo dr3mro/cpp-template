@@ -51,7 +51,7 @@ Repeat for the parts you care about: `cmake/`, `CMakeLists.txt`,
 `.github/`, `.clang-format`, `.clang-tidy`, `.zed/`, `.vscode/`. Copy over what
 you want, keeping your own changes (your entries in `cmake/Dependencies.cmake`,
 extra options, and so on), then build every preset and run the tests. The
-template's `CHANGELOG.md` says what changed and why.
+template's git history (`git log` in the template) says what changed and why.
 
 Use the same `--lib` and `--std` flags you created the project with, so the
 comparison isn't cluttered with mode differences.
