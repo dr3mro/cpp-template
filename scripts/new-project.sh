@@ -2,20 +2,24 @@
 # Create a new C++ project from this template.
 #
 #   scripts/new-project.sh <name> [destination-dir] [--std 17|20|23] [--no-git] [--lib]
+#                          [--github-user <user>]
 #
 # <name> must be a valid C++ identifier in lower_snake_case (for example: grocery, bank_app).
 # It becomes the CMake project, the executable, the namespace and the include/<name>/ folder.
 # Pass --lib to generate an installable library package (with examples/) instead of an app.
+# Pass --github-user to fill in the README's GitHub Pages docs link
+# (https://<user>.github.io/<name>/); without it the README keeps a placeholder.
 set -euo pipefail
 
-usage() { sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
-NAME=""; DEST=""; STD="17"; GIT=1; LIB=0
+NAME=""; DEST=""; STD="17"; GIT=1; LIB=0; GITHUB_USER=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --std) STD="${2:?}"; shift 2 ;;
         --no-git) GIT=0; shift ;;
         --lib) LIB=1; shift ;;
+        --github-user) GITHUB_USER="${2:?}"; shift 2 ;;
         -h|--help) usage ;;
         *) if [[ -z "$NAME" ]]; then NAME="$1"; elif [[ -z "$DEST" ]]; then DEST="$1"; else usage; fi; shift ;;
     esac
@@ -24,6 +28,7 @@ done
 [[ -n "$NAME" ]] || usage
 [[ "$NAME" =~ ^[a-z][a-z0-9_]*$ ]] || { echo "error: name must be lower_snake_case, e.g. bank_app" >&2; exit 1; }
 [[ "$STD" =~ ^(17|20|23)$ ]] || { echo "error: --std must be 17, 20 or 23" >&2; exit 1; }
+[[ -z "$GITHUB_USER" || "$GITHUB_USER" =~ ^[A-Za-z0-9-]+$ ]] || { echo "error: --github-user must be a GitHub user name (letters, digits, -)" >&2; exit 1; }
 
 TEMPLATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="${DEST:-$PWD/$NAME}"
@@ -39,8 +44,15 @@ mkdir -p "$DEST"
 # of paths excluded. The template-test workflow only makes sense in the template
 # repo, so it is left out either way.
 if git -C "$TEMPLATE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git -C "$TEMPLATE_DIR" ls-files -z --cached --modified --exclude-standard \
-        | tar --null -T - -cf - | (cd "$DEST" && tar -xf -)
+    # Run from inside the template: git prints paths relative to it, and tar
+    # must resolve them from there (not from wherever the script was started).
+    # --others adds new files that are not ignored yet; the [[ -f ]] filter
+    # skips tracked files deleted from the working tree.
+    (cd "$TEMPLATE_DIR" \
+        && git ls-files -z --cached --others --exclude-standard \
+        | sort -zu \
+        | while IFS= read -r -d '' file; do [[ -f "$file" ]] && printf '%s\0' "$file"; done \
+        | tar --null -T - -cf -) | (cd "$DEST" && tar -xf -)
 else
     (cd "$TEMPLATE_DIR" && tar --exclude='./.git' --exclude='./build' --exclude='./docs' \
         --exclude='./install' --exclude='./install-*' --exclude='./vcpkg_installed' \
@@ -68,15 +80,18 @@ if [[ -f "$DEST/vcpkg.json" ]]; then
 fi
 
 # C++ standard (carried by the library target; see target_compile_features).
-perl -pi -e "s/cxx_std_17/cxx_std_$STD/" "$DEST/CMakeLists.txt"
+perl -pi -e "s/cxx_std_17/cxx_std_$STD/" "$DEST/src/CMakeLists.txt"
 perl -pi -e "s/^Standard: c\+\+17/Standard: c++$STD/" "$DEST/.clang-format"
 
-# Swap the template README for the project README.
+# Swap the template README for the project README, and fill in the GitHub
+# Pages docs link (or leave a placeholder that says what to replace).
 mv "$DEST/PROJECT_README.md" "$DEST/README.md"
+GH_USER_TEXT="${GITHUB_USER:-your-github-user}"
+perl -pi -e "s/\@GITHUB_USER\@/$GH_USER_TEXT/g" "$DEST/README.md"
 
 # App mode keeps main.cpp and drops the library example; --lib does the reverse.
 if [[ $LIB -eq 1 ]]; then
-    perl -pi -e 's/(option\(\w+_LIBRARY_MODE "[^"]*" )OFF\b/${1}ON/' "$DEST/CMakeLists.txt"
+    perl -0pi -e 's/(option\(\w+_LIBRARY_MODE\s+"[^"]*"\s+)OFF\b/${1}ON/' "$DEST/cmake/Options.cmake"
     rm -f "$DEST/main.cpp"
 
     # A library has no executable, so drop the run tasks and the app debug
