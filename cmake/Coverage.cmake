@@ -26,6 +26,25 @@ if(MYAPP_ENABLE_COVERAGE)
     target_link_options(${PROJECT_NAME}_options INTERFACE -fprofile-instr-generate -fcoverage-mapping)
 endif()
 
+# _myapp_xcrun_find(<var> <tool>)
+#
+# Sets the cache entry <var> to `xcrun --find <tool>` (the copy inside the
+# active Xcode or command line tools), unless <var> is already set.
+function(_myapp_xcrun_find var tool)
+    if(${var})
+        return()
+    endif()
+    execute_process(
+        COMMAND xcrun --find ${tool}
+        OUTPUT_VARIABLE _path
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _result
+        ERROR_QUIET)
+    if(_result EQUAL 0 AND EXISTS "${_path}")
+        set(${var} "${_path}" CACHE FILEPATH "Path to ${tool}" FORCE)
+    endif()
+endfunction()
+
 # myapp_add_coverage_report()
 #
 # Defines `coverage` when coverage is enabled, the tests exist, and llvm-profdata
@@ -35,11 +54,25 @@ function(myapp_add_coverage_report)
         return()
     endif()
 
-    myapp_find_llvm_program(MYAPP_LLVM_PROFDATA llvm-profdata NEXT_TO_COMPILER)
-    myapp_find_llvm_program(MYAPP_LLVM_COV llvm-cov NEXT_TO_COMPILER)
+    # The tools must come from the same toolchain as the compiler, or
+    # llvm-profdata rejects the profile ("unsupported format version").
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        # Apple's clang keeps them inside Xcode, reachable only through xcrun;
+        # a Homebrew LLVM copy would not match Apple's profile format.
+        _myapp_xcrun_find(MYAPP_LLVM_PROFDATA llvm-profdata)
+        _myapp_xcrun_find(MYAPP_LLVM_COV llvm-cov)
+    else()
+        myapp_find_llvm_program(MYAPP_LLVM_PROFDATA llvm-profdata NEXT_TO_COMPILER)
+        myapp_find_llvm_program(MYAPP_LLVM_COV llvm-cov NEXT_TO_COMPILER)
+    endif()
+    # Coverage was asked for explicitly, so stop here rather than fail later
+    # with "unknown target 'coverage'".
     if(NOT MYAPP_LLVM_PROFDATA OR NOT MYAPP_LLVM_COV)
-        message(WARNING "llvm-profdata/llvm-cov not found: the coverage target is not defined.")
-        return()
+        message(FATAL_ERROR
+            "MYAPP_ENABLE_COVERAGE is ON but llvm-profdata/llvm-cov matching "
+            "${CMAKE_CXX_COMPILER} were not found.\n"
+            "macOS: install the Xcode command line tools (xcode-select --install) "
+            "or LLVM (brew install llvm). Linux: install llvm (apt install llvm).")
     endif()
 
     set(_out "${PROJECT_BINARY_DIR}")
