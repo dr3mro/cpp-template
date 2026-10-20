@@ -55,6 +55,15 @@ target_include_directories(${PROJECT_NAME}_lib PUBLIC
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC $<BUILD_INTERFACE:myapp_options>)
 include(${PROJECT_SOURCE_DIR}/cmake/ExportHeader.cmake)
 
+# Public dependencies this package needs downstream. Add one entry per
+# find_package() call that a consumer of the installed library must repeat, so
+# the generated <name>Config.cmake can find_dependency() them (see
+# cmake/Config.cmake.in). Example, once fmt is linked PUBLIC above:
+#
+#   set(MYAPP_PACKAGE_DEPENDENCIES fmt CONFIG)
+set(MYAPP_PACKAGE_DEPENDENCIES "" CACHE STRING
+    "Public dependencies repeated with find_dependency() by the installed package config")
+
 # ---- executable (skipped in library mode) ----
 if(NOT MYAPP_LIBRARY_MODE)
     add_executable(${PROJECT_NAME} main.cpp)

@@ -129,6 +129,14 @@ target_link_libraries(myapp_lib PUBLIC fmt::fmt)
 
 Re-run `cmake --preset debug`. The first configure downloads and builds the library, which can take a few minutes.
 
+If the package is linked `PUBLIC`, consumers of an installed library also need it. List it in `MYAPP_PACKAGE_DEPENDENCIES` so the generated package config repeats the lookup:
+
+```cmake
+set(MYAPP_PACKAGE_DEPENDENCIES fmt CONFIG CACHE STRING "" FORCE)
+```
+
+Each list entry becomes a `find_dependency()` call in `<name>Config.cmake` (use the same arguments you would pass to `find_package`, for example `fmt CONFIG` or `nlohmann_json`).
+
 Run `vcpkg search <name>` to find package names. After a package installs, vcpkg prints the exact `find_package` and `target_link_libraries` lines to use.
 
 ## Troubleshooting

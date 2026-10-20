@@ -1,5 +1,13 @@
 @PACKAGE_INIT@
 
+# Public dependencies of the exported targets, substituted from
+# MYAPP_PACKAGE_DEPENDENCIES in CMakeLists.txt at configure time. Each entry
+# becomes a find_dependency() call here so consumers resolve the same packages
+# the library was built against (fmt, in the example below, is only present if
+# the project added it).
+include(CMakeFindDependencyMacro)
+@MYAPP_FIND_DEPENDENCY_CALLS@
+
 include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
 
 check_required_components(@PROJECT_NAME@)

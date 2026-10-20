@@ -26,6 +26,14 @@ install(EXPORT ${PROJECT_NAME}Targets
     NAMESPACE ${PROJECT_NAME}::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
+# Turn MYAPP_PACKAGE_DEPENDENCIES (each entry a find_dependency() argument
+# list, e.g. "fmt CONFIG" separated by ';') into the calls the generated
+# package config runs for consumers.
+set(MYAPP_FIND_DEPENDENCY_CALLS "")
+foreach(_dependency IN LISTS MYAPP_PACKAGE_DEPENDENCIES)
+    string(APPEND MYAPP_FIND_DEPENDENCY_CALLS "find_dependency(${_dependency})\n")
+endforeach()
+
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in
     ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
