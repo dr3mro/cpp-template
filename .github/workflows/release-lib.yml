@@ -26,6 +26,11 @@ env:
 jobs:
   build:
     name: ${{ matrix.os }} ${{ matrix.arch }}
+    # The template repo is an app, so a v* tag would otherwise also run the
+    # library build here and attach same-named archives as the app release.
+    # Generated library projects keep the guard too, but their repository name
+    # differs, so the condition is always true for them.
+    if: github.repository != 'dr3mro/cpp-template'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
