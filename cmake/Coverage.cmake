@@ -17,7 +17,7 @@ if(NOT (MYAPP_LLVM_PROFDATA AND MYAPP_LLVM_COV AND TARGET ${PROJECT_NAME}_tests)
     return()
 endif()
 
-set(_myapp_cov_dir ${CMAKE_BINARY_DIR})
+set(_myapp_cov_dir ${PROJECT_BINARY_DIR})
 add_custom_target(coverage
     COMMAND ${CMAKE_COMMAND} -E rm -f
             ${_myapp_cov_dir}/default.profraw
@@ -31,11 +31,11 @@ add_custom_target(coverage
     COMMAND ${MYAPP_LLVM_COV} report
             $<TARGET_FILE:${PROJECT_NAME}_tests>
             -instr-profile=${_myapp_cov_dir}/merged.profdata
-            "--ignore-filename-regex=${CMAKE_SOURCE_DIR}/(tests|vcpkg_installed)/"
+            "--ignore-filename-regex=${PROJECT_SOURCE_DIR}/(tests|vcpkg_installed)/"
     COMMAND ${MYAPP_LLVM_COV} show
             $<TARGET_FILE:${PROJECT_NAME}_tests>
             -instr-profile=${_myapp_cov_dir}/merged.profdata
-            "--ignore-filename-regex=${CMAKE_SOURCE_DIR}/(tests|vcpkg_installed)/"
+            "--ignore-filename-regex=${PROJECT_SOURCE_DIR}/(tests|vcpkg_installed)/"
             -format=html -output-dir=${_myapp_cov_dir}/html
     DEPENDS ${PROJECT_NAME}_tests
     COMMENT "Running tests and generating coverage report (output: build/coverage/html/)"

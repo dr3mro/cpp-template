@@ -2,27 +2,32 @@
 # that points clangd at whichever preset was configured last.
 
 # Expose the compilation database at build/ so clangd finds it whatever preset
-# was configured last.
-if(NOT WIN32)
-    file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
-    file(REMOVE ${CMAKE_SOURCE_DIR}/build/compile_commands.json)
+# was configured last. Skipped when the build directory *is* build/ (a plain
+# `cmake -B build` without a preset): the database is already there, and a link
+# onto itself would fail.
+if(NOT WIN32 AND NOT PROJECT_BINARY_DIR STREQUAL "${PROJECT_SOURCE_DIR}/build")
+    file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
+    file(REMOVE ${PROJECT_SOURCE_DIR}/build/compile_commands.json)
+    # CMAKE_BINARY_DIR on purpose: the generator writes a single compilation
+    # database at the top of the build tree, even when this project is an
+    # add_subdirectory() subproject, so the link must point there.
     file(CREATE_LINK ${CMAKE_BINARY_DIR}/compile_commands.json
-         ${CMAKE_SOURCE_DIR}/build/compile_commands.json SYMBOLIC)
+         ${PROJECT_SOURCE_DIR}/build/compile_commands.json SYMBOLIC)
 endif()
 
 file(GLOB_RECURSE MYAPP_ALL_FILES CONFIGURE_DEPENDS
-     ${CMAKE_SOURCE_DIR}/include/*.hpp ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/tests/*.cpp)
+     ${PROJECT_SOURCE_DIR}/include/*.hpp ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/tests/*.cpp)
 # main.cpp only exists in app mode; library mode has no executable.
-if(EXISTS ${CMAKE_SOURCE_DIR}/main.cpp)
-    list(APPEND MYAPP_ALL_FILES ${CMAKE_SOURCE_DIR}/main.cpp)
+if(EXISTS ${PROJECT_SOURCE_DIR}/main.cpp)
+    list(APPEND MYAPP_ALL_FILES ${PROJECT_SOURCE_DIR}/main.cpp)
 endif()
 # fuzz/ ships with the template; examples/ only exists in library mode.
-if(EXISTS ${CMAKE_SOURCE_DIR}/fuzz)
-    file(GLOB _myapp_fuzz_files CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/fuzz/*.cpp)
+if(EXISTS ${PROJECT_SOURCE_DIR}/fuzz)
+    file(GLOB _myapp_fuzz_files CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/fuzz/*.cpp)
     list(APPEND MYAPP_ALL_FILES ${_myapp_fuzz_files})
 endif()
-if(EXISTS ${CMAKE_SOURCE_DIR}/examples)
-    file(GLOB _myapp_example_files CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/examples/*.cpp)
+if(EXISTS ${PROJECT_SOURCE_DIR}/examples)
+    file(GLOB _myapp_example_files CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/examples/*.cpp)
     list(APPEND MYAPP_ALL_FILES ${_myapp_example_files})
 endif()
 
@@ -51,14 +56,14 @@ if(RUN_CLANG_TIDY_EXE)
         list(APPEND _myapp_tidy_args "-warnings-as-errors=*")
     endif()
     add_custom_target(tidy
-        COMMAND ${RUN_CLANG_TIDY_EXE} -quiet ${_myapp_tidy_args} -p ${CMAKE_BINARY_DIR}
+        COMMAND ${RUN_CLANG_TIDY_EXE} -quiet ${_myapp_tidy_args} -p ${PROJECT_BINARY_DIR}
                 # Anchored at the source tree so the generated
                 # build/**/generated/include/<name>/ headers can never match;
                 # .clang-tidy's HeaderFilterRegex alone cannot express that
                 # exclusion in POSIX extended regex.
-                "-header-filter=^${CMAKE_SOURCE_DIR}/(include|src)/myapp/"
-                "${CMAKE_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                "-header-filter=^${PROJECT_SOURCE_DIR}/(include|src)/myapp/"
+                "${PROJECT_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running clang-tidy on the project"
         VERBATIM)
     # version.hpp is generated; make sure it exists before tidy compiles the
@@ -69,7 +74,12 @@ endif()
 find_program(DOT_EXECUTABLE dot)
 if(DOT_EXECUTABLE)
     # Every diagrams/*.dot file is rendered to a PNG beside it.
-    file(GLOB DIAGRAM_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/diagrams/*.dot)
+    file(GLOB DIAGRAM_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/diagrams/*.dot)
+    # architecture.dot may only be written at the end of this configure.
+    if(MYAPP_GENERATE_ARCHITECTURE)
+        list(APPEND DIAGRAM_SOURCES ${MYAPP_ARCHITECTURE_DOT})
+        list(REMOVE_DUPLICATES DIAGRAM_SOURCES)
+    endif()
     set(DIAGRAM_PNGS "")
     foreach(dot_file IN LISTS DIAGRAM_SOURCES)
         string(REGEX REPLACE "\\.dot$" ".png" png_file ${dot_file})
@@ -95,38 +105,43 @@ find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
     # main.cpp is app-only; library mode would otherwise warn about a missing
     # input file.
-    if(EXISTS ${CMAKE_SOURCE_DIR}/main.cpp)
-        set(MYAPP_DOXY_EXTRA_INPUT ${CMAKE_SOURCE_DIR}/main.cpp)
+    if(EXISTS ${PROJECT_SOURCE_DIR}/main.cpp)
+        set(MYAPP_DOXY_EXTRA_INPUT ${PROJECT_SOURCE_DIR}/main.cpp)
     else()
         set(MYAPP_DOXY_EXTRA_INPUT "")
     endif()
-    configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
+    configure_file(${PROJECT_SOURCE_DIR}/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY)
     add_custom_target(docs
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Generating documentation with Doxygen (output: docs/)"
         VERBATIM)
+
+    # Render diagrams/*.dot first so the README/docs images are always current.
+    if(TARGET diagrams)
+        add_dependencies(docs diagrams)
+    endif()
 
     # Class diagrams are dot graphs that Doxygen renders and then normally
     # deletes, so this target needs Graphviz as well as Doxygen to exist.
     if(DOT_EXECUTABLE)
-        configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.classes.in
-                       ${CMAKE_BINARY_DIR}/Doxyfile.classes @ONLY)
+        configure_file(${PROJECT_SOURCE_DIR}/Doxyfile.classes.in
+                       ${PROJECT_BINARY_DIR}/Doxyfile.classes @ONLY)
 
         add_custom_target(class-diagrams
             # Wipe both outputs first so graphs from renamed or removed classes
             # cannot linger in Doxygen's output and get copied back.
             COMMAND ${CMAKE_COMMAND} -E rm -rf
-                    ${CMAKE_BINARY_DIR}/class-diagrams
-                    ${CMAKE_SOURCE_DIR}/diagrams/classes
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/diagrams/classes
-            COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile.classes
+                    ${PROJECT_BINARY_DIR}/class-diagrams
+                    ${PROJECT_SOURCE_DIR}/diagrams/classes
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/diagrams/classes
+            COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile.classes
             COMMAND ${CMAKE_COMMAND}
                     -DDOT_EXECUTABLE=${DOT_EXECUTABLE}
-                    -DOUTPUT_DIR=${CMAKE_BINARY_DIR}/class-diagrams
-                    -DDEST_DIR=${CMAKE_SOURCE_DIR}/diagrams/classes
-                    -P ${CMAKE_SOURCE_DIR}/cmake/CollectClassDiagrams.cmake
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                    -DOUTPUT_DIR=${PROJECT_BINARY_DIR}/class-diagrams
+                    -DDEST_DIR=${PROJECT_SOURCE_DIR}/diagrams/classes
+                    -P ${PROJECT_SOURCE_DIR}/cmake/CollectClassDiagrams.cmake
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             COMMENT "Generating class diagrams (output: diagrams/classes/)"
             VERBATIM)
     endif()

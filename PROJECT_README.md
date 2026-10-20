@@ -188,6 +188,10 @@ Run these with `cmake --build --preset release --target <name>`:
 
 ![Architecture](diagrams/architecture.png)
 
+The diagram is generated from the CMake targets — do not edit
+`diagrams/architecture.dot` by hand. `cmake --preset debug` regenerates it, and
+the `diagrams` and `docs` targets render it to the PNG above.
+
 ## Releases
 
 Push a version tag to build binaries for Linux, macOS and Windows and attach them to a GitHub Release:

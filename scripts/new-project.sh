@@ -56,14 +56,17 @@ if command -v dot >/dev/null; then
     done
 fi
 
-# vcpkg package names allow hyphens but not underscores: fix up the manifest name.
+# vcpkg package names allow hyphens but not underscores: fix up the manifest
+# name. The manifest's "version" field is the project's single source of
+# truth (CMakeLists.txt reads it before project()), so it is the only place a
+# version may be set.
 if [[ -f "$DEST/vcpkg.json" ]]; then
     VCPKG_NAME="${NAME//_/-}"
     perl -pi -e "s/\"name\": \"[^\"]+\"/\"name\": \"$VCPKG_NAME\"/" "$DEST/vcpkg.json"
 fi
 
-# C++ standard.
-perl -pi -e "s/CMAKE_CXX_STANDARD 17/CMAKE_CXX_STANDARD $STD/" "$DEST/CMakeLists.txt"
+# C++ standard (carried by the library target; see target_compile_features).
+perl -pi -e "s/cxx_std_17/cxx_std_$STD/" "$DEST/CMakeLists.txt"
 perl -pi -e "s/^Standard: c\+\+17/Standard: c++$STD/" "$DEST/.clang-format"
 
 # Swap the template README for the project README.

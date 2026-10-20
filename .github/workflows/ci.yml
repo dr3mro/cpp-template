@@ -43,6 +43,26 @@ jobs:
           cmake --build --preset release
           ctest --preset release
 
+  version:
+    name: version matches vcpkg.json (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Compare the CMake project version with vcpkg.json
+        # vcpkg.json is the single source of truth; the configure-time
+        # version.hpp records the version project() actually received, so a
+        # hard-coded VERSION in CMakeLists.txt (or a stale manifest) fails here.
+        run: |
+          cmake --preset debug-nosan -DMYAPP_BUILD_TESTS=OFF
+          manifest="$(sed -n 's/^[[:space:]]*"version": "\([^"]*\)",*/\1/p' vcpkg.json)"
+          project="$(grep -o 'kVersion = "[^"]*"' build/debug-nosan/generated/include/myapp/version.hpp | sed 's/.*"\(.*\)"/\1/')"
+          echo "vcpkg.json: '$manifest'  CMake project: '$project'"
+          if [ "$manifest" != "$project" ]; then
+            echo "::error::vcpkg.json version ($manifest) and the CMake project version ($project) disagree"
+            exit 1
+          fi
+
   tsan:
     name: thread sanitizer (ubuntu-latest)
     runs-on: ubuntu-latest

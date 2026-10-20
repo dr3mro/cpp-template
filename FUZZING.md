@@ -234,7 +234,7 @@ It's also worth adding a normal doctest case for the same input in
   `assert(Decode(Encode(x)) == x)`.
 - **Split the input when a function needs several values.** Use the first byte as an
   option or index and the rest as data, like `fuzz_greeter.cpp` does. LLVM's
-  `FuzzedDataProvider` (`#include <fuzzer/FuzzedDataProvider.h>`) does this for
+  `FuzzedDataProvider` (from the header `fuzzer/FuzzedDataProvider.h`) does this for
   integers, strings and booleans.
 - **Give it good seeds.** A few small, valid examples (a real config file, a sample
   packet) help it reach deep code much faster than starting from nothing.

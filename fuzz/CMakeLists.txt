@@ -16,9 +16,10 @@ foreach(fuzz_source IN LISTS MYAPP_FUZZ_SOURCES)
     # Only the fuzz binaries get the libFuzzer driver (main()).
     target_compile_options(${fuzz_name} PRIVATE -fsanitize=fuzzer)
     target_link_options(${fuzz_name} PRIVATE -fsanitize=fuzzer)
-    # Keep the binaries at the top of the build dir so fuzz-run finds them.
+    # Keep the binaries at the top of this project's build dir so fuzz-run
+    # finds them (also when built as a subproject).
     set_target_properties(${fuzz_name} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
     list(APPEND MYAPP_FUZZ_NAMES ${fuzz_name})
 endforeach()
 
@@ -35,10 +36,10 @@ if(MYAPP_FUZZ_NAMES)
                     "Fuzzing ${fuzz_name} for ${MYAPP_FUZZ_SECONDS}s..."
             # libFuzzer needs the writable corpus dir to exist before it runs.
             COMMAND ${CMAKE_COMMAND} -E make_directory
-                    ${CMAKE_BINARY_DIR}/fuzz-corpus/${fuzz_name}
+                    ${PROJECT_BINARY_DIR}/fuzz-corpus/${fuzz_name}
             COMMAND $<TARGET_FILE:${fuzz_name}>
                     -max_total_time=${MYAPP_FUZZ_SECONDS}
-                    ${CMAKE_BINARY_DIR}/fuzz-corpus/${fuzz_name}
+                    ${PROJECT_BINARY_DIR}/fuzz-corpus/${fuzz_name}
                     ${CMAKE_CURRENT_SOURCE_DIR}/corpus/${fuzz_name})
     endforeach()
     add_custom_target(fuzz-run

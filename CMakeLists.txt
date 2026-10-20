@@ -1,36 +1,20 @@
 cmake_minimum_required(VERSION 3.25)
 
-# The coverage and fuzz presets need LLVM's clang (for llvm-profdata/llvm-cov and
-# libFuzzer). Pick it here, before project(), because the compiler cannot be
-# changed once the language is enabled. Only CMAKE_HOST_* is available this
-# early: APPLE and UNIX are defined by project().
-option(MYAPP_USE_LLVM_CLANG "Prefer Homebrew LLVM clang++ as the compiler" OFF)
-if(MYAPP_USE_LLVM_CLANG AND NOT DEFINED CMAKE_CXX_COMPILER)
-    find_program(MYAPP_LLVM_CLANGXX
-        NAMES clang++
-        HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
-    if(NOT MYAPP_LLVM_CLANGXX)
-        message(FATAL_ERROR
-            "MYAPP_USE_LLVM_CLANG is ON but clang++ was not found.\n"
-            "Install LLVM first: 'brew install llvm' (macOS) or "
-            "'apt install clang' (Linux).")
-    endif()
-    set(CMAKE_CXX_COMPILER "${MYAPP_LLVM_CLANGXX}" CACHE FILEPATH "C++ compiler")
-endif()
+# Everything here must run before project(): include it only above that call.
+# (PROJECT_SOURCE_DIR does not exist yet, hence CMAKE_CURRENT_LIST_DIR.)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/PreProject.cmake)
 
-# doctest is a vcpkg manifest *feature*, so it is only downloaded and installed
-# when the tests are actually built. The toolchain reads the manifest during
-# project(), so this has to happen before that call.
-option(MYAPP_BUILD_TESTS "Build the doctest unit tests" ON)
-if(MYAPP_BUILD_TESTS)
-    set(VCPKG_MANIFEST_FEATURES tests)
-endif()
+# The version has a single source of truth: the "version" field in vcpkg.json.
+# Read it here so the CMake project and the manifest can never disagree (CI
+# fails the build if they ever do).
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg.json" _myapp_vcpkg_manifest)
+string(JSON MYAPP_VERSION GET "${_myapp_vcpkg_manifest}" version)
 
-project(myapp VERSION 0.1.0 LANGUAGES CXX)
+project(myapp VERSION ${MYAPP_VERSION} LANGUAGES CXX)
 
 # ---- language ----
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# The C++ standard is a property of the library target (see below) so that the
+# app, tests, fuzzers, examples and downstream consumers all inherit it.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Generate compile_commands.json for clangd and clang-tidy.
@@ -49,43 +33,27 @@ include(cmake/Sanitizers.cmake)
 include(cmake/Hardening.cmake)
 include(cmake/Ccache.cmake)
 include(cmake/Version.cmake)
+include(cmake/ArchitectureDiagram.cmake)
 include(cmake/Tooling.cmake)
 
 # ---- library: everything under src/, so tests and the app can both link it ----
-file(GLOB_RECURSE MYAPP_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE MYAPP_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_library(${PROJECT_NAME}_lib ${MYAPP_SOURCES})
+# C++17 travels with the library: everything that links it (app, tests,
+# fuzzers, examples) and every downstream consumer of the installed package
+# inherits the requirement.
+target_compile_features(${PROJECT_NAME}_lib PUBLIC cxx_std_17)
 # Refresh the build-time version header before the library compiles.
 add_dependencies(${PROJECT_NAME}_lib myapp_version)
 # BUILD_INTERFACE keeps the source path out of the installed export set.
 target_include_directories(${PROJECT_NAME}_lib PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 # PUBLIC + BUILD_INTERFACE: the warning/sanitizer options (and the generated
 # include dir they carry) reach the library and every in-tree consumer, but the
 # BUILD_INTERFACE wrapper keeps myapp_options out of the exported package.
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC $<BUILD_INTERFACE:myapp_options>)
-# Exported as <name>::<name> so consumers write a clean target_link_libraries.
-# OUTPUT_NAME drops the _lib suffix from the installed file (libmyapp.a), and
-# VERSION/SOVERSION give shared builds a soname. Hidden visibility means only
-# MYAPP_EXPORT classes are visible from a shared library.
-set_target_properties(${PROJECT_NAME}_lib PROPERTIES
-    EXPORT_NAME ${PROJECT_NAME}
-    OUTPUT_NAME ${PROJECT_NAME}
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_VERSION_MAJOR}
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN ON)
-
-# Export header: produces <name>_EXPORT, empty for static builds and
-# import/export annotations for shared ones (needed for Windows DLLs).
-include(GenerateExportHeader)
-generate_export_header(${PROJECT_NAME}_lib
-    BASE_NAME MYAPP
-    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/${PROJECT_NAME}_export.h)
-get_target_property(_myapp_lib_type ${PROJECT_NAME}_lib TYPE)
-if(_myapp_lib_type STREQUAL "STATIC_LIBRARY")
-    target_compile_definitions(${PROJECT_NAME}_lib PUBLIC MYAPP_STATIC_DEFINE)
-endif()
+include(${PROJECT_SOURCE_DIR}/cmake/ExportHeader.cmake)
 
 # ---- executable (skipped in library mode) ----
 if(NOT MYAPP_LIBRARY_MODE)
@@ -108,44 +76,5 @@ endif()
 
 # ---- install, package config and CPack (library mode only) ----
 if(MYAPP_LIBRARY_MODE)
-    include(GNUInstallDirs)
-    include(CMakePackageConfigHelpers)
-
-    install(TARGETS ${PROJECT_NAME}_lib
-        EXPORT ${PROJECT_NAME}Targets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-    # Public headers plus the generated version and export headers (skip the
-    # .in template).
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-            PATTERN "*.in" EXCLUDE)
-    install(FILES
-        ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/version.hpp
-        ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/${PROJECT_NAME}_export.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
-
-    install(EXPORT ${PROJECT_NAME}Targets
-        FILE ${PROJECT_NAME}Targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
-
-    configure_package_config_file(
-        ${CMAKE_SOURCE_DIR}/cmake/Config.cmake.in
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
-    write_basic_package_version_file(
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        COMPATIBILITY SameMajorVersion)
-    install(FILES
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
-
-    set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-    set(CPACK_GENERATOR "TGZ")
-    include(CPack)
+    include(${PROJECT_SOURCE_DIR}/cmake/Install.cmake)
 endif()

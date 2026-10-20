@@ -28,7 +28,8 @@
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "MYAPP_SANITIZER": "address"
+        "MYAPP_SANITIZER": "address",
+        "MYAPP_GENERATE_ARCHITECTURE": "ON"
       }
     },
     {
