@@ -55,3 +55,10 @@ compile_commands.json
 *.tmp
 *.temp
 *~
+
+# libFuzzer findings (written to the directory the fuzzer runs in)
+crash-*
+leak-*
+timeout-*
+oom-*
+slow-unit-*

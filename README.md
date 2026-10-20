@@ -111,7 +111,7 @@ If CMake reports `VCPKG_ROOT is empty`, the `export VCPKG_ROOT=...` line is miss
 - **vcpkg dependencies**: pinned to a registry baseline, declared in `vcpkg.json` and installed by vcpkg at configure time, wired into every preset, with binary caching in CI.
 - **doctest unit tests**: installed by vcpkg from `vcpkg.json` as the `tests` feature, with each `TEST_CASE` registered in CTest.
 - **Sanitizers**: `debug` runs ASan + UBSan, `tsan` runs ThreadSanitizer; both are probed before use so unsupported flags are skipped.
-- **Fuzzing**: a libFuzzer harness under `fuzz/` with seed corpora and a `fuzz-run` target.
+- **Fuzzing**: a libFuzzer harness under `fuzz/` with seed corpora and a `fuzz-run` target, plus a step-by-step tutorial in [FUZZING.md](FUZZING.md).
 - **Coverage**: the `coverage` preset plus a `coverage` target that writes a text summary and HTML to `build/coverage/html/`.
 - **Security hardening**: defence-in-depth flags for optimised builds, documented in `SECURITY.md`.
 - **clangd ready**: `build/compile_commands.json` always points at the last configured preset.
@@ -152,7 +152,7 @@ In Zed, run tasks with `Cmd+Shift+P` → **task: spawn** (for example `test`), a
 | `tsan` | Debug build with ThreadSanitizer | `build/tsan/` |
 | `ci` | Warnings-as-errors build, used by CI | `build/ci/` |
 | `coverage` | Instrumented build for coverage reporting | `build/coverage/` |
-| `fuzz` | Release build with the libFuzzer harness | `build/fuzz/` |
+| `fuzz` | Debug build with libFuzzer, ASan and UBSan (LLVM clang) | `build/fuzz/` |
 | `docs` | Release build for Doxygen, no tests or packages | `build/docs/` |
 | `vs2022` / `vs2026` | Visual Studio solution (Windows only) | `build/vs20xx/` |
 

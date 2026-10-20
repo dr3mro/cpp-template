@@ -58,7 +58,7 @@ ctest --preset debug                                        # run unit tests
 | `tsan` | Debug build with ThreadSanitizer | `build/tsan/` |
 | `ci` | Warnings-as-errors build, used by CI | `build/ci/` |
 | `coverage` | Instrumented build for coverage reporting | `build/coverage/` |
-| `fuzz` | Release build with the libFuzzer harness | `build/fuzz/` |
+| `fuzz` | Debug build with libFuzzer, ASan and UBSan (LLVM clang) | `build/fuzz/` |
 | `docs` | Release build for Doxygen, no tests or packages | `build/docs/` |
 | `vs2022` / `vs2026` | Visual Studio solution (Windows only) | `build/vs20xx/` |
 
@@ -74,6 +74,9 @@ cmake --build --preset fuzz --target fuzz-run   # runs each harness for MYAPP_FU
 
 Seed inputs live in `fuzz/corpus/`. Set `-DMYAPP_FUZZ_SECONDS=<n>` to change
 how long each harness runs.
+
+New to fuzzing? [FUZZING.md](FUZZING.md) is a step-by-step tutorial: running the
+fuzzer, finding a real buffer overflow, reproducing the crash and keeping it fixed.
 
 ## Coverage
 
