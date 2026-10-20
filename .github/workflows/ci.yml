@@ -145,8 +145,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
-      - name: Install current clang-format (.clang-format needs v20+)
-        run: pipx install clang-format
+      - name: Install clang-format (.clang-format needs v20+)
+        # Pinned to match the pre-commit hook rev, so CI and the local hook
+        # agree on formatting. Keep both in step.
+        run: pipx install clang-format==21.1.5
       - name: Check formatting
         # The format-check target owns the file list, so CI and a local run
         # cannot drift apart. Tests are off, so doctest is not downloaded.

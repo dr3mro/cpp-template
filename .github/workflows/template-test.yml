@@ -31,7 +31,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y clang llvm libclang-rt-dev clang-tidy doxygen graphviz
-          pipx install clang-format
+          # Pinned to match the pre-commit hook rev, so CI and the local hook
+          # agree on formatting. Keep both in step.
+          pipx install clang-format==21.1.5
 
       - name: Install extra tools (macOS)
         if: runner.os == 'macOS'
