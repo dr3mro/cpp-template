@@ -34,12 +34,17 @@ All notable changes to this template are documented here. The format follows
 - `--github-user` in `new-project.sh` fills in the GitHub Pages docs link.
 - README tutorials for linking a library to an app (installed or from source)
   and for adding dependencies; a corpus guide in `FUZZING.md`.
-- A wiki with in-depth guides (recipes, testing, debugging and sanitizers,
-  CMake internals, CI and releases, maintaining the template, FAQ). Its
-  source lives in `wiki/` and the `wiki` workflow publishes it.
+- A wiki with the full guides: getting started, creating a project, project
+  layout, building, editor setup, writing code, dependencies, the library +
+  app tutorial, testing, debugging and sanitizers, fuzzing, code quality,
+  documentation, recipes, options, security, CI and releases, CMake
+  internals, maintenance, troubleshooting, FAQ and a glossary. It is included
+  as a git submodule in `wiki/`.
 
 ### Changed
 
+- The README is now a short overview that links to the wiki; `FUZZING.md` and
+  the hardening details in `SECURITY.md` moved to the wiki.
 - The CMake build is split into one small, commented module per feature;
   `CMakeLists.txt` is now a table of contents. All options live in
   `cmake/Options.cmake`, the library in `src/CMakeLists.txt`.

@@ -58,14 +58,14 @@ else
         --exclude='./install' --exclude='./install-*' --exclude='./vcpkg_installed' \
         --exclude='./.cache' --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' \
         --exclude='./.github/workflows/template-test.yml' --exclude='./wiki' \
-        --exclude='./.github/workflows/wiki.yml' -cf - .) | (cd "$DEST" && tar -xf -)
+        --exclude='./.gitmodules' -cf - .) | (cd "$DEST" && tar -xf -)
 fi
 rm -f "$DEST/scripts/new-project.sh"
 rmdir "$DEST/scripts" 2>/dev/null || true
 rm -f "$DEST/.github/workflows/template-test.yml"
-# The wiki pages describe the template itself, so new projects start without
-# them (and without the workflow that publishes them).
-rm -rf "$DEST/wiki" "$DEST/.github/workflows/wiki.yml"
+# The wiki (a git submodule in wiki/) describes the template itself, so new
+# projects start without it.
+rm -rf "$DEST/wiki" "$DEST/.gitmodules"
 
 # Rename folders: include/myapp -> include/<name>, src/myapp -> src/<name>.
 mv "$DEST/include/myapp" "$DEST/include/$NAME"

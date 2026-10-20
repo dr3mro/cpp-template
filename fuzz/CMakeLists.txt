@@ -3,7 +3,7 @@
 #
 # Every fuzz/fuzz_<name>.cpp becomes an executable <name>, with its seed
 # corpus in fuzz/corpus/fuzz_<name>/. The `fuzz-run` target runs each one for
-# MYAPP_FUZZ_SECONDS. See FUZZING.md.
+# MYAPP_FUZZ_SECONDS. Guide: https://github.com/dr3mro/cpp-template/wiki/Fuzzing
 #
 # Built when MYAPP_BUILD_FUZZERS is ON (the fuzz preset). Sanitizers.cmake
 # already compiles everything with -fsanitize=fuzzer-no-link,address,undefined;

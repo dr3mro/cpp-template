@@ -3,6 +3,7 @@
 One-paragraph description of what this project does.
 
 📖 **Documentation:** <https://@GITHUB_USER@.github.io/myapp/>
+📚 **Guides** (from the template this project was made with): <https://github.com/dr3mro/cpp-template/wiki>
 
 ## Features
 
@@ -114,8 +115,9 @@ Static and shared builds of `mathlib` (`-DBUILD_SHARED_LIBS=ON`) work the same
 way. To build `mathlib` from source as part of this project instead, replace
 steps 1, 2 and 4 with
 `add_subdirectory("${PROJECT_SOURCE_DIR}/../mathlib" "${PROJECT_BINARY_DIR}/mathlib")`
-in `cmake/Dependencies.cmake`. The template's README has the full,
-step-by-step tutorial.
+in `cmake/Dependencies.cmake`. The full, step-by-step
+[tutorial](https://github.com/dr3mro/cpp-template/wiki/Library-and-App-Tutorial)
+is in the template's wiki.
 
 ## If this is a library: using it from another project
 
@@ -153,8 +155,9 @@ cmake --preset fuzz && cmake --build --preset fuzz
 cmake --build --preset fuzz --target fuzz-run   # each fuzzer for MYAPP_FUZZ_SECONDS (10)
 ```
 
-New to fuzzing? [FUZZING.md](FUZZING.md) walks through writing a fuzz target,
-building a good corpus, and finding, reproducing and fixing a real bug.
+New to fuzzing? The [fuzzing guide](https://github.com/dr3mro/cpp-template/wiki/Fuzzing)
+walks through writing a fuzz target, building a good corpus, and finding,
+reproducing and fixing a real bug.
 
 ## Coverage, formatting, static analysis and docs
 
@@ -213,8 +216,9 @@ git tag v0.1.0 && git push origin v0.1.0
 
 ## Security
 
-Release builds are hardened (see [SECURITY.md](SECURITY.md) for the flags and
-for how to report a vulnerability).
+Release builds are hardened; the
+[Security guide](https://github.com/dr3mro/cpp-template/wiki/Security) lists the
+flags. To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## License
 
