@@ -33,12 +33,23 @@ UPPER="$(echo "$NAME" | tr '[:lower:]' '[:upper:]')"
 
 echo "Creating $NAME in $DEST (C++$STD)"
 mkdir -p "$DEST"
-# Copy everything except git history, build output and this script. The
-# template-test workflow only makes sense in the template repo, so leave it out.
-(cd "$TEMPLATE_DIR" && tar --exclude='./.git' --exclude='./build' --exclude='./docs' --exclude='./.cache' \
-    --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' \
-    --exclude='./.github/workflows/template-test.yml' -cf - .) | (cd "$DEST" && tar -xf -)
+# Copy only files git tracks, so build output, local installs and other ignored
+# clutter never leak into the new project. When the template is not a git
+# checkout (a plain zip download), fall back to a tar copy with the same kinds
+# of paths excluded. The template-test workflow only makes sense in the template
+# repo, so it is left out either way.
+if git -C "$TEMPLATE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$TEMPLATE_DIR" ls-files -z --cached --modified --exclude-standard \
+        | tar --null -T - -cf - | (cd "$DEST" && tar -xf -)
+else
+    (cd "$TEMPLATE_DIR" && tar --exclude='./.git' --exclude='./build' --exclude='./docs' \
+        --exclude='./install' --exclude='./install-*' --exclude='./vcpkg_installed' \
+        --exclude='./.cache' --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' \
+        --exclude='./.github/workflows/template-test.yml' -cf - .) | (cd "$DEST" && tar -xf -)
+fi
+rm -f "$DEST/scripts/new-project.sh"
 rmdir "$DEST/scripts" 2>/dev/null || true
+rm -f "$DEST/.github/workflows/template-test.yml"
 
 # Rename folders: include/myapp -> include/<name>, src/myapp -> src/<name>.
 mv "$DEST/include/myapp" "$DEST/include/$NAME"
