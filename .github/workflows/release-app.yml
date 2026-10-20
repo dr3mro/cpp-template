@@ -35,7 +35,9 @@ jobs:
           - os: linux
             arch: x86
             runner: ubuntu-latest
-            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS=-m32"
+            # -m32 does not reach vcpkg's triplet detection, so it would install
+            # x64-linux packages and fail at link time; name the triplet too.
+            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS=-m32 -DVCPKG_TARGET_TRIPLET=x86-linux"
             extension: ""
           - os: linux
             arch: arm64
