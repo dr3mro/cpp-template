@@ -39,6 +39,28 @@ endif()
 find_program(CLANG_FORMAT_EXE NAMES clang-format
              HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
 if(CLANG_FORMAT_EXE)
+    # The .clang-format file uses options that older clang-format versions do
+    # not understand, so refuse to define the targets rather than silently
+    # reformat with the wrong rules.
+    execute_process(
+        COMMAND ${CLANG_FORMAT_EXE} --version
+        OUTPUT_VARIABLE _myapp_clang_format_version
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(_myapp_clang_format_version MATCHES "([0-9]+)\\.[0-9]+\\.[0-9]+")
+        set(_myapp_clang_format_major ${CMAKE_MATCH_1})
+    else()
+        set(_myapp_clang_format_major 0)
+    endif()
+    if(_myapp_clang_format_major LESS 20)
+        message(WARNING
+            "clang-format ${_myapp_clang_format_version} found at ${CLANG_FORMAT_EXE} "
+            "is too old: .clang-format needs 20+. The format and format-check "
+            "targets are not defined. Install LLVM 20+ (macOS: 'brew install llvm').")
+        unset(CLANG_FORMAT_EXE)
+    endif()
+endif()
+
+if(CLANG_FORMAT_EXE)
     add_custom_target(format
         COMMAND ${CLANG_FORMAT_EXE} -i ${MYAPP_ALL_FILES}
         COMMENT "Formatting sources with clang-format"
