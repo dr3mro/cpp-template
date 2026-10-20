@@ -2,10 +2,13 @@
 # that points clangd at whichever preset was configured last.
 
 # Expose the compilation database at build/ so clangd finds it whatever preset
-# was configured last. Skipped when the build directory *is* build/ (a plain
-# `cmake -B build` without a preset): the database is already there, and a link
-# onto itself would fail.
-if(NOT WIN32 AND NOT PROJECT_BINARY_DIR STREQUAL "${PROJECT_SOURCE_DIR}/build")
+# was configured last. Only for the top-level project: a parent project that
+# pulls this one in with add_subdirectory() should not have its source tree
+# touched. Skipped when the build directory *is* build/ (a plain `cmake -B
+# build` without a preset): the database is already there and a link onto
+# itself would fail.
+if(PROJECT_IS_TOP_LEVEL AND NOT WIN32
+   AND NOT PROJECT_BINARY_DIR STREQUAL "${PROJECT_SOURCE_DIR}/build")
     file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
     file(REMOVE ${PROJECT_SOURCE_DIR}/build/compile_commands.json)
     # CMAKE_BINARY_DIR on purpose: the generator writes a single compilation
