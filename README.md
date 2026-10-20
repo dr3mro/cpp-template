@@ -3,9 +3,8 @@
 A ready-to-use starting point for C++ console apps and libraries, built on
 CMake, Ninja and vcpkg. One command creates a new project that already has
 unit tests, sanitizers, fuzzing, code coverage, formatting, static analysis,
-documentation and CI wired up. It grew out of the Grocery (CS-210) project
-setup and is tuned for Zed, VS Code and clangd on an Apple Silicon Mac, but
-works on Linux and Windows too.
+documentation and CI wired up. It is tuned for Zed, VS Code and clangd on an
+Apple Silicon Mac, and works on Linux and Windows too.
 
 📖 **Documentation:** <https://dr3mro.github.io/cpp-template/>
 📚 **Wiki** (in-depth guides, recipes, FAQ): <https://github.com/dr3mro/cpp-template/wiki>

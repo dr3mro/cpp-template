@@ -4,7 +4,7 @@
 #   scripts/new-project.sh <name> [destination-dir] [--std 17|20|23] [--no-git] [--lib]
 #                          [--github-user <user>]
 #
-# <name> must be a valid C++ identifier in lower_snake_case (for example: grocery, bank_app).
+# <name> must be a valid C++ identifier in lower_snake_case (for example: inventory, bank_app).
 # It becomes the CMake project, the executable, the namespace and the include/<name>/ folder.
 # Pass --lib to generate an installable library package (with examples/) instead of an app.
 # Pass --github-user to fill in the README's GitHub Pages docs link
