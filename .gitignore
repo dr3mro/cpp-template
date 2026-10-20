@@ -20,9 +20,10 @@ CMakeUserPresets.json
 # Generated documentation
 /docs/
 
-# Generated diagrams (render with the `diagrams` / `class-diagrams` targets)
+# Generated diagrams. The hand-written diagrams/*.png are committed (README
+# references them); only Doxygen's class graphs under diagrams/classes/ are
+# regenerated and ignored.
 /diagrams/classes/
-/diagrams/*.png
 
 # Debugger and profiling output
 *.dSYM/

@@ -47,6 +47,15 @@ mv "$DEST/src/myapp" "$DEST/src/$NAME"
 # Replace the placeholder in every text file (perl works the same on macOS and Linux).
 find "$DEST" -type f ! -name '*.png' -print0 | xargs -0 perl -pi -e "s/MYAPP/$UPPER/g; s/myapp/$NAME/g"
 
+# Re-render the committed diagrams so the renamed .dot titles show up in the
+# PNGs (the copy kept the template's images).
+if command -v dot >/dev/null; then
+    for dot_file in "$DEST"/diagrams/*.dot; do
+        [[ -e "$dot_file" ]] || continue
+        dot -Tpng "$dot_file" -o "${dot_file%.dot}.png"
+    done
+fi
+
 # vcpkg package names allow hyphens but not underscores: fix up the manifest name.
 if [[ -f "$DEST/vcpkg.json" ]]; then
     VCPKG_NAME="${NAME//_/-}"
