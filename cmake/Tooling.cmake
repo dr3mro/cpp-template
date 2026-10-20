@@ -56,11 +56,14 @@ if(RUN_CLANG_TIDY_EXE)
                 # build/**/generated/include/<name>/ headers can never match;
                 # .clang-tidy's HeaderFilterRegex alone cannot express that
                 # exclusion in POSIX extended regex.
-                -header-filter=^${CMAKE_SOURCE_DIR}/(include|src)/myapp/
+                "-header-filter=^${CMAKE_SOURCE_DIR}/(include|src)/myapp/"
                 "${CMAKE_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-tidy on the project"
         VERBATIM)
+    # version.hpp is generated; make sure it exists before tidy compiles the
+    # sources (the CI tidy job builds this target without building the library).
+    add_dependencies(tidy myapp_version)
 endif()
 
 find_program(DOT_EXECUTABLE dot)
