@@ -39,7 +39,7 @@ jobs:
       - name: Build and test (Windows)
         if: runner.os == 'Windows'
         run: |
-          cmake --preset release
+          cmake --preset release -DMYAPP_WARNINGS_AS_ERRORS=ON
           cmake --build --preset release
           ctest --preset release
 
@@ -149,7 +149,7 @@ jobs:
         run: pipx install clang-format
       - name: Check formatting
         # The format-check target owns the file list, so CI and a local run
-        # cannot drift apart.
+        # cannot drift apart. Tests are off, so doctest is not downloaded.
         run: |
-          cmake --preset release
+          cmake --preset release -DMYAPP_BUILD_TESTS=OFF
           cmake --build --preset release --target format-check
