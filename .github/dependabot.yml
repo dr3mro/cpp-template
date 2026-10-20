@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+
+  # Advances the vcpkg builtin-baseline so dependencies stay current as a set.
+  - package-ecosystem: vcpkg
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps"

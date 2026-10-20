@@ -6,69 +6,35 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-binary-cache
+
 jobs:
-  test:
-    name: test (${{ matrix.os }})
+  build-and-test:
+    name: build-and-test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    env:
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-binary-cache
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-
     steps:
       - uses: actions/checkout@v5
-
-      - name: Install vcpkg (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          BASELINE="$(python3 -c 'import json;print(json.load(open("vcpkg.json"))["builtin-baseline"])')"
-          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
-          git -C "$HOME/vcpkg" fetch --quiet --depth 1 origin "$BASELINE"
-          git -C "$HOME/vcpkg" checkout --quiet FETCH_HEAD
-          "$HOME/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
-          echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
-          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
-
-      - name: Install vcpkg (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
-          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$env:USERPROFILE\vcpkg"
-          git -C "$env:USERPROFILE\vcpkg" fetch --quiet --depth 1 origin $baseline
-          git -C "$env:USERPROFILE\vcpkg" checkout --quiet FETCH_HEAD
-          & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
-          "VCPKG_ROOT=$env:USERPROFILE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
-
-      - name: Cache vcpkg binary packages
-        uses: actions/cache@v4
-        with:
-          path: vcpkg-binary-cache
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            vcpkg-${{ runner.os }}-
-
-      - name: Install Ninja (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y ninja-build
-
-      - name: Install Ninja (macOS)
-        if: runner.os == 'macOS'
-        run: brew install ninja
+      - uses: ./.github/actions/setup-vcpkg
 
       - name: Configure MSVC
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Build and test (sanitizers on Linux/macOS)
+      # The ci preset adds ASan/UBSan and turns warnings into errors.
+      - name: Build and test (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          cmake --preset debug
-          cmake --build --preset debug
-          ctest --preset debug
+          cmake --preset ci
+          cmake --build --preset ci
+          ctest --preset ci
 
       - name: Build and test (Windows)
         if: runner.os == 'Windows'
@@ -77,7 +43,74 @@ jobs:
           cmake --build --preset release
           ctest --preset release
 
+  tsan:
+    name: thread sanitizer (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-vcpkg
+      - run: |
+          cmake --preset tsan
+          cmake --build --preset tsan
+          ctest --preset tsan
+
+  coverage:
+    name: coverage (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-vcpkg
+
+      - name: Install LLVM (for llvm-profdata/llvm-cov)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y llvm
+
+      - name: Generate coverage report
+        run: |
+          cmake --preset coverage
+          cmake --build --preset coverage
+          cmake --build --preset coverage --target coverage
+
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-${{ matrix.os }}
+          path: build/coverage/html
+          if-no-files-found: ignore
+
+  tidy:
+    name: clang-tidy (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Install clang-tidy
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang-tidy
+      - name: Run clang-tidy
+        run: |
+          cmake --preset debug-nosan
+          cmake --build --preset debug-nosan --target tidy
+
+  fuzz:
+    name: fuzz (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Install LLVM (for a fuzzer-capable clang)
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y llvm
+      - name: Run fuzzers
+        run: |
+          cmake --preset fuzz -DMYAPP_FUZZ_SECONDS=30
+          cmake --build --preset fuzz
+          cmake --build --preset fuzz --target fuzz-run
+
   format:
+    name: format (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -85,4 +118,4 @@ jobs:
         run: pipx install clang-format
       - name: Check formatting
         run: |
-          find main.cpp include src tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format --dry-run --Werror
+          find main.cpp include src tests fuzz -name '*.cpp' -o -name '*.hpp' | xargs clang-format --dry-run --Werror

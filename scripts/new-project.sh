@@ -31,9 +31,11 @@ UPPER="$(echo "$NAME" | tr '[:lower:]' '[:upper:]')"
 
 echo "Creating $NAME in $DEST (C++$STD)"
 mkdir -p "$DEST"
-# Copy everything except git history, build output and this script.
+# Copy everything except git history, build output and this script. The
+# template-test workflow only makes sense in the template repo, so leave it out.
 (cd "$TEMPLATE_DIR" && tar --exclude='./.git' --exclude='./build' --exclude='./docs' --exclude='./.cache' \
-    --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' -cf - .) | (cd "$DEST" && tar -xf -)
+    --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' \
+    --exclude='./.github/workflows/template-test.yml' -cf - .) | (cd "$DEST" && tar -xf -)
 rmdir "$DEST/scripts" 2>/dev/null || true
 
 # Rename folders: include/myapp -> include/<name>, src/myapp -> src/<name>.

@@ -1,0 +1,35 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 3 * * 0"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: analyze (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+
+      - uses: ./.github/actions/setup-vcpkg
+
+      # CodeQL traces the build, so it has to run between init and analyze.
+      - name: Build
+        run: |
+          cmake --preset debug-nosan
+          cmake --build --preset debug-nosan
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3

@@ -1,0 +1,35 @@
+name: Template test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-binary-cache
+
+jobs:
+  generate-and-build:
+    # Only run in the template repository itself; generated projects carry a
+    # different name (and do not ship this workflow at all).
+    if: github.repository == 'dr3mro/cpp-template'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-vcpkg
+
+      - name: Generate a project from the template
+        run: ./scripts/new-project.sh ci_probe /tmp/ci_probe --std 20 --no-git
+
+      # The ci preset is warnings-as-errors + ASan, so this fails on any warning
+      # the template introduces.
+      - name: Build and test the generated project
+        working-directory: /tmp/ci_probe
+        run: |
+          cmake --preset ci
+          cmake --build --preset ci
+          ctest --preset ci
