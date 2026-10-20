@@ -63,7 +63,16 @@ target_include_directories(${PROJECT_NAME}_lib PUBLIC
 # BUILD_INTERFACE wrapper keeps myapp_options out of the exported package.
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC $<BUILD_INTERFACE:myapp_options>)
 # Exported as <name>::<name> so consumers write a clean target_link_libraries.
-set_target_properties(${PROJECT_NAME}_lib PROPERTIES EXPORT_NAME ${PROJECT_NAME})
+# OUTPUT_NAME drops the _lib suffix from the installed file (libmyapp.a), and
+# VERSION/SOVERSION give shared builds a soname. Hidden visibility means only
+# MYAPP_EXPORT classes are visible from a shared library.
+set_target_properties(${PROJECT_NAME}_lib PROPERTIES
+    EXPORT_NAME ${PROJECT_NAME}
+    OUTPUT_NAME ${PROJECT_NAME}
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON)
 
 # Export header: produces <name>_EXPORT, empty for static builds and
 # import/export annotations for shared ones (needed for Windows DLLs).
