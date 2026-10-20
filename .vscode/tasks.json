@@ -234,6 +234,57 @@
       ]
     },
     {
+      "label": "configure fuzz",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "fuzz"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "build fuzz",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "fuzz"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure fuzz"
+      ]
+    },
+    {
+      "label": "fuzz run",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "fuzz",
+        "--target",
+        "fuzz-run"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "build fuzz"
+      ]
+    },
+    {
       "label": "run",
       "type": "shell",
       "command": "./build/release/myapp",
