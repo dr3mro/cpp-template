@@ -84,6 +84,13 @@ endif()
 
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
+    # main.cpp is app-only; library mode would otherwise warn about a missing
+    # input file.
+    if(EXISTS ${CMAKE_SOURCE_DIR}/main.cpp)
+        set(MYAPP_DOXY_EXTRA_INPUT ${CMAKE_SOURCE_DIR}/main.cpp)
+    else()
+        set(MYAPP_DOXY_EXTRA_INPUT "")
+    endif()
     configure_file(${CMAKE_SOURCE_DIR}/Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
     add_custom_target(docs
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile

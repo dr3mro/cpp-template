@@ -64,8 +64,54 @@ mv "$DEST/PROJECT_README.md" "$DEST/README.md"
 if [[ $LIB -eq 1 ]]; then
     perl -pi -e 's/(option\(\w+_LIBRARY_MODE "[^"]*" )OFF\b/${1}ON/' "$DEST/CMakeLists.txt"
     rm -f "$DEST/main.cpp"
+
+    # A library has no executable, so drop the run tasks and the app debug
+    # config. Zed's tasks.json keeps one object per line; filter those lines.
+    python3 - "$DEST" "$NAME" <<'PY'
+import json, sys, pathlib
+
+dest, name = pathlib.Path(sys.argv[1]), sys.argv[2]
+
+tasks = dest / ".zed" / "tasks.json"
+if tasks.exists():
+    drop = {"run", "run debug"}
+    kept = [ln for ln in tasks.read_text().splitlines()
+            if not any(f'"label": "{d}"' in ln for d in drop)]
+    tasks.write_text("\n".join(kept) + "\n")
+
+def drop_entries(path, key, unwanted):
+    p = pathlib.Path(path)
+    if not p.exists():
+        return
+    items = json.loads(p.read_text())
+    items = [it for it in items if it.get(key) not in unwanted]
+    p.write_text(json.dumps(items, indent=2) + "\n")
+
+drop_entries(dest / ".zed" / "debug.json", "label", {f"Debug {name}"})
+
+vscode_tasks = dest / ".vscode" / "tasks.json"
+if vscode_tasks.exists():
+    data = json.loads(vscode_tasks.read_text())
+    data["tasks"] = [t for t in data["tasks"] if t.get("label") != "run"]
+    vscode_tasks.write_text(json.dumps(data, indent=2) + "\n")
+
+launch = dest / ".vscode" / "launch.json"
+if launch.exists():
+    data = json.loads(launch.read_text())
+    data["configurations"] = [c for c in data["configurations"] if c.get("name") != f"Debug {name}"]
+    launch.write_text(json.dumps(data, indent=2) + "\n")
+PY
 else
     rm -rf "$DEST/examples"
+fi
+
+# Keep only the release workflow that matches the mode, named release.yml.
+if [[ $LIB -eq 1 ]]; then
+    rm -f "$DEST/.github/workflows/release-app.yml"
+    mv "$DEST/.github/workflows/release-lib.yml" "$DEST/.github/workflows/release.yml"
+else
+    rm -f "$DEST/.github/workflows/release-lib.yml"
+    mv "$DEST/.github/workflows/release-app.yml" "$DEST/.github/workflows/release.yml"
 fi
 
 if [[ $GIT -eq 1 ]] && command -v git >/dev/null; then
