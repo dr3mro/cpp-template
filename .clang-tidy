@@ -19,5 +19,8 @@ Checks: >
   -performance-avoid-endl
 
 WarningsAsErrors: ''
+# Only analyse our own headers under include/ and src/ (the trailing slash
+# plus a word boundary keeps the generated include/<name>/ folder out).
 HeaderFilterRegex: '.*/(include|src)/myapp/.*'
+ExcludeHeaderFilterRegex: '.*/generated/.*'
 FormatStyle: file

@@ -91,8 +91,10 @@ jobs:
       - name: Install clang-tidy
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang-tidy
       - name: Run clang-tidy
+        # MYAPP_TIDY_WERROR makes findings fail the build; .clang-tidy keeps
+        # warnings-as-errors off so editors still show them as warnings.
         run: |
-          cmake --preset debug-nosan
+          cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON
           cmake --build --preset debug-nosan --target tidy
 
   fuzz:

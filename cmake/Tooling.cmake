@@ -43,8 +43,15 @@ endif()
 
 find_program(RUN_CLANG_TIDY_EXE NAMES run-clang-tidy run-clang-tidy.py)
 if(RUN_CLANG_TIDY_EXE)
+    # WarningsAsErrors stays '' in .clang-tidy so editors keep showing warnings;
+    # CI turns this ON to make findings fail the build.
+    option(MYAPP_TIDY_WERROR "Fail the tidy target on clang-tidy findings" OFF)
+    set(_myapp_tidy_args "")
+    if(MYAPP_TIDY_WERROR)
+        list(APPEND _myapp_tidy_args "-warnings-as-errors=*")
+    endif()
     add_custom_target(tidy
-        COMMAND ${RUN_CLANG_TIDY_EXE} -quiet -p ${CMAKE_BINARY_DIR} "${CMAKE_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
+        COMMAND ${RUN_CLANG_TIDY_EXE} -quiet ${_myapp_tidy_args} -p ${CMAKE_BINARY_DIR} "${CMAKE_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-tidy on the project"
         VERBATIM)
