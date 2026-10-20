@@ -18,26 +18,83 @@ Add a shell alias so it is one word:
 echo 'alias newcpp="$HOME/Templates/cpp-template/scripts/new-project.sh"' >> ~/.zshrc
 ```
 
-## One-time vcpkg setup
+## Requirements
 
-Dependencies are managed with [vcpkg](https://vcpkg.io) in manifest mode (`vcpkg.json`). Every preset hands the vcpkg toolchain to CMake, so `VCPKG_ROOT` must point at a bootstrapped vcpkg clone:
+- CMake 3.21+
+- Ninja
+- A C++ compiler (Clang, GCC or MSVC)
+- vcpkg with `VCPKG_ROOT` set (dependencies are declared in `vcpkg.json`)
+- Optional: clang-format and clang-tidy (LLVM), Doxygen, Graphviz
+
+On macOS: `brew install ninja cmake pkg-config llvm doxygen graphviz`
+
+Dependencies are managed with [vcpkg](https://vcpkg.io) in manifest mode. The packages (currently doctest) are listed in `vcpkg.json` and installed automatically by vcpkg when CMake configures. `CMakePresets.json` hands the toolchain to CMake with `"toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"`, so `VCPKG_ROOT` must point at a bootstrapped vcpkg clone before you configure.
+
+### One-time machine setup
+
+Install vcpkg once per machine, and install Ninja with Homebrew:
 
 ```bash
-git clone --depth 1 https://github.com/microsoft/vcpkg.git ~/vcpkg
-~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
-echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.zshrc
+git clone https://github.com/microsoft/vcpkg ~/.vcpkg
+~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics
+brew install ninja cmake
 ```
+
+Add this to `~/.zshrc`:
+
+```bash
+export VCPKG_ROOT="$HOME/.vcpkg"
+export PATH="$VCPKG_ROOT:$PATH"
+```
+
+Then open a new terminal, or run `source ~/.zshrc`.
 
 On Windows, clone vcpkg anywhere, run `bootstrap-vcpkg.bat` and set the `VCPKG_ROOT` user environment variable (the Visual Studio presets need it outside a shell). If editor tasks fail to find vcpkg, add the export to `~/.zshenv` as well — non-interactive shells (which is what VS Code and Zed tasks run) read that file, not `.zshrc`.
 
-To add a library, list it in `vcpkg.json` and consume it with `find_package()` — for example `"dependencies": ["fmt"]`, then `find_package(fmt CONFIG REQUIRED)` and `target_link_libraries(myapp_lib PUBLIC fmt::fmt)`. The next configure installs it automatically.
+## Adding a library
+
+Add the package name to the `dependencies` array in `vcpkg.json`, for example `"fmt"`:
+
+```json
+"dependencies": [
+  "doctest",
+  "fmt"
+]
+```
+
+In `CMakeLists.txt`, find the package and link it to your library:
+
+```cmake
+find_package(fmt CONFIG REQUIRED)
+target_link_libraries(<name>_lib PUBLIC fmt::fmt)
+```
+
+Re-run `cmake --preset debug`. The first configure downloads and builds the library, which can take a few minutes.
+
+Run `vcpkg search <name>` to find package names. After a package installs, vcpkg prints the exact `find_package` and `target_link_libraries` lines to use.
+
+## Troubleshooting
+
+```text
+CMake Error ... Could not find toolchain file:
+"/Users/<you>/.vcpkg/scripts/buildsystems/vcpkg.cmake"
+CMake was unable to find a build program corresponding to "Ninja".
+```
+
+This means vcpkg is not installed at `$VCPKG_ROOT`. The Ninja message is only a side effect of the missing toolchain file. Run the one-time machine setup above, then start from a clean build folder:
+
+```bash
+rm -rf build && cmake --preset debug
+```
+
+If CMake reports `VCPKG_ROOT is empty`, the `export VCPKG_ROOT=...` line is missing from `~/.zshrc`, or the terminal was opened before you added it. Add the line and open a new terminal.
 
 ## What you get
 
 - **CMake presets**: `release`, `debug` (ASan + UBSan), `debug-nosan` (for the debugger) and Visual Studio 2022/2026.
 - **Library + executable split**: code in `src/` builds into `<name>_lib`, so `main.cpp` and the tests both link it.
-- **vcpkg dependencies**: manifest mode (`vcpkg.json`) wired into every preset, with binary caching in CI.
-- **doctest unit tests**: installed by vcpkg, with each `TEST_CASE` registered in CTest.
+- **vcpkg dependencies**: declared in `vcpkg.json` and installed by vcpkg at configure time, wired into every preset, with binary caching in CI.
+- **doctest unit tests**: installed by vcpkg from `vcpkg.json`, with each `TEST_CASE` registered in CTest.
 - **clangd ready**: `build/compile_commands.json` always points at the last configured preset.
 - **Your style and checks**: the Grocery `.clang-format` (Microsoft/Allman, 4 spaces) and `.clang-tidy` rules.
 - **Tooling targets**: `format`, `format-check`, `tidy`, `docs` (Doxygen), `class-diagrams` (Doxygen + Graphviz) and `diagrams` (Graphviz).
