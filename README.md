@@ -100,12 +100,12 @@ echo 'alias newcpp="$HOME/Templates/cpp-template/scripts/new-project.sh"' >> ~/.
 
 ### App or library?
 
-| | App (default) | Library (`--lib`) |
-| --- | --- | --- |
-| What you get | an executable built from `main.cpp` | an installable package other projects can use |
-| Your code goes in | `src/` and `include/` (built into `<name>_lib`) | the same |
-| Extra files | `main.cpp` | `examples/` (a tiny program that uses the installed library) |
-| `cmake --install` puts | the executable in `bin/` | the library, headers and CMake package files |
+|                        | App (default)                                   | Library (`--lib`)                                            |
+| ---------------------- | ----------------------------------------------- | ------------------------------------------------------------ |
+| What you get           | an executable built from `main.cpp`             | an installable package other projects can use                |
+| Your code goes in      | `src/` and `include/` (built into `<name>_lib`) | the same                                                     |
+| Extra files            | `main.cpp`                                      | `examples/` (a tiny program that uses the installed library) |
+| `cmake --install` puts | the executable in `bin/`                        | the library, headers and CMake package files                 |
 
 In both modes all real code lives in a library (`<name>_lib`), so the app,
 the tests and the fuzzers all test the exact same code.
@@ -123,17 +123,17 @@ ctest --preset debug          # 3. test: run every unit test
 ./build/debug/<name>          # 4. run the app
 ```
 
-| Preset | Use it for | Output folder |
-| --- | --- | --- |
-| `debug` | everyday development: debug info plus AddressSanitizer and UndefinedBehaviorSanitizer, which stop the program at memory errors and undefined behaviour | `build/debug/` |
-| `debug-nosan` | stepping through code in the debugger (sanitizers off) | `build/debug-nosan/` |
-| `release` | the optimised, hardened build you ship | `build/release/` |
-| `tsan` | finding data races with ThreadSanitizer | `build/tsan/` |
-| `ci` | what CI builds: like `debug`, but every warning is an error | `build/ci/` |
-| `coverage` | measuring which lines the tests run (needs clang) | `build/coverage/` |
-| `fuzz` | fuzzing with libFuzzer (needs clang) | `build/fuzz/` |
-| `docs` | generating the documentation site | `build/docs/` |
-| `vs2022` / `vs2026` | a Visual Studio solution (Windows only) | `build/vs20xx/` |
+| Preset              | Use it for                                                                                                                                             | Output folder        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- |
+| `debug`             | everyday development: debug info plus AddressSanitizer and UndefinedBehaviorSanitizer, which stop the program at memory errors and undefined behaviour | `build/debug/`       |
+| `debug-nosan`       | stepping through code in the debugger (sanitizers off)                                                                                                 | `build/debug-nosan/` |
+| `release`           | the optimised, hardened build you ship                                                                                                                 | `build/release/`     |
+| `tsan`              | finding data races with ThreadSanitizer                                                                                                                | `build/tsan/`        |
+| `ci`                | what CI builds: like `debug`, but every warning is an error                                                                                            | `build/ci/`          |
+| `coverage`          | measuring which lines the tests run (needs clang)                                                                                                      | `build/coverage/`    |
+| `fuzz`              | fuzzing with libFuzzer (needs clang)                                                                                                                   | `build/fuzz/`        |
+| `docs`              | generating the documentation site                                                                                                                      | `build/docs/`        |
+| `vs2022` / `vs2026` | a Visual Studio solution (Windows only)                                                                                                                | `build/vs20xx/`      |
 
 At the end of every configure, CMake prints a short summary of what it will
 build (mode, compiler, sanitizer, tests, install folder, ...).
@@ -250,44 +250,52 @@ Three small edits:
 
 1. **Find it.** At the end of `cmake/Dependencies.cmake`, add:
 
-   ```cmake
-   calc_find_dependency(mathlib CONFIG)
-   ```
+    ```cmake
+    calc_find_dependency(mathlib CONFIG)
+    ```
 
-   (`calc_find_dependency` is the template's helper; the prefix is always your
-   project's name.)
+    (`calc_find_dependency` is the template's helper; the prefix is always your
+    project's name.)
 
 2. **Link it.** In `src/CMakeLists.txt`, after the comment that mentions
    `fmt::fmt`, add:
 
-   ```cmake
-   target_link_libraries(${PROJECT_NAME}_lib PUBLIC mathlib::mathlib)
-   ```
+    ```cmake
+    target_link_libraries(${PROJECT_NAME}_lib PUBLIC mathlib::mathlib)
+    ```
 
-   Linking it to `calc_lib` (not only to the app) means your code in `src/`,
-   `main.cpp` and the tests can all use it.
+    Linking it to `calc_lib` (not only to the app) means your code in `src/`,
+    `main.cpp` and the tests can all use it.
 
 3. **Say where it is installed.** Create `CMakeUserPresets.json` in the `calc`
    folder. It holds settings for your machine only and is ignored by git:
 
-   ```json
-   {
-     "version": 6,
-     "configurePresets": [
-       {
-         "name": "dev",
-         "inherits": "debug",
-         "cacheVariables": { "CMAKE_PREFIX_PATH": "${sourceDir}/../mathlib/build/install/release" }
-       }
-     ],
-     "buildPresets": [{ "name": "dev", "configurePreset": "dev" }],
-     "testPresets": [{ "name": "dev", "configurePreset": "dev", "output": { "outputOnFailure": true } }]
-   }
-   ```
+    ```json
+    {
+        "version": 6,
+        "configurePresets": [
+            {
+                "name": "dev",
+                "inherits": "debug",
+                "cacheVariables": {
+                    "CMAKE_PREFIX_PATH": "${sourceDir}/../mathlib/build/install/release"
+                }
+            }
+        ],
+        "buildPresets": [{ "name": "dev", "configurePreset": "dev" }],
+        "testPresets": [
+            {
+                "name": "dev",
+                "configurePreset": "dev",
+                "output": { "outputOnFailure": true }
+            }
+        ]
+    }
+    ```
 
-   `CMAKE_PREFIX_PATH` is the list of folders CMake searches for packages. The
-   new `dev` preset is the normal `debug` preset plus that path. (For a one-off
-   build you can pass `-DCMAKE_PREFIX_PATH=...` on the command line instead.)
+    `CMAKE_PREFIX_PATH` is the list of folders CMake searches for packages. The
+    new `dev` preset is the normal `debug` preset plus that path. (For a one-off
+    build you can pass `-DCMAKE_PREFIX_PATH=...` on the command line instead.)
 
 ### Step 5: use it
 
@@ -339,11 +347,11 @@ when it is used this way.
 A **dependency** is someone else's library that your code uses. Adding one
 always takes the same three steps, and each one lives in a fixed place:
 
-| Step | File | Why |
-| --- | --- | --- |
-| 1. Declare it | `vcpkg.json` | vcpkg downloads and builds it for you, at a pinned version |
-| 2. Find it | `cmake/Dependencies.cmake` | CMake locates the installed package |
-| 3. Link it | `src/CMakeLists.txt` | your library (and everything built on it) can use it |
+| Step          | File                       | Why                                                        |
+| ------------- | -------------------------- | ---------------------------------------------------------- |
+| 1. Declare it | `vcpkg.json`               | vcpkg downloads and builds it for you, at a pinned version |
+| 2. Find it    | `cmake/Dependencies.cmake` | CMake locates the installed package                        |
+| 3. Link it    | `src/CMakeLists.txt`       | your library (and everything built on it) can use it       |
 
 Example with [fmt](https://fmt.dev), a popular formatting library:
 
@@ -387,7 +395,7 @@ name and target to use.
   library needs it too.
 
 For a **library project**, a PUBLIC dependency needs one more word, so that
-programs using your *installed* library also find it:
+programs using your _installed_ library also find it:
 
 ```cmake
 bank_lib_find_dependency(fmt PUBLIC CONFIG)                        # cmake/Dependencies.cmake
@@ -423,7 +431,7 @@ into the installed package. Without it, other projects fail with
 A fuzzer feeds your code millions of generated inputs and stops at the first
 crash, memory error or undefined behaviour, finding bugs that unit tests miss.
 Every `fuzz/fuzz_<name>.cpp` file becomes a fuzzer, and its starting inputs
-(the *seed corpus*) go in `fuzz/corpus/fuzz_<name>/`.
+(the _seed corpus_) go in `fuzz/corpus/fuzz_<name>/`.
 
 ```bash
 cmake --preset fuzz && cmake --build --preset fuzz
@@ -437,16 +445,16 @@ and growing a corpus, finding a real buffer overflow, reproducing and fixing it.
 
 Run these "tool targets" with `cmake --build --preset <preset> --target <target>`:
 
-| Target | Preset | What it does |
-| --- | --- | --- |
-| `coverage` | `coverage` | runs the tests and shows which lines they executed; HTML report in `build/coverage/html/index.html` |
-| `format` | any | rewrites every source file in the project style (`.clang-format`, needs clang-format 20+) |
-| `format-check` | any | fails if a file is not formatted (used by CI) |
-| `tidy` | any | runs clang-tidy, a static analyser that flags bug-prone code (`.clang-tidy`) |
-| `docs` | `docs` | builds the documentation site into `docs/` |
-| `fuzz-run` | `fuzz` | runs every fuzzer for `MYAPP_FUZZ_SECONDS` |
-| `package` | `release` | makes a `.tar.gz` of the installed files (CPack) |
-| `distclean` | any | deletes every generated folder |
+| Target         | Preset     | What it does                                                                                        |
+| -------------- | ---------- | --------------------------------------------------------------------------------------------------- |
+| `coverage`     | `coverage` | runs the tests and shows which lines they executed; HTML report in `build/coverage/html/index.html` |
+| `format`       | any        | rewrites every source file in the project style (`.clang-format`, needs clang-format 20+)           |
+| `format-check` | any        | fails if a file is not formatted (used by CI)                                                       |
+| `tidy`         | any        | runs clang-tidy, a static analyser that flags bug-prone code (`.clang-tidy`)                        |
+| `docs`         | `docs`     | builds the documentation site into `docs/`                                                          |
+| `fuzz-run`     | `fuzz`     | runs every fuzzer for `MYAPP_FUZZ_SECONDS`                                                          |
+| `package`      | `release`  | makes a `.tar.gz` of the installed files (CPack)                                                    |
+| `distclean`    | any        | deletes every generated folder                                                                      |
 
 **Documentation.** One command configures and builds the docs:
 
@@ -472,31 +480,31 @@ step lives in its own small file under `cmake/`. Every file starts with a
 comment explaining what it does and which options it reads, so you can read
 any one of them on its own.
 
-| File | What it does |
-| --- | --- |
-| `CMakeLists.txt` | the table of contents: includes the modules below in order and defines the app |
-| `src/CMakeLists.txt` | the library `<name>_lib` (alias `<name>::<name>`), its C++ standard and headers |
-| `tests/CMakeLists.txt` | the doctest test executable, each `TEST_CASE` registered with CTest |
-| `fuzz/CMakeLists.txt` | one libFuzzer binary per `fuzz_*.cpp`, and the `fuzz-run` target |
-| `examples/CMakeLists.txt` | library mode: a stand-alone program that uses the installed package |
-| `cmake/Helpers.cmake` | shared functions: read the version, find LLVM tools, `<name>_find_dependency()` |
-| `cmake/PreProject.cmake` | before `project()`: compiler choice, vcpkg toolchain, test feature |
-| `cmake/Options.cmake` | every `MYAPP_*` option, with its description |
-| `cmake/ProjectDefaults.cmake` | C++ dialect, default build type, PIC/PIE, install folder |
-| `cmake/Warnings.cmake` | compiler warnings |
-| `cmake/Sanitizers.cmake` | ASan/UBSan, TSan, MSan and fuzzing instrumentation |
-| `cmake/Hardening.cmake` | security flags for release builds |
-| `cmake/Coverage.cmake` | coverage instrumentation and the `coverage` target |
-| `cmake/Ccache.cmake` | compiler caching with ccache |
-| `cmake/Version.cmake`, `WriteVersion.cmake` | the generated `<name>/version.hpp` (version + git hash) |
-| `cmake/ExportHeader.cmake` | shared-library settings and `<name>_export.h` |
-| `cmake/Dependencies.cmake` | **you edit this**: third-party packages |
-| `cmake/CompileCommands.cmake` | the `build/compile_commands.json` link for clangd |
-| `cmake/Format.cmake`, `Tidy.cmake` | the `format`, `format-check` and `tidy` targets |
-| `cmake/Docs.cmake`, `ArchitectureDiagram.cmake`, `CollectClassDiagrams.cmake` | the `docs` target and its diagrams |
-| `cmake/Install.cmake`, `Config.cmake.in` | `cmake --install`, the CMake package and CPack |
-| `cmake/DistClean.cmake` | the full clean |
-| `cmake/Summary.cmake` | the summary printed after configuring |
+| File                                                                          | What it does                                                                    |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `CMakeLists.txt`                                                              | the table of contents: includes the modules below in order and defines the app  |
+| `src/CMakeLists.txt`                                                          | the library `<name>_lib` (alias `<name>::<name>`), its C++ standard and headers |
+| `tests/CMakeLists.txt`                                                        | the doctest test executable, each `TEST_CASE` registered with CTest             |
+| `fuzz/CMakeLists.txt`                                                         | one libFuzzer binary per `fuzz_*.cpp`, and the `fuzz-run` target                |
+| `examples/CMakeLists.txt`                                                     | library mode: a stand-alone program that uses the installed package             |
+| `cmake/Helpers.cmake`                                                         | shared functions: read the version, find LLVM tools, `<name>_find_dependency()` |
+| `cmake/PreProject.cmake`                                                      | before `project()`: compiler choice, vcpkg toolchain, test feature              |
+| `cmake/Options.cmake`                                                         | every `MYAPP_*` option, with its description                                    |
+| `cmake/ProjectDefaults.cmake`                                                 | C++ dialect, default build type, PIC/PIE, install folder                        |
+| `cmake/Warnings.cmake`                                                        | compiler warnings                                                               |
+| `cmake/Sanitizers.cmake`                                                      | ASan/UBSan, TSan, MSan and fuzzing instrumentation                              |
+| `cmake/Hardening.cmake`                                                       | security flags for release builds                                               |
+| `cmake/Coverage.cmake`                                                        | coverage instrumentation and the `coverage` target                              |
+| `cmake/Ccache.cmake`                                                          | compiler caching with ccache                                                    |
+| `cmake/Version.cmake`, `WriteVersion.cmake`                                   | the generated `<name>/version.hpp` (version + git hash)                         |
+| `cmake/ExportHeader.cmake`                                                    | shared-library settings and `<name>_export.h`                                   |
+| `cmake/Dependencies.cmake`                                                    | **you edit this**: third-party packages                                         |
+| `cmake/CompileCommands.cmake`                                                 | the `build/compile_commands.json` link for clangd                               |
+| `cmake/Format.cmake`, `Tidy.cmake`                                            | the `format`, `format-check` and `tidy` targets                                 |
+| `cmake/Docs.cmake`, `ArchitectureDiagram.cmake`, `CollectClassDiagrams.cmake` | the `docs` target and its diagrams                                              |
+| `cmake/Install.cmake`, `Config.cmake.in`                                      | `cmake --install`, the CMake package and CPack                                  |
+| `cmake/DistClean.cmake`                                                       | the full clean                                                                  |
+| `cmake/Summary.cmake`                                                         | the summary printed after configuring                                           |
 
 All project-wide compiler flags (warnings, sanitizers, hardening, coverage) are
 attached to one internal target, `<name>_options`, which the library links.
@@ -510,20 +518,20 @@ Pass any of these when configuring, for example
 `MYAPP` is your project's name in capitals). They are all defined in
 `cmake/Options.cmake` and `cmake/PreProject.cmake`.
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `MYAPP_BUILD_TESTS` | `ON` | build the unit tests (and let vcpkg fetch doctest) |
-| `MYAPP_LIBRARY_MODE` | `OFF` | build an installable library instead of an app (`--lib` sets it) |
-| `MYAPP_BUILD_FUZZERS` | `OFF` | build the fuzzers (the `fuzz` preset sets it) |
-| `MYAPP_SANITIZER` | empty | `address` (with UBSan), `thread` or `memory` |
-| `MYAPP_WARNINGS_AS_ERRORS` | `OFF` | fail the build on any warning (the `ci` preset sets it) |
-| `MYAPP_ENABLE_HARDENING` | `ON` | security flags in release builds |
-| `MYAPP_ENABLE_COVERAGE` | `OFF` | coverage instrumentation (the `coverage` preset sets it) |
-| `MYAPP_USE_LLVM_CLANG` | `OFF` | use LLVM clang++ (Homebrew's on macOS) |
-| `MYAPP_USE_CCACHE` | `ON` | use ccache when it is installed |
-| `MYAPP_TIDY_WERROR` | `OFF` | make `tidy` fail on findings |
-| `MYAPP_FUZZ_SECONDS` | `10` | how long `fuzz-run` runs each fuzzer |
-| `BUILD_SHARED_LIBS` | `OFF` | standard CMake option: build the library as shared instead of static |
+| Option                     | Default | Meaning                                                              |
+| -------------------------- | ------- | -------------------------------------------------------------------- |
+| `MYAPP_BUILD_TESTS`        | `ON`    | build the unit tests (and let vcpkg fetch doctest)                   |
+| `MYAPP_LIBRARY_MODE`       | `OFF`   | build an installable library instead of an app (`--lib` sets it)     |
+| `MYAPP_BUILD_FUZZERS`      | `OFF`   | build the fuzzers (the `fuzz` preset sets it)                        |
+| `MYAPP_SANITIZER`          | empty   | `address` (with UBSan), `thread` or `memory`                         |
+| `MYAPP_WARNINGS_AS_ERRORS` | `OFF`   | fail the build on any warning (the `ci` preset sets it)              |
+| `MYAPP_ENABLE_HARDENING`   | `ON`    | security flags in release builds                                     |
+| `MYAPP_ENABLE_COVERAGE`    | `OFF`   | coverage instrumentation (the `coverage` preset sets it)             |
+| `MYAPP_USE_LLVM_CLANG`     | `OFF`   | use LLVM clang++ (Homebrew's on macOS)                               |
+| `MYAPP_USE_CCACHE`         | `ON`    | use ccache when it is installed                                      |
+| `MYAPP_TIDY_WERROR`        | `OFF`   | make `tidy` fail on findings                                         |
+| `MYAPP_FUZZ_SECONDS`       | `10`    | how long `fuzz-run` runs each fuzzer                                 |
+| `BUILD_SHARED_LIBS`        | `OFF`   | standard CMake option: build the library as shared instead of static |
 
 ## Security hardening
 
@@ -581,13 +589,3 @@ folder and configure again: `cmake -P cmake/DistClean.cmake`.
   ThreadSanitizer, coverage, clang-tidy, fuzzing, format check, CodeQL, docs
   deployment, tagged releases and a template self-test; Dependabot keeps
   actions and vcpkg current.
-
-## Changes from the Grocery setup
-
-- The hand-written Makefile and the `.sln`/`.vcxproj` files are gone; presets
-  cover both (`cmake --preset vs2026` generates the Visual Studio solution).
-- `#include "myapp/core/greeter.hpp"` replaces `#include "include/..."`,
-  because only `include/` is on the include path.
-- Docs build into `docs/`, which is git-ignored because GitHub Actions
-  publishes them.
-- The release workflow runs only on version tags; CI covers ordinary pushes.
