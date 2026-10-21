@@ -339,6 +339,25 @@
       ]
     },
     {
+      "label": "cmake-lint",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "release",
+        "--target",
+        "cmake-lint"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      },
+      "dependsOn": [
+        "configure release"
+      ]
+    },
+    {
       "label": "tidy",
       "type": "shell",
       "command": "cmake",

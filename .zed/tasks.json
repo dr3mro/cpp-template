@@ -13,6 +13,7 @@
   { "label": "build fuzz", "command": "cmake --preset fuzz && cmake --build --preset fuzz", "hide": "on_success" },
   { "label": "fuzz run", "command": "cmake --preset fuzz && cmake --build --preset fuzz --target fuzz-run", "use_new_terminal": true },
   { "label": "format", "command": "cmake --preset release && cmake --build --preset release --target format", "hide": "on_success" },
+  { "label": "cmake-lint", "command": "cmake --preset release && cmake --build --preset release --target cmake-lint", "hide": "never" },
   { "label": "tidy", "command": "cmake --preset release && cmake --build --preset release --target tidy", "hide": "never" },
   { "label": "docs", "command": "cmake --workflow --preset docs", "hide": "on_success" },
   { "label": "clean", "command": "cmake --preset debug && cmake --build --preset debug --target clean", "hide": "on_success" },

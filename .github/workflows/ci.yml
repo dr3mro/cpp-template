@@ -140,6 +140,22 @@ jobs:
           path: build/coverage/html
           if-no-files-found: ignore
 
+  cmake-lint:
+    name: cmake-lint (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install cmakelang
+        # Pinned so CI and the pre-commit hook agree on the rules. PyYAML is
+        # imported by cmake-lint but not declared by cmakelang 0.6.13.
+        run: |
+          pipx install cmakelang==0.6.13
+          pipx inject cmakelang pyyaml
+      - name: Lint the CMake files
+        run: |
+          git ls-files -z 'CMakeLists.txt' '*.cmake' '*.cmake.in' \
+            | xargs -0 cmake-lint
+
   tidy:
     name: clang-tidy (ubuntu-latest)
     runs-on: ubuntu-latest

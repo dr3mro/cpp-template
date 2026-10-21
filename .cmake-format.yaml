@@ -1,0 +1,159 @@
+# =============================================================================
+# .cmake-format.yaml - formatting and lint rules for the CMake files
+#
+# Read by cmakelang (pip install cmakelang):
+#   cmake-lint <files>                             # style and naming checks
+#   cmake-format -i <files>                        # a no-op while format.disable
+#                                                  # is true (see below)
+# Editors that lint CMake through cmakelang (VS Code's cmake-format
+# extension, neocmakelsp in Zed/Neovim) pick this file up from the repository
+# root automatically.
+#
+# The rules match the rest of the project: 4-space indents (.editorconfig),
+# lowercase commands, and the naming scheme the cmake/ modules use:
+#   myapp_do_thing()       public functions and macros
+#   _myapp_do_thing()      private helpers
+#   MYAPP_SOME_OPTION      cache variables and options (public)
+#   _myapp_some_value      variables local to one module or function
+# =============================================================================
+
+# ---- parse: teach the parser the project's own commands ----------------------
+# With a signature, cmake-format lays out keyword arguments properly and
+# cmake-lint can check them, instead of treating them as plain word lists.
+parse:
+  additional_commands:
+    # cmake/Helpers.cmake
+    myapp_read_manifest_version:
+      pargs: 2                      # <out-var> <vcpkg.json>
+    myapp_regex_escape:
+      pargs: 2                      # <out-var> <text>
+    myapp_find_llvm_program:
+      pargs: "1+"                   # <var> <name>...
+      flags: [NEXT_TO_COMPILER]
+    myapp_find_dependency:
+      pargs: "1+"                   # <package> [find_package arguments...]
+      flags: [PUBLIC]
+    myapp_find_msvc_cl:
+      pargs: 1                      # <out-var>
+    # cmake/Coverage.cmake
+    myapp_add_coverage_report:
+      pargs: 0
+    # cmake/WriteVersion.cmake
+    myapp_write_version_header:
+      kwargs:
+        TEMPLATE: 1
+        OUTPUT: 1
+        SOURCE_DIR: 1
+    # cmake/Hardening.cmake
+    _myapp_harden:
+      kwargs:
+        COMPILE: "+"
+        LINK: "+"
+    # cmake/Sanitizers.cmake
+    _myapp_use_sanitizer:
+      pargs: 3                      # <compile-flag> <link-flag> <what>
+    # cmake/Summary.cmake
+    _myapp_summary_line:
+      pargs: "1+"                   # <label> <value>...
+  # Commands whose arguments are left exactly as written (none needed yet).
+  override_spec: {}
+  # Variables that must keep their case in "variable" positions.
+  vartags: []
+  proptags: []
+
+# ---- format: layout -------------------------------------------------------------
+format:
+  # Formatting is OFF: the CMake files are hand-formatted (keywords kept on
+  # the command's first line, aligned trailing comments, wrapped message()
+  # text), and cmake-format cannot reproduce that layout; it would rewrite
+  # nearly every file. The settings below still matter: cmake-lint uses
+  # line_width for C0301, and they describe the house style for new code.
+  # Set this to false only if you want cmake-format to own the layout.
+  disable: true
+  # 100 columns: wide enough for a target_* call with a generator expression,
+  # narrow enough for a side-by-side diff. Long string literals are not broken
+  # by the formatter; split them into several quoted strings instead.
+  line_width: 100
+  tab_size: 4                       # matches .editorconfig for *.cmake
+  use_tabchars: false
+  fractional_tab_policy: use-space
+  # Keep short calls on one line; only wrap when a call really does not fit.
+  max_subgroups_hwrap: 3
+  max_pargs_hwrap: 6
+  max_rows_cmdline: 2
+  # Wrapped arguments start on the next line, indented one level, rather than
+  # lining up under the opening parenthesis (stable diffs when a name changes).
+  dangle_parens: false
+  dangle_align: prefix
+  min_prefix_chars: 4
+  max_prefix_chars: 10
+  max_lines_hwrap: 2
+  separate_ctrl_name_with_space: false   # if(...) not if (...)
+  separate_fn_name_with_space: false     # foo(...) not foo (...)
+  line_ending: unix                 # .gitattributes normalises to LF anyway
+  command_case: canonical           # lowercase commands, CamelCase for find modules
+  keyword_case: upper               # COMMAND, PUBLIC, INTERFACE, ...
+  always_wrap: []
+  enable_sort: true                 # sort plain file lists in add_library() & co.
+  autosort: false                   # ... but only where they are already sorted
+  require_valid_layout: false
+  layout_passes: {}
+
+# ---- markup: comments -------------------------------------------------------------
+markup:
+  bullet_char: "-"
+  enum_char: "."
+  # Comment blocks are hand-formatted (the module headers line up columns and
+  # code samples), so cmake-format must not reflow them.
+  enable_markup: false
+  first_comment_is_literal: true
+  literal_comment_pattern: null
+  fence_pattern: ^\s*([`~]{3}[`~]*)(.*)$
+  ruler_pattern: ^\s*[^\w\s]{3}.*[^\w\s]{3}$
+  explicit_trailing_pattern: "#<"
+  hashruler_min_length: 10
+  canonicalize_hashrulers: false    # keep the "# ---- section ----" rulers as written
+
+# ---- lint: cmake-lint checks ---------------------------------------------------------
+lint:
+  # C0301 (line too long) uses format.line_width above. Nothing is disabled
+  # globally; silence a single line with "# cmake-lint: disable=<code>".
+  # Known false positive: cmakelang predates file(COPY_FILE ...) (CMake 3.21),
+  # so cmake-lint reports E1126 on it; disable that one line where it occurs.
+  disabled_codes: []
+  # Naming, as described at the top of this file.
+  function_pattern: "_?[0-9a-z_]+"
+  macro_pattern: "_?[0-9a-z_]+"
+  global_var_pattern: "[A-Z][0-9A-Z_]+"
+  internal_var_pattern: "_[A-Za-z][0-9A-Za-z_]+"
+  # Locals: lowercase, optionally "_"-prefixed. UPPER_CASE locals are allowed
+  # for the variables CMake itself reads (CMAKE_REQUIRED_FLAGS before a
+  # check_*() call) and for @VARS@ that configure_file() substitutes.
+  local_var_pattern: "_?[a-z][a-z0-9_]*|[A-Z][0-9A-Z_]+"
+  # Directory-scope variables: "_myapp_..." in modules; plain lowercase is
+  # fine too, mainly in the script-mode helpers run with cmake -P.
+  private_var_pattern: "_?[a-z][0-9a-z_]*"
+  public_var_pattern: "[A-Z][0-9A-Z_]+"
+  # Function/macro arguments and foreach() loop variables (_flag, _dep, ...).
+  argument_var_pattern: "_?[a-z][a-z0-9_]*"
+  keyword_pattern: "[A-Z][0-9A-Z_]+"
+  # Complexity limits, generous enough for the existing modules; a function
+  # that outgrows them should be split.
+  max_conditionals_custom_parser: 2
+  min_statement_spacing: 1
+  max_statement_spacing: 2
+  max_returns: 6
+  max_branches: 15
+  max_arguments: 5
+  max_localvars: 15
+  max_statements: 50
+
+# ---- encode: file encoding ---------------------------------------------------------
+encode:
+  emit_byteorder_mark: false
+  input_encoding: utf-8
+  output_encoding: utf-8
+
+# ---- misc -----------------------------------------------------------------------------
+misc:
+  per_command: {}

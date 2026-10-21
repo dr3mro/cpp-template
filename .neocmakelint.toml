@@ -1,0 +1,18 @@
+# Settings for neocmakelsp, the CMake language server used by Zed (and other
+# editors). The project-root file is found automatically; restart the language
+# server after editing it.
+#
+# cmake-lint reads .cmake-format.yaml, not this file, so the line length is
+# repeated here to keep the editor and the command line in agreement.
+
+# Match format.line_width in .cmake-format.yaml (cmake-lint's C0301).
+line_max_words = 100
+
+# The project writes commands in lower case (cmake_minimum_required(...),
+# target_link_libraries(...)).
+command_case = "lowercase"
+
+# Run the external cmake-lint checks as well, so editor diagnostics match
+# `cmake-lint` and the cmake-lint target. Quietly skipped when cmake-lint is
+# not installed.
+enable_external_cmake_lint = true

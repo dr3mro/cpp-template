@@ -17,3 +17,17 @@ repos:
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
+
+  # CMake style and naming, with the rules in .cmake-format.yaml. A local hook
+  # rather than a pinned repository: it uses the cmake-lint you install with
+  # pipx (see the wiki), and cmakelang 0.6.13 is old enough that a managed
+  # environment is not always reliable on the latest Python. Formatting stays
+  # off; only the lint runs.
+  - repo: local
+    hooks:
+      - id: cmake-lint
+        name: cmake-lint
+        entry: cmake-lint
+        language: system
+        types: [file]
+        files: '(^|/)CMakeLists\.txt$|\.cmake(\.in)?$'
