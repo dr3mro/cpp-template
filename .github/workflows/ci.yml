@@ -43,6 +43,25 @@ jobs:
           cmake --build --preset release
           ctest --preset release
 
+  msvc-asan:
+    name: MSVC + AddressSanitizer (windows-latest)
+    # The debug preset builds with ASan/UBSan on MSVC too. The ASan runtime
+    # DLL lives in the MSVC tools folder, which the developer shell puts on
+    # PATH, so the tests find it.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build and test with ASan
+        run: |
+          cmake --preset debug
+          cmake --build --preset debug
+          ctest --preset debug
+
   version:
     name: version matches vcpkg.json (ubuntu-latest)
     runs-on: ubuntu-latest

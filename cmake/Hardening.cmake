@@ -40,8 +40,10 @@ endfunction()
 
 if(MSVC)
     # Buffer-overrun checks and Control Flow Guard; ASLR and DEP at link time.
+    # Control Flow Guard needs /guard:cf at link time as well: the compiler
+    # flag only marks the objects, the linker flag turns the feature on.
     _myapp_harden(COMPILE /GS /guard:cf
-                  LINK /DYNAMICBASE /NXCOMPAT)
+                  LINK /guard:cf /DYNAMICBASE /NXCOMPAT)
     # High-entropy ASLR needs a 64-bit image.
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         _myapp_harden(LINK /HIGHENTROPYVA)

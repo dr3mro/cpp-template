@@ -10,8 +10,11 @@ include_guard(DIRECTORY)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME}_options INTERFACE
-        /W4             # high warning level
-        /permissive-)   # standards conformance
+        /W4              # high warning level
+        /permissive-    # standards conformance
+        /utf-8          # the sources are UTF-8, whatever the code page is
+        /Zc:__cplusplus # __cplusplus reports the standard the compiler uses
+    )
     if(MYAPP_WARNINGS_AS_ERRORS)
         target_compile_options(${PROJECT_NAME}_options INTERFACE /WX)
     endif()

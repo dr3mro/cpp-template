@@ -34,7 +34,7 @@
     },
     {
       "name": "tsan",
-      "displayName": "Debug + ThreadSanitizer (Ninja)",
+      "displayName": "Debug + ThreadSanitizer (Linux/macOS only, Ninja)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
