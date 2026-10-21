@@ -58,11 +58,11 @@ if git -C "$TEMPLATE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 else
     (cd "$TEMPLATE_DIR" && tar --exclude='./.git' --exclude='./build' --exclude='./docs' \
         --exclude='./install' --exclude='./install-*' --exclude='./vcpkg_installed' \
-        --exclude='./.cache' --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' \
+        --exclude='./.cache' --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' --exclude='./scripts/new-project.ps1' \
         --exclude='./.github/workflows/template-test.yml' --exclude='./wiki' \
         --exclude='./.github/workflows/wiki.yml' --exclude='./.gitmodules' -cf - .) | (cd "$DEST" && tar -xf -)
 fi
-rm -f "$DEST/scripts/new-project.sh"
+rm -f "$DEST/scripts/new-project.sh" "$DEST/scripts/new-project.ps1"
 rmdir "$DEST/scripts" 2>/dev/null || true
 rm -f "$DEST/.github/workflows/template-test.yml"
 # The wiki pages describe the template itself, so new projects start without
