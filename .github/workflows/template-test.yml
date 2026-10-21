@@ -203,15 +203,55 @@ jobs:
           cmake --build --preset fuzz
           cmake --build --preset fuzz --target fuzz-run
 
+  windows-compiler-guard:
+    # A plain PowerShell window is not a developer shell. CMake must stop with
+    # its own explanation instead of picking a clang++ from PATH and failing
+    # later with STL1000 from the Visual Studio standard library.
+    if: github.repository == 'dr3mro/cpp-template'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+
+      - name: CMake refuses to guess the compiler outside a developer shell
+        shell: pwsh
+        run: |
+          # This job deliberately does not configure MSVC: the environment is
+          # a plain PowerShell window, like the one the error message is for.
+          cmake --preset release -DMYAPP_BUILD_TESTS=OFF 2>&1 | Tee-Object -Variable log
+          $text = ($log | Out-String)
+          if ($LASTEXITCODE -eq 0) {
+            throw "cmake --preset release succeeded outside a developer shell; the compiler guard did not run"
+          }
+          if ($text -match 'STL1000') {
+            throw "the build failed with STL1000 instead of the developer-shell message"
+          }
+          if ($text -notmatch 'No Visual Studio compiler') {
+            $text
+            throw "cmake did not print the developer-shell error message"
+          }
+          if ($text -notmatch 'Launch-VsDevShell\.ps1') {
+            throw "the developer-shell error message does not say how to open one"
+          }
+
   visual-studio:
     # The checked-in Visual Studio solution must build with MSBuild, without
     # CMake being run first. This job is the only place it can be verified:
     # MSBuild needs Windows.
     if: github.repository == 'dr3mro/cpp-template'
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v7
       - uses: microsoft/setup-msbuild@v2
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ contains(matrix.os, 'arm') && 'arm64' || 'x64' }}
 
       - name: Generate projects from the template
         shell: bash
@@ -235,7 +275,7 @@ jobs:
           function Get-MaskedCopy([string]$Dir, [string]$Name) {
               $copy = Join-Path $env:RUNNER_TEMP $Name
               # Copy-Item into an existing folder nests the copy inside it, so
-              # always start from an empty destination.
+              # always start from a clean destination.
               if (Test-Path -LiteralPath $copy) { Remove-Item -LiteralPath $copy -Recurse -Force }
               Copy-Item -Recurse -Force -LiteralPath $Dir -Destination $copy
               Get-ChildItem -LiteralPath $copy -Recurse -File | ForEach-Object {
@@ -257,6 +297,52 @@ jobs:
                       throw "the PowerShell script and the bash script produce different projects ($($pair[0]), $shell)"
                   }
               }
+          }
+
+      - name: The PowerShell script accepts the bash-style options
+        shell: pwsh
+        run: |
+          # The same command line has to work with both scripts: --std 20 must
+          # produce the same project as -Std 20.
+          & powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bashopts "$env:RUNNER_TEMP\bashopts-dashes" --std 20 --lib --no-git
+          & powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bashopts "$env:RUNNER_TEMP\bashopts-ps" -Std 20 -Lib -NoGit
+
+          function Get-MaskedCopy([string]$Dir, [string]$Name) {
+              $copy = Join-Path $env:RUNNER_TEMP $Name
+              if (Test-Path -LiteralPath $copy) { Remove-Item -LiteralPath $copy -Recurse -Force }
+              Copy-Item -Recurse -Force -LiteralPath $Dir -Destination $copy
+              Get-ChildItem -LiteralPath $copy -Recurse -File | ForEach-Object {
+                  $bytes = [System.IO.File]::ReadAllBytes($_.FullName)
+                  if ($bytes -contains 0) { return }
+                  $text = [System.Text.Encoding]::UTF8.GetString($bytes)
+                  $text = $text -replace '[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}', '<GUID>'
+                  [System.IO.File]::WriteAllText($_.FullName, $text, (New-Object System.Text.UTF8Encoding $false))
+              }
+              return $copy
+          }
+          $dashes = Get-MaskedCopy "$env:RUNNER_TEMP\bashopts-dashes" 'masked-bashopts-dashes'
+          $ps = Get-MaskedCopy "$env:RUNNER_TEMP\bashopts-ps" 'masked-bashopts-ps'
+          git diff --no-index --stat $dashes $ps
+          if ($LASTEXITCODE -ne 0) {
+              git diff --no-index $dashes $ps
+              throw "--std 20 --lib --no-git and -Std 20 -Lib -NoGit produce different projects"
+          }
+
+      - name: The developer shell makes CMake pick MSVC
+        shell: pwsh
+        run: |
+          # Inside a developer shell, cl.exe comes from the tools that shell
+          # set up, not from whichever clang++ or g++ is earlier on PATH.
+          Push-Location "$env:RUNNER_TEMP\vsapp"
+          try {
+            cmake --preset release -DMYAPP_BUILD_TESTS=OFF
+            if ($LASTEXITCODE -ne 0) { throw "cmake --preset release failed in the developer shell" }
+            $cache = Get-Content build/release/CMakeCache.txt -Raw
+            if ($cache -notmatch 'CMAKE_CXX_COMPILER:FILEPATH=.*cl\.exe') {
+              throw "the developer shell did not make CMake pick MSVC"
+            }
+          } finally {
+            Pop-Location
           }
 
       - name: No placeholder names left behind
@@ -287,8 +373,9 @@ jobs:
       - name: Build the app project with MSBuild
         shell: pwsh
         run: |
+          $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
           foreach ($config in @('Debug', 'Release')) {
-            msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=$config -p:Platform=x64 -m | Tee-Object -Variable log
+            msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=$config -p:Platform=$platform -m | Tee-Object -Variable log
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vsapp ($config)" }
             # The solution must build without CMake.
             if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vsapp ran CMake" }
@@ -301,8 +388,9 @@ jobs:
       - name: Build the library project with MSBuild
         shell: pwsh
         run: |
+          $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
           foreach ($config in @('Debug', 'Release')) {
-            msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=x64 -m | Tee-Object -Variable log
+            msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=$platform -m | Tee-Object -Variable log
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vslib ($config)" }
             # The solution must build without CMake.
             if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vslib ran CMake" }
@@ -315,7 +403,8 @@ jobs:
       - name: Build the project of the PowerShell script with MSBuild
         shell: pwsh
         run: |
-          msbuild "$env:RUNNER_TEMP\psapp-pwsh\vsapp.sln" -p:Configuration=Release -p:Platform=x64 -m | Tee-Object -Variable log
+          $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          msbuild "$env:RUNNER_TEMP\psapp-pwsh\vsapp.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
           if ($LASTEXITCODE -ne 0) { throw "msbuild failed for the project of the PowerShell script" }
           # The solution must build without CMake.
           if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of the PowerShell project ran CMake" }

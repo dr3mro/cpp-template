@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
@@ -27,6 +27,8 @@ jobs:
       - name: Configure MSVC
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ contains(matrix.os, 'arm') && 'arm64' || 'x64' }}
 
       # The ci preset adds ASan/UBSan and turns warnings into errors.
       - name: Build and test (Linux/macOS)
@@ -36,8 +38,15 @@ jobs:
           cmake --build --preset ci
           ctest --preset ci
 
-      - name: Build and test (Windows)
-        if: runner.os == 'Windows'
+      - name: Build and test (Windows x64)
+        if: runner.os == 'Windows' && !contains(matrix.os, 'arm')
+        run: |
+          cmake --preset release -DMYAPP_WARNINGS_AS_ERRORS=ON
+          cmake --build --preset release
+          ctest --preset release
+
+      - name: Build and test (Windows ARM64)
+        if: runner.os == 'Windows' && contains(matrix.os, 'arm')
         run: |
           cmake --preset release -DMYAPP_WARNINGS_AS_ERRORS=ON
           cmake --build --preset release
@@ -61,6 +70,12 @@ jobs:
           cmake --preset debug
           cmake --build --preset debug
           ctest --preset debug
+
+  # MSVC + AddressSanitizer on windows-11-arm is deliberately not a job here:
+  # the MSVC ASan runtime for ARM64 is not part of every Visual Studio install,
+  # so the debug preset cannot be promised to link. The windows-11-arm entry in
+  # build-and-test still builds and tests the release preset there; the x64
+  # msvc-asan job keeps the sanitizer itself covered.
 
   version:
     name: version matches vcpkg.json (ubuntu-latest)
