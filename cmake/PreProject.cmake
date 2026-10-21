@@ -60,12 +60,14 @@ endif()
 # work with: the first error is a wall of "STL1000: Unexpected compiler while
 # looking for the 'iostream' header".
 #
-# A multi-config generator (Visual Studio) finds MSVC by itself, so it needs
-# none of this. So does a compiler the user chose explicitly
-# (-DCMAKE_CXX_COMPILER=clang-cl, or the CXX environment variable).
+# A Visual Studio generator finds MSVC by itself, so it needs none of this.
+# So does a compiler the user chose explicitly (-DCMAKE_CXX_COMPILER=clang-cl,
+# or the CXX environment variable). Only the Visual Studio generators are
+# skipped that way: "Ninja Multi-Config" is a multi-config generator too, but
+# it looks for a compiler on the PATH just like the single-config ones, so it
+# has to go through this check.
 if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
-    get_property(_myapp_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-    if(NOT _myapp_multi_config
+    if(NOT CMAKE_GENERATOR MATCHES "^Visual Studio"
        AND NOT DEFINED CMAKE_CXX_COMPILER
        AND NOT DEFINED ENV{CXX})
         # The architecture of this machine, in the spelling the Visual Studio
@@ -109,7 +111,12 @@ if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
                 "     current folder):\n"
                 "       & \"<VS>\\Common7\\Tools\\Launch-VsDevShell.ps1\" -SkipAutomaticLocation "
                 "-Arch ${_myapp_arch} -HostArch ${_myapp_arch}\n"
-                "     and run 'cmake --preset release' in it.")
+                "     and run 'cmake --preset release' in it.\n"
+                "\n"
+                "  4. Use another compiler you have installed (clang-cl, or the\n"
+                "     MSYS2/MinGW g++):\n"
+                "       cmake --preset release -DCMAKE_CXX_COMPILER=clang-cl\n"
+                "     or set the CXX environment variable to that compiler.")
         endif()
     endif()
 endif()
