@@ -58,8 +58,11 @@ disk is part of the build after you reload the solution. If Visual Studio
 ever expands the wildcards into explicit entries after "Add > New Item",
 revert that change in the `.vcxproj`.
 
-Output goes to `build/vs/<Platform>/<Configuration>/`. The tests are not part
-of the solution (they need doctest from CMake), so they keep running through
+Everything the build writes stays under `build/vs/`: the program, the
+intermediate files, the generated headers and the vcpkg packages. Only `.vs/`
+(Visual Studio's own folder) and an optional `<name>.vcxproj.user` appear in
+the project root, and both are git-ignored. The tests are not part of the
+solution (they need doctest from CMake), so they keep running through
 `cmake --preset debug && cmake --build --preset debug && ctest --preset
 debug`.
 

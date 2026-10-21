@@ -14,6 +14,10 @@ All notable changes to this project are documented here. The format follows
   export header) itself before every compile.
 - A Windows job in the template test that builds the solution with MSBuild,
   for an app project and for a library project.
+- `Directory.Build.props`, which keeps every file MSBuild writes under
+  `build/vs/`: the binaries, the intermediate files, the NuGet restore files,
+  the vcpkg packages and the generated headers. Only `.vs/` and an optional
+  `<name>.vcxproj.user` stay in the project root, and both are git-ignored.
 
 `new-project.sh` renames the Visual Studio files, gives every project a fresh
 project GUID and sets the C++ standard (`stdcpp17`, `stdcpp20` or

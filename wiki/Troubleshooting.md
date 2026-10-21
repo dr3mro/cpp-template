@@ -80,6 +80,15 @@ Visual Studio. Install the **C++ CMake tools for Windows** component of the
 **Desktop development with C++** workload (Visual Studio → Installer → Modify),
 or put a `cmake` on the `PATH`, and build again.
 
+**Visual Studio left files in the project root**
+The output paths live in `Directory.Build.props`, so everything should land
+under `build/vs/`. If you see `obj\`, `Debug\`, `Release\` or
+`vcpkg_installed\` next to the solution, the props file was not picked up:
+check that `Directory.Build.props` sits in the project root and that the
+project still sets `VsBuildRootProject` (it is in the `Globals` property
+group of the `.vcxproj`). A `.vs/` folder and a `<name>.vcxproj.user` file
+in the root are normal and git-ignored.
+
 **Visual Studio doesn't see the file I just added**
 Reload the solution (right-click the solution → **Reload Project**). If
 Visual Studio replaced the wildcards in the `.vcxproj` with explicit file

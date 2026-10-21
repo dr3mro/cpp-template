@@ -43,7 +43,8 @@ doesn't behave as expected.
 The project also ships `<name>.sln`, a solution that opens directly in
 Visual Studio 2019, 2022 and 2026 **without CMake**. It finds the sources
 under `src/`, the headers under `include/` and the `main.cpp` in the project
-root by wildcard, and writes its output to `build/vs/<Platform>/<Configuration>/`.
+root by wildcard, and writes **everything** it builds to `build/vs/`: the
+program, the intermediate files, the generated headers and the vcpkg packages.
 It needs the **Desktop development with C++** workload and the **C++ CMake
 tools for Windows** component.
 

@@ -6,3 +6,4 @@
 # Visual Studio solutions and projects: Visual Studio writes and expects CRLF
 *.sln text eol=crlf
 *.vcxproj text eol=crlf
+Directory.Build.props text eol=crlf

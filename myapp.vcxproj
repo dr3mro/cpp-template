@@ -34,6 +34,12 @@
     <RootNamespace>myapp</RootNamespace>
     <ProjectName>myapp</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <!-- Marks this as the hand-written project. Directory.Build.props is
+         imported by the C++ targets further down, so the marker is set in
+         time: only this project gets its output redirected to build/vs/,
+         never the CMake-generated solutions under build/vs2022 or
+         build/vs2026. -->
+    <VsBuildRootProject>true</VsBuildRootProject>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -73,13 +79,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <!-- Build output lives under build/, which is git-ignored. -->
-    <OutDir>$(MSBuildProjectDirectory)\build\vs\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(MSBuildProjectDirectory)\build\vs\obj\$(Platform)\$(Configuration)\</IntDir>
+    <!-- The output paths (OutDir, IntDir, the vcpkg folder and the folder for
+         the generated headers) live in Directory.Build.props, so that every
+         file MSBuild writes stays under build/vs/. -->
     <TargetName>myapp</TargetName>
-    <!-- The CMake-generated headers (version.hpp, <name>_export.h) are written
-         here before every compile. -->
-    <GeneratedIncludeDir>$(MSBuildProjectDirectory)\build\vs\generated\</GeneratedIncludeDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

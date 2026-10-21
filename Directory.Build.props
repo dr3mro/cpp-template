@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    Directory.Build.props - where MSBuild writes everything.
+
+    Visual Studio likes to put some files next to the project file. This file
+    moves all of them under build/vs/, so a build never leaves anything new
+    in the repository root.
+
+    MSBuild imports this file before the project body runs, which is what
+    makes it possible to redirect the intermediate output: NuGet restore and
+    the vcpkg manifest integration have to know their paths before the
+    project itself is evaluated.
+
+    It only applies to the hand-written project, which sets the marker
+    property VsBuildRootProject before it imports the C++ targets. The
+    CMake-generated solutions (the vs2022 and vs2026 presets) live in
+    build/vs2022 and build/vs2026, and they do not set the marker, so they
+    keep their own output paths.
+  -->
+  <PropertyGroup Condition="'$(VsBuildRootProject)' == 'true'">
+    <!-- The root of everything MSBuild writes for this project. -->
+    <BuildRoot Condition="'$(BuildRoot)' == ''">$(MSBuildThisFileDirectory)build\vs\</BuildRoot>
+
+    <!-- NuGet restore and the C++ targets create obj\ next to the project by
+         default; both follow these two. -->
+    <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(BuildRoot)obj\</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath Condition="'$(MSBuildProjectExtensionsPath)' == ''">$(BuildRoot)obj\</MSBuildProjectExtensionsPath>
+
+    <!-- The program, the import library and the linker PDB. -->
+    <OutDir Condition="'$(OutDir)' == ''">$(BuildRoot)$(Platform)\$(Configuration)\</OutDir>
+
+    <!-- The objects and everything the compiler and the linker leave behind:
+         .obj, .ilk, .iobj, .ipdb, .tlog, .lastbuildstate, .recipe, the
+         compiler PDB and the code-analysis output. -->
+    <IntDir Condition="'$(IntDir)' == ''">$(BuildRoot)obj\$(Platform)\$(Configuration)\</IntDir>
+    <ProgramDataBaseFileName Condition="'$(ProgramDataBaseFileName)' == ''">$(IntDir)$(MSBuildProjectName).pdb</ProgramDataBaseFileName>
+
+    <!-- The vcpkg manifest installs into vcpkg_installed\ next to the project
+         by default. -->
+    <VcpkgInstalledDir Condition="'$(VcpkgInstalledDir)' == ''">$(BuildRoot)vcpkg_installed\$(Platform)\</VcpkgInstalledDir>
+
+    <!-- The headers the project generates before every compile. -->
+    <GeneratedIncludeDir Condition="'$(GeneratedIncludeDir)' == ''">$(BuildRoot)generated\</GeneratedIncludeDir>
+  </PropertyGroup>
+</Project>

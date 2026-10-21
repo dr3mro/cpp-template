@@ -22,6 +22,7 @@ myapp/
 ├── main.cpp                ✏️ the program's entry point (app projects)
 ├── myapp.sln                 Visual Studio solution (opens in VS 2019/2022/2026)
 ├── myapp.vcxproj            Visual Studio project (wildcard source discovery)
+├── Directory.Build.props      where MSBuild writes everything (under build/vs/)
 ├── examples/                  a program using the installed library (library projects)
 ├── cmake/                     build modules, one per feature
 │   ├── Dependencies.cmake  ✏️ third-party packages
@@ -81,14 +82,21 @@ New files are picked up automatically on the next build. You don't edit any
   under `src/` and `include/` are found by wildcard (together with
   `main.cpp`), so you never edit them to add a file. See
   [Visual Studio](Visual-Studio).
+- **`Directory.Build.props`**: where MSBuild writes everything. It sends the
+  binaries, the intermediate files, the NuGet restore files, the vcpkg
+  packages and the generated headers to `build/vs/`, so a Visual Studio build
+  never leaves anything new in the project root. It applies only to the
+  hand-written project, not to the CMake-generated solutions.
 
 ## Generated folders (never committed)
 
 | Folder | Made by | Contents |
 | --- | --- | --- |
 | `build/<preset>/` | `cmake --preset <preset>` | build files, the compiled program, tests, `compile_commands.json` |
-| `build/vs/<platform>/<config>/` | building the Visual Studio solution | the program and its intermediate files |
+| `build/vs/<platform>/<config>/` | building the Visual Studio solution | the program, the import library and the linker PDB |
+| `build/vs/obj/` | building the Visual Studio solution | the intermediate files (objects, `.tlog`, the compiler PDB, the NuGet restore files) |
 | `build/vs/generated/` | building the Visual Studio solution | the generated headers (`version.hpp`, `<name>_export.h`) |
+| `build/vs/vcpkg_installed/` | building the Visual Studio solution | the vcpkg packages of the manifest mode |
 | `build/install/<preset>/` | `cmake --install build/<preset>` | the installed result |
 | `build/compile_commands.json` | configuring | a link to the last preset's compile commands, for clangd |
 | `docs/` | the `docs` target | the documentation website and diagrams |

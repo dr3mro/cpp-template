@@ -146,12 +146,40 @@ jobs:
             exit 1
           fi
 
+      # A git repository per project, so that the check after the build can see
+      # which files the build created.
+      - name: Prepare the projects for the output check
+        shell: pwsh
+        run: |
+          foreach ($project in @('vsapp', 'vslib')) {
+            Push-Location "$env:RUNNER_TEMP\$project"
+            git init -q
+            git add -A
+            Pop-Location
+          }
+
       # PowerShell, not bash: setup-msbuild puts msbuild on the Windows PATH,
       # and Git Bash would also rewrite /p: switches as if they were paths.
       - name: Build the app project with MSBuild
         shell: pwsh
-        run: msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=Release -p:Platform=x64 -m
+        run: |
+          foreach ($config in @('Debug', 'Release')) {
+            msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=$config -p:Platform=x64 -m
+            if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vsapp ($config)" }
+            Push-Location "$env:RUNNER_TEMP\vsapp"
+            $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
+            Pop-Location
+            if ($extra) { $extra; throw "msbuild wrote files outside build/vs" }
+          }
 
       - name: Build the library project with MSBuild
         shell: pwsh
-        run: msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=Release -p:Platform=x64 -m
+        run: |
+          foreach ($config in @('Debug', 'Release')) {
+            msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=x64 -m
+            if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vslib ($config)" }
+            Push-Location "$env:RUNNER_TEMP\vslib"
+            $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
+            Pop-Location
+            if ($extra) { $extra; throw "msbuild wrote files outside build/vs" }
+          }

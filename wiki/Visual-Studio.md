@@ -48,14 +48,41 @@ control diffs.
 
 ## Where the output goes
 
+**Everything** MSBuild writes stays under `build/vs/`:
+
 | | |
 | --- | --- |
-| Program | `build/vs/<Platform>/<Configuration>/` (for example `build/vs/x64/Release/`) |
-| Intermediate files | `build/vs/obj/<Platform>/<Configuration>/` |
+| Program, import library, linker PDB | `build/vs/<Platform>/<Configuration>/` (for example `build/vs/x64/Release/`) |
+| Intermediate files | `build/vs/obj/<Platform>/<Configuration>/` (objects, `.ilk`, `.iobj`, `.ipdb`, `.tlog`, `.lastbuildstate`, `.recipe`, the compiler PDB, the code-analysis output) |
+| NuGet restore files | `build/vs/obj/` |
 | Generated headers | `build/vs/generated/<name>/` |
+| vcpkg packages (manifest mode) | `build/vs/vcpkg_installed/<Platform>/` |
+
+`Directory.Build.props` in the project root sets those paths. MSBuild imports
+it before the project itself, which is what lets it redirect the intermediate
+output (NuGet restore and the vcpkg manifest integration need to know their
+paths early). It only applies to this hand-written project; the
+CMake-generated solutions under `build/vs2022` and `build/vs2026` keep their
+own paths.
 
 Everything under `build/` is git-ignored, so nothing generated is ever
 committed.
+
+## What stays in the project root
+
+Two things, and both are git-ignored:
+
+- **`.vs/`**: Visual Studio's own folder next to the solution (window layout,
+  the per-user `.suo`, the IntelliSense database, the precompiled headers).
+  Its location is fixed by Visual Studio; no project setting moves it.
+- **`<name>.vcxproj.user`**: created when someone changes the debugger
+  settings in the IDE. The project keeps `LocalDebuggerWorkingDirectory` and
+  `DebuggerFlavor` in the `.vcxproj`, so most people never need one.
+
+The IntelliSense cache can be moved, but only per user: **Tools → Options →
+Text Editor → C/C++ → Advanced → Fallback Location** (set it to a folder
+outside the project, or disable the fallback cache). It is optional — nothing
+else is written to the root.
 
 ## The generated headers
 
