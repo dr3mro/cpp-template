@@ -13,6 +13,10 @@
     Windows PowerShell 5.1 and PowerShell 7 on Windows, macOS and Linux.
     Nothing else is needed: no bash, perl or Python.
 
+    Every option can be written in the PowerShell style (-Std 20) or in the
+    bash style of new-project.sh (--std 20), so the same command line works
+    with both scripts.
+
 .PARAMETER Name
     Project name: a lower_snake_case C++ identifier, for example inventory or
     bank_app. It becomes the CMake project, the executable, the namespace and
@@ -33,23 +37,40 @@
 .PARAMETER GitHubUser
     Fill in the README's GitHub Pages docs link (https://<user>.github.io/<name>/).
 
+.PARAMETER Help
+    Print the usage message and stop.
+
 .EXAMPLE
     .\scripts\new-project.ps1 bank_app
 
 .EXAMPLE
     .\scripts\new-project.ps1 bank_app C:\dev\bank -Std 20 -GitHubUser dr3mro
+    .\scripts\new-project.ps1 bank_app C:\dev\bank --std 20 --github-user dr3mro
+
+.EXAMPLE
+    # The bash-style options of new-project.sh work here as well.
+    .\scripts\new-project.ps1 bank_app C:\dev\bank --std 20 --github-user dr3mro
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 bank_lib -Lib
+    powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 bank_lib --lib --no-git
+
+.EXAMPLE
+    .\scripts\new-project.ps1 --help
 #>
 [CmdletBinding()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '',
     Justification = 'The script prints its progress to the person who runs it.')]
 param(
-    [Parameter(Mandatory = $true, Position = 0)]
+    # Everything PowerShell does not bind by itself: the positionals (name,
+    # destination) and the bash-style options of new-project.sh (--std, --lib,
+    # --no-git, --github-user). The script parses these and maps them onto the
+    # parameters below, so that one command line works with both scripts.
+    [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
+    [string[]]$RemainingArgs,
+
     [string]$Name,
 
-    [Parameter(Position = 1)]
     [string]$Destination,
 
     [ValidateSet('17', '20', '23')]
@@ -59,14 +80,124 @@ param(
 
     [switch]$NoGit,
 
-    [string]$GitHubUser = ''
+    [string]$GitHubUser = '',
+
+    [Alias('h')]
+    [switch]$Help
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
+function Show-Usage {
+    @(
+        'Usage: scripts/new-project.ps1 <name> [destination-dir] [options]',
+        '',
+        'Options:',
+        '  -Std 17|20|23 / --std 17|20|23 / --std=17|20|23',
+        '  -Lib / --lib',
+        '  -NoGit / --no-git',
+        '  -GitHubUser <user> / --github-user <user> / --github-user=<user>',
+        '  -h, --help',
+        '',
+        'Create a new C++ project from this template.'
+    ) | ForEach-Object { [Console]::Out.WriteLine($_) }
+}
+
 function Fail([string]$Message) {
     [Console]::Error.WriteLine("error: $Message")
+    Show-Usage
+    exit 1
+}
+
+# ---- parse the arguments -------------------------------------------------------
+# PowerShell binds the options it knows by itself (-Std, -Lib, -GitHubUser,
+# -h). Everything else lands in $RemainingArgs: the positionals (name,
+# destination) and the bash-style options of new-project.sh (--std, --lib,
+# --no-git, --github-user). Map them onto the parameters above, so that the
+# same command line works with both scripts. An option may take its value
+# either as the next argument (--std 20) or after an equals sign (--std=20).
+
+$StdValues = @('17', '20', '23')
+# The options the script parsed itself, to catch an option given twice.
+$Parsed = @{}
+
+$tokens = @()
+if ($RemainingArgs) { $tokens = @($RemainingArgs) }
+
+for ($i = 0; $i -lt $tokens.Count; $i++) {
+    $token = $tokens[$i]
+
+    if (-not $token.StartsWith('-')) {
+        # a positional: the project name, then the destination folder
+        if (-not $Name) { $Name = $token }
+        elseif (-not $Destination) { $Destination = $token }
+        else { Fail "unexpected argument: $token" }
+        continue
+    }
+
+    $option = $token
+    $value = $null
+    $hasValue = $false
+    $equals = $option.IndexOf('=')
+    if ($equals -gt 0) {
+        $value = $option.Substring($equals + 1)
+        $option = $option.Substring(0, $equals)
+        $hasValue = $true
+    }
+    # The bash style (--std) and the PowerShell style (-Std) name the same
+    # option, so compare the name without the dashes.
+    switch ($option.TrimStart('-').ToLowerInvariant() -replace '-', '') {
+        'std' {
+            if (-not $hasValue) {
+                if ($i + 1 -ge $tokens.Count) { Fail "missing value for $option" }
+                $i++
+                $value = $tokens[$i]
+            }
+            if ($value -notin $StdValues) {
+                Fail "Cannot validate argument on parameter 'Std'. The argument `"$value`" does not belong to the set `"$($StdValues -join ',')`" specified by the ValidateSet attribute. Supply an argument that is in the set and then try the command again."
+            }
+            if ($Parsed.ContainsKey('std') -or ($PSBoundParameters.ContainsKey('Std') -and $Std -ne $value)) {
+                Fail 'the C++ standard is given twice'
+            }
+            $Parsed['std'] = $value
+            $Std = $value
+        }
+        'lib' {
+            if ($Parsed.ContainsKey('lib')) { Fail 'the --lib option is given twice' }
+            $Parsed['lib'] = $true
+            $Lib = $true
+        }
+        'nogit' {
+            if ($Parsed.ContainsKey('nogit')) { Fail 'the --no-git option is given twice' }
+            $Parsed['nogit'] = $true
+            $NoGit = $true
+        }
+        'githubuser' {
+            if (-not $hasValue) {
+                if ($i + 1 -ge $tokens.Count) { Fail "missing value for $option" }
+                $i++
+                $value = $tokens[$i]
+            }
+            if ($Parsed.ContainsKey('githubuser') -or ($PSBoundParameters.ContainsKey('GitHubUser') -and $GitHubUser -ne $value)) {
+                Fail 'the GitHub user is given twice'
+            }
+            $Parsed['githubuser'] = $value
+            $GitHubUser = $value
+        }
+        'help' { $Help = $true }
+        'h' { $Help = $true }
+        default { Fail "unknown option: $token" }
+    }
+}
+
+if ($Help) {
+    Show-Usage
+    exit 0
+}
+
+if (-not $Name) {
+    Show-Usage
     exit 1
 }
 
@@ -115,7 +246,8 @@ if ($Name.Contains('__') -or $Name.EndsWith('_')) {
     Fail 'name must not contain "__" or end with "_"'
 }
 if ($GitHubUser -and $GitHubUser -notmatch '^[A-Za-z0-9-]+$') {
-    Fail '-GitHubUser must be a GitHub user name (letters, digits, -)'
+    # The same message as new-project.sh gives, whichever spelling was used.
+    Fail '--github-user must be a GitHub user name (letters, digits, -)'
 }
 
 $TemplateDir = Split-Path -Parent $PSScriptRoot
