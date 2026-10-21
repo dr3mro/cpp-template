@@ -153,10 +153,11 @@ separated by `:`.
 
 Example: `ASAN_OPTIONS=detect_leaks=0 ./build/debug/myapp`.
 
-Leak detection works on Linux. Apple's toolchain doesn't support
-LeakSanitizer on Apple Silicon, so on a Mac run the leak checks in CI or in a
-Linux container, or use Xcode's `leaks` tool:
-`leaks --atExit -- ./build/debug-nosan/myapp`.
+Leak detection works on Linux, where AddressSanitizer includes
+LeakSanitizer. Apple's AddressSanitizer does not, so the sanitized presets
+report no leaks on a Mac: use Apple's `leaks` tool there, or build with
+Homebrew's LLVM and `-fsanitize=leak`. See
+[Memory leaks](Memory-Leaks) for the details.
 
 ## Bugs sanitizers don't catch
 

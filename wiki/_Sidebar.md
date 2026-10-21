@@ -13,6 +13,7 @@
 - [Library + app tutorial](Library-and-App-Tutorial)
 - [Testing guide](Testing-Guide)
 - [Debugging and sanitizers](Debugging-and-Sanitizers)
+- [Memory leaks](Memory-Leaks)
 - [Fuzzing](Fuzzing)
 - [Code quality](Code-Quality)
 - [Documentation](Documentation)

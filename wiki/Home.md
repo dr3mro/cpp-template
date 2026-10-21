@@ -21,6 +21,7 @@ publishing a release. New to it? Read the **Start here** pages in order.
 - [Tutorial: a library and an app](Library-and-App-Tutorial): make a library and use it from another project
 - [Testing guide](Testing-Guide): doctest, running and filtering tests
 - [Debugging and sanitizers](Debugging-and-Sanitizers): LLDB, reading ASan/UBSan/TSan reports
+- [Memory leaks](Memory-Leaks): finding leaks on Linux and macOS
 - [Fuzzing](Fuzzing): find crashes with libFuzzer; work with the corpus
 - [Code quality](Code-Quality): warnings, formatting, clang-tidy, coverage, pre-commit
 - [Documentation](Documentation): doc comments, the docs website and diagrams
