@@ -8,6 +8,7 @@
 #   MYAPP_LLVM_HINTS               Homebrew's LLVM bin directories
 #   myapp_read_manifest_version()  read "version" from vcpkg.json
 #   myapp_find_llvm_program()      find clang-format, llvm-cov, clang++, ...
+#   myapp_find_msvc_cl()           find cl.exe in the Visual Studio tools
 #   myapp_find_dependency()        find_package() + record it for the package config
 #   myapp_regex_escape()           make a path safe to use as a regular expression
 # =============================================================================
@@ -45,6 +46,28 @@ function(myapp_find_llvm_program var)
         list(APPEND _hints "${_compiler_dir}")
     endif()
     find_program(${var} NAMES ${ARG_UNPARSED_ARGUMENTS} HINTS ${_hints} ${MYAPP_LLVM_HINTS})
+endfunction()
+
+# myapp_find_msvc_cl(<out-var>)
+#
+# Finds cl.exe in the Visual Studio tools of the current developer shell. The
+# tools live in bin/Host<host arch>/<target arch>/, and the developer shell
+# (VsDevCmd.bat or Launch-VsDevShell.ps1) sets VCToolsInstallDir and
+# VSCMD_ARG_TGT_ARCH. The result is empty outside a developer shell.
+function(myapp_find_msvc_cl out_var)
+    set(_hints "")
+    if(DEFINED ENV{VCToolsInstallDir} AND DEFINED ENV{VSCMD_ARG_TGT_ARCH})
+        set(_target "$ENV{VSCMD_ARG_TGT_ARCH}")
+        list(APPEND _hints
+            "$ENV{VCToolsInstallDir}/bin/Host$ENV{VSCMD_ARG_HOST_ARCH}/${_target}"
+            "$ENV{VCToolsInstallDir}/bin/Hostx64/${_target}"
+            "$ENV{VCToolsInstallDir}/bin/${_target}")
+    endif()
+    find_program(_cl NAMES cl HINTS ${_hints})
+    # find_program() caches its result; this lookup must not leave an entry
+    # behind, so it is not part of the project's configuration.
+    unset(_cl CACHE)
+    set(${out_var} "${_cl}" PARENT_SCOPE)
 endfunction()
 
 # myapp_regex_escape(<out-var> <text>)

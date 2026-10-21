@@ -46,6 +46,64 @@ if(MYAPP_USE_LLVM_CLANG AND NOT DEFINED CMAKE_CXX_COMPILER)
     set(CMAKE_CXX_COMPILER "${MYAPP_LLVM_CLANGXX}" CACHE FILEPATH "C++ compiler")
 endif()
 
+# ---- Windows: the Visual Studio compiler needs a developer shell ----------------
+# On Windows the Visual Studio tools (cl.exe, the Windows SDK and the INCLUDE
+# and LIB environment variables that point at them) only exist inside a
+# developer shell. Outside one, CMake takes whatever compiler comes first on
+# the PATH (clang++ or g++), and that compiler has no Visual Studio STL to
+# work with: the first error is a wall of "STL1000: Unexpected compiler while
+# looking for the 'iostream' header".
+#
+# A multi-config generator (Visual Studio) finds MSVC by itself, so it needs
+# none of this. So does a compiler the user chose explicitly
+# (-DCMAKE_CXX_COMPILER=clang-cl, or the CXX environment variable).
+if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
+    get_property(_myapp_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+    if(NOT _myapp_multi_config
+       AND NOT DEFINED CMAKE_CXX_COMPILER
+       AND NOT DEFINED ENV{CXX})
+        # The architecture of this machine, in the spelling the Visual Studio
+        # developer shell uses.
+        set(_myapp_arch "amd64")
+        if("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "ARM64"
+           OR "$ENV{PROCESSOR_ARCHITEW6432}" STREQUAL "ARM64")
+            set(_myapp_arch "arm64")
+        endif()
+        if(DEFINED ENV{VSCMD_VER} OR DEFINED ENV{VCToolsInstallDir})
+            # Inside a developer shell: use its cl, not the clang++ or g++ that
+            # happens to come first on the PATH.
+            myapp_find_msvc_cl(_myapp_cl)
+            if(_myapp_cl)
+                set(CMAKE_CXX_COMPILER "${_myapp_cl}" CACHE FILEPATH "C++ compiler")
+            endif()
+        else()
+            message(FATAL_ERROR
+                "No Visual Studio compiler: the Visual Studio tools (cl.exe, the\n"
+                "Windows SDK and the INCLUDE and LIB environment variables) are only\n"
+                "set up inside a developer shell, and this shell is not one.\n"
+                "\n"
+                "Pick one of these:\n"
+                "\n"
+                "  1. Build in Visual Studio, which needs neither CMake nor a shell:\n"
+                "       start myapp.sln\n"
+                "\n"
+                "  2. Let CMake find Visual Studio itself, with a Visual Studio\n"
+                "     generator (these presets also build the tests):\n"
+                "       cmake --preset vs2022\n"
+                "       cmake --preset vs2026\n"
+                "\n"
+                "  3. Open a developer shell for your architecture and configure from\n"
+                "     there. Find Visual Studio (this needs the Visual Studio\n"
+                "     Installer):\n"
+                "       & \"\${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath\n"
+                "     Then start its developer shell (use -Arch arm64 on an ARM64\n"
+                "     machine):\n"
+                "       & \"<the path from vswhere>\\Common7\\Tools\\Launch-VsDevShell.ps1\" -Arch ${_myapp_arch} -HostArch ${_myapp_arch}\n"
+                "     and run 'cmake --preset release' in it.")
+        endif()
+    endif()
+endif()
+
 # ---- vcpkg toolchain -----------------------------------------------------------
 # The setup steps depend on the host OS. vcpkg.json pins a baseline commit, so
 # the clone has to be complete: a shallow clone does not contain that commit
