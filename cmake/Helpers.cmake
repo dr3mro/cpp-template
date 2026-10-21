@@ -5,7 +5,7 @@
 # early (no PROJECT_* variables, no compiler information).
 #
 # Provides:
-#   MYAPP_LLVM_HINTS               Homebrew's LLVM bin directories
+#   MYAPP_LLVM_HINTS               LLVM bin directories to search before PATH
 #   myapp_read_manifest_version()  read "version" from vcpkg.json
 #   myapp_find_llvm_program()      find clang-format, llvm-cov, clang++, ...
 #   myapp_find_msvc_cl()           find cl.exe in the Visual Studio tools
@@ -16,8 +16,10 @@ include_guard(GLOBAL)
 
 # Homebrew installs LLVM outside PATH (Apple Silicon, then Intel prefix). Every
 # LLVM tool lookup searches these before PATH, so a newer Homebrew LLVM wins
-# over an older system copy.
-set(MYAPP_LLVM_HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
+# over an older system copy. The Windows installer puts LLVM in Program Files
+# and only adds it to the PATH of new shells, so look there as well.
+set(MYAPP_LLVM_HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin
+                     "C:/Program Files/LLVM/bin")
 
 # myapp_read_manifest_version(<out-var> <vcpkg.json>)
 #

@@ -20,10 +20,20 @@ execute_process(
     OUTPUT_VARIABLE _myapp_clang_format_version
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(NOT _myapp_clang_format_version MATCHES "version ([0-9]+)" OR CMAKE_MATCH_1 LESS 20)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        set(_myapp_clang_format_advice
+            "Windows: 'winget upgrade LLVM.LLVM', or 'pipx install clang-format'.")
+    elseif(APPLE)
+        set(_myapp_clang_format_advice
+            "macOS: 'brew install llvm'.")
+    else()
+        set(_myapp_clang_format_advice
+            "Linux: 'pipx install clang-format'.")
+    endif()
     message(WARNING
         "${MYAPP_CLANG_FORMAT} is too old (\"${_myapp_clang_format_version}\"): "
         ".clang-format needs version 20+. The format targets are not defined. "
-        "Install a newer LLVM (macOS: 'brew install llvm'), or point "
+        "Install a newer LLVM (${_myapp_clang_format_advice}), or point "
         "-DMYAPP_CLANG_FORMAT=<path> at clang-format 20+.")
     return()
 endif()

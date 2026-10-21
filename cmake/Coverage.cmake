@@ -68,11 +68,21 @@ function(myapp_add_coverage_report)
     # Coverage was asked for explicitly, so stop here rather than fail later
     # with "unknown target 'coverage'".
     if(NOT MYAPP_LLVM_PROFDATA OR NOT MYAPP_LLVM_COV)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+            set(_myapp_coverage_advice
+                "Windows: install LLVM ('winget install LLVM.LLVM').")
+        elseif(APPLE)
+            set(_myapp_coverage_advice
+                "macOS: install the Xcode command line tools "
+                "('xcode-select --install') or LLVM ('brew install llvm').")
+        else()
+            set(_myapp_coverage_advice
+                "Linux: install llvm ('apt install llvm').")
+        endif()
         message(FATAL_ERROR
             "MYAPP_ENABLE_COVERAGE is ON but llvm-profdata/llvm-cov matching "
             "${CMAKE_CXX_COMPILER} were not found.\n"
-            "macOS: install the Xcode command line tools (xcode-select --install) "
-            "or LLVM (brew install llvm). Linux: install llvm (apt install llvm).")
+            "${_myapp_coverage_advice}")
     endif()
 
     set(_out "${PROJECT_BINARY_DIR}")

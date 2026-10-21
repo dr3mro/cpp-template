@@ -38,10 +38,16 @@ option(MYAPP_USE_LLVM_CLANG "Prefer LLVM clang++ (Homebrew's on macOS) as the co
 if(MYAPP_USE_LLVM_CLANG AND NOT DEFINED CMAKE_CXX_COMPILER)
     myapp_find_llvm_program(MYAPP_LLVM_CLANGXX clang++)
     if(NOT MYAPP_LLVM_CLANGXX)
+        if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
+            set(_myapp_llvm_install_advice "Windows: 'winget install LLVM.LLVM'.")
+        elseif(CMAKE_HOST_APPLE)
+            set(_myapp_llvm_install_advice "macOS: 'brew install llvm'.")
+        else()
+            set(_myapp_llvm_install_advice "Linux: 'apt install clang'.")
+        endif()
         message(FATAL_ERROR
             "MYAPP_USE_LLVM_CLANG is ON but clang++ was not found.\n"
-            "Install LLVM first: 'brew install llvm' (macOS) or "
-            "'apt install clang' (Linux).")
+            "Install LLVM first: ${_myapp_llvm_install_advice}")
     endif()
     set(CMAKE_CXX_COMPILER "${MYAPP_LLVM_CLANGXX}" CACHE FILEPATH "C++ compiler")
 endif()
