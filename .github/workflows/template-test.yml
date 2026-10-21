@@ -349,7 +349,7 @@ jobs:
           & powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 nextsteps "$env:RUNNER_TEMP\nextsteps" -NoGit 2>&1 | Tee-Object -Variable log
           if ($LASTEXITCODE -ne 0) { throw "new-project.ps1 failed under Windows PowerShell 5.1" }
           $text = ($log | Out-String)
-          $bad = $log | Where-Object { $_ -match '&&' }
+          $bad = $log | Where-Object { $_ -match '\&\&' }
           if ($bad) {
             $bad
             throw "the printed next steps use &&, which Windows PowerShell 5.1 cannot parse"
