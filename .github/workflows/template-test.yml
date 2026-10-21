@@ -45,6 +45,23 @@ jobs:
           ./scripts/new-project.sh app20 /tmp/app20 --std 20 --no-git
           ./scripts/new-project.sh mylib /tmp/mylib --no-git --lib
 
+      - name: The author ends up in the project exactly as given
+        # The name goes into every file through perl, so characters that mean
+        # something to perl or the shell (/ @ $ < >) must come out unchanged.
+        run: |
+          # shellcheck disable=SC2016 # the $HOME is meant literally
+          author='Jane O/Brien <jane@x.io> $HOME'
+          ./scripts/new-project.sh authored /tmp/authored --no-git --author "$author"
+          grep -qF " * $author" /tmp/authored/main.cpp || {
+            echo "::error::main.cpp does not carry the author '$author'"
+            sed -n 1,5p /tmp/authored/main.cpp
+            exit 1
+          }
+          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' /tmp/authored --exclude-dir=.git; then
+            echo "::error::placeholder left behind in the --author project"
+            exit 1
+          fi
+
       - name: The PowerShell script produces the same project
         # scripts/new-project.ps1 must produce the same project as
         # new-project.sh, apart from the random Visual Studio GUID. Same names
@@ -278,6 +295,23 @@ jobs:
           foreach ($shell in @('powershell', 'pwsh')) {
             & $shell -ExecutionPolicy Bypass -File scripts\new-project.ps1 vsapp "$env:RUNNER_TEMP\psapp-$shell" -NoGit
             & $shell -ExecutionPolicy Bypass -File scripts\new-project.ps1 vslib "$env:RUNNER_TEMP\pslib-$shell" -NoGit -Lib
+          }
+
+      - name: The PowerShell script keeps the author exactly as given
+        shell: pwsh
+        run: |
+          $author = 'Jane O/Brien <jane@x.io> $HOME'
+          foreach ($shell in @('powershell', 'pwsh')) {
+            $dest = "$env:RUNNER_TEMP\authored-$shell"
+            & $shell -ExecutionPolicy Bypass -File scripts\new-project.ps1 authored $dest -NoGit -Author $author
+            if ($LASTEXITCODE -ne 0) { throw "new-project.ps1 -Author failed under $shell" }
+            $header = Get-Content -LiteralPath "$dest\main.cpp" -TotalCount 5 | Out-String
+            if (-not $header.Contains(" * $author")) {
+              $header
+              throw "main.cpp does not carry the author under $shell"
+            }
+            $left = Get-ChildItem -LiteralPath $dest -Recurse -File | Select-String -SimpleMatch -Pattern '@AUTHOR@' -List
+            if ($left) { $left; throw "@AUTHOR@ left behind under $shell" }
           }
 
       - name: The PowerShell script produces the same project as the bash script

@@ -111,14 +111,29 @@ The site is at `https://<user>.github.io/<repo>/`.
 The release workflow builds:
 
 - **app projects**: the executable for Linux (x64, x86, arm64), macOS (x64,
-  arm64) and Windows (x64, x86, arm64), one `.tar.gz` each;
+  arm64) and Windows (x64, x86, arm64), as a `.zip` on Windows and a
+  `.tar.gz` everywhere else;
 - **library projects**: an installed package (headers, library and CMake
   files) per platform, one `.tar.gz` each.
+
+Two checks guard a release:
+
+- **The tag must match the version.** A first job, `check-version`, compares
+  the tag without its `v` (`v1.2.0` → `1.2.0`) with `"version"` in
+  `vcpkg.json`, and nothing is built when they differ. Fix it by bumping
+  `vcpkg.json`, then moving the tag (`git tag -f v1.2.0`, then
+  `git push -f origin v1.2.0`). Manual runs have no tag and skip the check.
+- **Each library is built for the CPU it is named after.** After installing,
+  the library release reads the architecture out of the library itself
+  (`objdump` on Linux, `lipo` on macOS, `dumpbin` on Windows) and fails when
+  it does not match the archive's name. A wrong vcpkg triplet or cross-compile
+  flag still builds, so without this check it would ship the wrong binary.
 
 ### Publishing a release
 
 ```bash
-# 1. bump "version" in vcpkg.json and update CHANGELOG.md, commit
+# 1. bump "version" in vcpkg.json (it must equal the tag without the v)
+#    and update CHANGELOG.md, commit
 git tag v1.2.0
 git push origin main v1.2.0
 ```

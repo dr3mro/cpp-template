@@ -10,6 +10,7 @@ newcpp bank_app ~/dev/bank              # choose the folder
 newcpp bank_app --std 20                # C++20 instead of C++17 (or 23)
 newcpp bank_lib --lib                   # an installable library instead of an app
 newcpp bank_app --github-user dr3mro    # fill in the GitHub Pages docs link in the README
+newcpp bank_app --author "Jane Doe"     # the name in main.cpp's header comment
 newcpp bank_app --no-git                # don't create a git repository
 ```
 
@@ -25,10 +26,16 @@ pwsh -NoProfile -File scripts/new-project.ps1 bank_app C:\dev\bank -Std 20 -GitH
 pwsh -NoProfile -File scripts/new-project.ps1 bank_lib -Lib -NoGit
 pwsh -NoProfile -File scripts/new-project.ps1 bank_app C:\dev\bank --std 20 --github-user dr3mro
 pwsh -NoProfile -File scripts/new-project.ps1 bank_lib --lib --no-git
+pwsh -NoProfile -File scripts/new-project.ps1 bank_app -Author "Jane Doe"
 ```
 
-`--std 20`, `--std=20`, `--lib`, `--no-git`, `--github-user <user>` and
-`--github-user=<user>` are all accepted. `-h` and `--help` print the usage.
+`--std 20`, `--std=20`, `--lib`, `--no-git`, `--github-user <user>`,
+`--github-user=<user>`, `--author <name>` and `--author=<name>` are all
+accepted. `-h` and `--help` print the usage.
+
+Without `--author` (`-Author`), the author is your `git config user.name`,
+or `Your Name` when git has none. The name is copied exactly as you type it,
+so quote it when it has spaces.
 
 On Windows PowerShell 5.1 (the one that comes with Windows) the execution
 policy may block a downloaded script with *"running scripts is disabled on
@@ -97,13 +104,15 @@ instead of `bank`.
    template files are covered automatically. The Visual Studio files also get
    a **fresh project GUID**, so two projects never share one.
 
-3. Sets the C++ standard you chose, in CMake and in the Visual Studio project
+3. Writes the author (`--author`, or your git user name) into the header
+   comment of `main.cpp`.
+4. Sets the C++ standard you chose, in CMake and in the Visual Studio project
    (`stdcpp17`, `stdcpp20`, `stdcpp23`).
-4. Replaces the README with a project README (with your docs link when you pass
+5. Replaces the README with a project README (with your docs link when you pass
    `--github-user`).
-5. Keeps only the pieces for the mode you picked (see below) and the matching
+6. Keeps only the pieces for the mode you picked (see below) and the matching
    release workflow.
-6. Runs `git init` and makes a first commit (unless `--no-git`).
+7. Runs `git init` and makes a first commit (unless `--no-git`).
 
 It refuses to overwrite a folder that already exists.
 

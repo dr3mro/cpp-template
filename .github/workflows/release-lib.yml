@@ -39,13 +39,18 @@ jobs:
           [ "$tag" = "$ver" ] || { echo "::error::tag v$tag does not match vcpkg.json version $ver"; exit 1; }
 
   build:
-
     name: ${{ matrix.os }} ${{ matrix.arch }}
+    # Every build waits for the tag check. A manual run (no tag) skips that
+    # check, and always() keeps the skipped job from cancelling the build.
+    needs: check-version
     # The template repo is an app, so a v* tag would otherwise also run the
     # library build here and attach same-named archives as the app release.
     # Generated library projects keep the guard too, but their repository name
     # differs, so the condition is always true for them.
-    if: github.repository != 'dr3mro/cpp-template'
+    if: >-
+      always() &&
+      github.repository != 'dr3mro/cpp-template' &&
+      (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -105,28 +110,48 @@ jobs:
           cmake --preset release -DMYAPP_BUILD_TESTS=OFF ${{ matrix.cmake_args }}
           cmake --build --preset release
           cmake --install build/release --prefix "$prefix"
-          lib="$(find "$prefix" -type f \( -name '*.so' -o -name '*.dylib' -o -name '*.a' -o -name '*.lib' -o -name '*.dll' \) | head -1)"
-          if [ -z "$lib" ]; then echo "::error::no installed library found under $prefix" >&2; exit 1; fi
-          case "${{ matrix.os }}" in
-            linux)
-              out="$(objdump -f "$lib")"; echo "$out"
-              case "${{ matrix.arch }}" in
-                x64) echo "$out" | grep -m1 architecture | grep -q 'x86-64' ;;
-                arm64) echo "$out" | grep -m1 architecture | grep -q 'aarch64' ;;
-              esac ;;
-            macos)
-              out="$(lipo -info "$lib")"; echo "$out"
-              case "${{ matrix.arch }}" in
-                x64) echo "$out" | grep -q 'x86_64' ;;
-                arm64) echo "$out" | grep -q 'arm64' ;;
-              esac ;;
-            windows)
-              out="$(dumpbin /headers "$lib")"; echo "$out"
-              case "${{ matrix.arch }}" in
-                x64) echo "$out" | grep -q '8664 machine (x64)' ;;
-                arm64) echo "$out" | grep -q 'AA64 machine (ARM64)' ;;
-              esac ;;
+
+      # A swapped vcpkg triplet or a wrong cross-compile flag still builds, but
+      # for the wrong CPU. Check the installed library itself. `file` cannot do
+      # this: for a static library it only says "current ar archive".
+      - name: Check the library architecture (Linux, macOS)
+        if: matrix.os != 'windows'
+        shell: bash
+        run: |
+          prefix="dist/myapp-${{ matrix.os }}-${{ matrix.arch }}"
+          lib="$(find "$prefix" -type f \( -name '*.a' -o -name '*.so*' -o -name '*.dylib' \) | head -1)"
+          if [ -z "$lib" ]; then
+            echo "::error::no installed library found under $prefix"
+            exit 1
+          fi
+          case "${{ matrix.os }}-${{ matrix.arch }}" in
+            linux-x64)   out="$(objdump -f "$lib" | grep -m1 architecture)"; want='x86-64' ;;
+            linux-arm64) out="$(objdump -f "$lib" | grep -m1 architecture)"; want='aarch64' ;;
+            macos-x64)   out="$(lipo -info "$lib")"; want='x86_64' ;;
+            macos-arm64) out="$(lipo -info "$lib")"; want='arm64' ;;
+            *) echo "::error::no architecture check for ${{ matrix.os }}-${{ matrix.arch }}"; exit 1 ;;
           esac
+          echo "$lib: $out"
+          if ! grep -q -- "$want" <<<"$out"; then
+            echo "::error::$lib is not ${{ matrix.arch }} (expected '$want')"
+            exit 1
+          fi
+
+      # PowerShell, not bash: Git Bash would rewrite /headers as if it were a
+      # path. dumpbin comes from the developer shell set up above.
+      - name: Check the library architecture (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $prefix = "dist/myapp-${{ matrix.os }}-${{ matrix.arch }}"
+          $lib = Get-ChildItem -LiteralPath $prefix -Recurse -File -Include *.lib, *.dll | Select-Object -First 1
+          if (-not $lib) { throw "no installed library found under $prefix" }
+          $want = @{ 'x64' = '8664 machine (x64)'; 'arm64' = 'AA64 machine (ARM64)' }['${{ matrix.arch }}']
+          $out = dumpbin /headers $lib.FullName | Select-String -Pattern 'machine \(' | Select-Object -First 1
+          "$($lib.FullName): $out"
+          if (-not ("$out" -match [regex]::Escape($want))) {
+            throw "$($lib.Name) is not ${{ matrix.arch }} (expected '$want')"
+          }
 
       - name: Package library
         shell: bash
@@ -143,7 +168,11 @@ jobs:
 
   publish:
     name: Publish GitHub release
-    if: startsWith(github.ref, 'refs/tags/') || inputs.publish_release == true
+    # always(): on a manual run check-version is skipped, and a skipped job
+    # further up would otherwise skip this one too, even after a good build.
+    if: >-
+      always() && needs.build.result == 'success' &&
+      (startsWith(github.ref, 'refs/tags/') || inputs.publish_release == true)
     needs: build
     runs-on: ubuntu-latest
     steps:

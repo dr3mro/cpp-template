@@ -25,7 +25,8 @@ ctest --preset debug             # test
 ```
 
 `new-project.sh <name>` makes an app; add `--lib` for an installable library,
-`--std 20` for C++20. On Windows, `scripts/new-project.ps1` does the same
+`--std 20` for C++20, `--author "Jane Doe"` for the name in `main.cpp`
+(default: your git user name). On Windows, `scripts/new-project.ps1` does the same
 without bash and accepts both option styles (`-Std 20` and `--std 20`). See
 [Creating a project](https://github.com/dr3mro/cpp-template/wiki/Creating-a-Project).
 

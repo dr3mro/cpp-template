@@ -39,8 +39,13 @@ jobs:
           [ "$tag" = "$ver" ] || { echo "::error::tag v$tag does not match vcpkg.json version $ver"; exit 1; }
 
   build:
-
     name: ${{ matrix.os }} ${{ matrix.arch }}
+    # Every build waits for the tag check. A manual run (no tag) skips that
+    # check, and always() keeps the skipped job from cancelling the build.
+    needs: check-version
+    if: >-
+      always() &&
+      (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -125,15 +130,21 @@ jobs:
           cmake --build --preset release
           cp "build/release/myapp${{ matrix.extension }}" "dist/myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
 
-      - name: Package binary
-        shell: ${{ matrix.os == 'windows' && 'pwsh' || 'bash' }}
+      # Windows users expect a .zip; everyone else gets a .tar.gz. Two steps,
+      # because each one is written for its own shell.
+      - name: Package binary (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
         run: |
           $archive = "myapp-${{ matrix.os }}-${{ matrix.arch }}"
-          if ("${{ matrix.os }}" -eq "windows") {
-            Compress-Archive -Path "dist/myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}" -DestinationPath "dist/${archive}.zip" -Force
-          } else {
-            tar -czf "dist/${archive}.tar.gz" -C dist "myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
-          }
+          Compress-Archive -Path "dist/$archive${{ matrix.extension }}" -DestinationPath "dist/$archive.zip" -Force
+
+      - name: Package binary (Linux, macOS)
+        if: matrix.os != 'windows'
+        shell: bash
+        run: |
+          archive="myapp-${{ matrix.os }}-${{ matrix.arch }}"
+          tar -czf "dist/${archive}.tar.gz" -C dist "${archive}${{ matrix.extension }}"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
@@ -146,7 +157,11 @@ jobs:
 
   publish:
     name: Publish GitHub release
-    if: startsWith(github.ref, 'refs/tags/') || inputs.publish_release == true
+    # always(): on a manual run check-version is skipped, and a skipped job
+    # further up would otherwise skip this one too, even after a good build.
+    if: >-
+      always() && needs.build.result == 'success' &&
+      (startsWith(github.ref, 'refs/tags/') || inputs.publish_release == true)
     needs: build
     runs-on: ubuntu-latest
     steps:
