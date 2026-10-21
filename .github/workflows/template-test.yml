@@ -135,25 +135,23 @@ jobs:
       - name: Generate projects from the template
         shell: bash
         run: |
-          ./scripts/new-project.sh vsapp /tmp/vsapp --no-git
-          ./scripts/new-project.sh vslib /tmp/vslib --no-git --lib
+          ./scripts/new-project.sh vsapp "$RUNNER_TEMP/vsapp" --no-git
+          ./scripts/new-project.sh vslib "$RUNNER_TEMP/vslib" --no-git --lib
 
       - name: No placeholder names left behind
         shell: bash
         run: |
-          if grep -rIl 'myapp\|MYAPP' /tmp/vsapp /tmp/vslib --exclude-dir=.git; then
+          if grep -rIl 'myapp\|MYAPP' "$RUNNER_TEMP/vsapp" "$RUNNER_TEMP/vslib" --exclude-dir=.git; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
 
+      # PowerShell, not bash: setup-msbuild puts msbuild on the Windows PATH,
+      # and Git Bash would also rewrite /p: switches as if they were paths.
       - name: Build the app project with MSBuild
-        shell: bash
-        run: |
-          cd /tmp/vsapp
-          msbuild vsapp.sln /p:Configuration=Release /p:Platform=x64
+        shell: pwsh
+        run: msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=Release -p:Platform=x64 -m
 
       - name: Build the library project with MSBuild
-        shell: bash
-        run: |
-          cd /tmp/vslib
-          msbuild vslib.sln /p:Configuration=Release /p:Platform=x64
+        shell: pwsh
+        run: msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=Release -p:Platform=x64 -m

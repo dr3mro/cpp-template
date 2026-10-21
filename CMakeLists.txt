@@ -17,6 +17,15 @@
 # =============================================================================
 cmake_minimum_required(VERSION 3.25)
 
+# An in-source build would overwrite the checked-in myapp.sln/myapp.vcxproj
+# (and litter the tree), so require a separate build folder: use a preset.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+    message(FATAL_ERROR
+        "In-source builds are not supported. Use a preset, e.g.\n"
+        "  cmake --preset debug      (or vs2022 / vs2026 on Windows)\n"
+        "then remove the CMakeCache.txt and CMakeFiles/ just created here.")
+endif()
+
 # ---- 1. Before project() ------------------------------------------------------
 # These must run before project() enables C++, so they are included by path.
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Helpers.cmake)

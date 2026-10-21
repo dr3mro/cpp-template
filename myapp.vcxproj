@@ -38,29 +38,29 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <!-- An app has main.cpp; a library project does not. -->
-    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
-    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="Exists('$(MSBuildProjectDirectory)\main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(MSBuildProjectDirectory)\main.cpp')">StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
-    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="Exists('$(MSBuildProjectDirectory)\main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(MSBuildProjectDirectory)\main.cpp')">StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
-    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
-    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="Exists('$(MSBuildProjectDirectory)\main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(MSBuildProjectDirectory)\main.cpp')">StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
-    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
-    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="Exists('$(MSBuildProjectDirectory)\main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(MSBuildProjectDirectory)\main.cpp')">StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -74,12 +74,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <!-- Build output lives under build/, which is git-ignored. -->
-    <OutDir>$(ProjectDir)build\vs\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\vs\obj\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(MSBuildProjectDirectory)\build\vs\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(MSBuildProjectDirectory)\build\vs\obj\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>myapp</TargetName>
     <!-- The CMake-generated headers (version.hpp, <name>_export.h) are written
          here before every compile. -->
-    <GeneratedIncludeDir>$(ProjectDir)build\vs\generated\</GeneratedIncludeDir>
+    <GeneratedIncludeDir>$(MSBuildProjectDirectory)\build\vs\generated\</GeneratedIncludeDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -92,7 +92,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/utf-8 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>MYAPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(GeneratedIncludeDir);$(ProjectDir)include;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GeneratedIncludeDir);$(MSBuildProjectDirectory)\include;$(MSBuildProjectDirectory)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,7 +120,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalOptions>/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /CETCOMPAT %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /CETCOMPAT %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -144,7 +144,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalOptions>/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -168,7 +168,7 @@
   <PropertyGroup>
     <!-- The debugger starts in the project root, so data files next to the
          sources are found. -->
-    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>$(MSBuildProjectDirectory)\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <!--
     The two headers that CMake generates are written here, before every
@@ -180,6 +180,7 @@
   <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile">
     <PropertyGroup>
       <VsCMakePath>$(DevEnvDir)CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</VsCMakePath>
+      <VsCMakePath Condition="!Exists('$(VsCMakePath)')">$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</VsCMakePath>
       <VsCMakePath Condition="!Exists('$(VsCMakePath)')">$(CMAKE_COMMAND)</VsCMakePath>
       <VsCMakePath Condition="'$(VsCMakePath)'==''">cmake</VsCMakePath>
     </PropertyGroup>
@@ -188,7 +189,7 @@
     </Exec>
     <Error Condition="'$(VsCMakeExitCode)'!='0'" Text="CMake was not found. Install the 'C++ CMake tools for Windows' component of the 'Desktop development with C++' workload in Visual Studio (or add cmake to PATH) and build again." />
     <!-- The version lives in vcpkg.json; that is the single source of truth. -->
-    <Exec Command="powershell -NoProfile -NonInteractive -Command &quot;[Console]::Out.Write((Get-Content -Raw '$(ProjectDir)vcpkg.json' | ConvertFrom-Json).version)&quot;"
+    <Exec Command="powershell -NoProfile -NonInteractive -Command &quot;[Console]::Out.Write((Get-Content -Raw '$(MSBuildProjectDirectory)\vcpkg.json' | ConvertFrom-Json).version)&quot;"
           ConsoleToMSBuild="true" StandardOutputImportance="high" ContinueOnError="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="VsVersionOutput" />
       <Output TaskParameter="ExitCode" PropertyName="VsVersionExitCode" />
@@ -202,7 +203,7 @@
       <VsVersionPatch>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.\d+\.(\d+).*$', '$1'))</VsVersionPatch>
     </PropertyGroup>
     <MakeDir Directories="$(GeneratedIncludeDir)" />
-    <Exec Command="&quot;$(VsCMakePath)&quot; -DTEMPLATE=&quot;$(ProjectDir)include\$(ProjectName)\version.hpp.in&quot; -DOUTPUT=&quot;$(GeneratedIncludeDir)$(ProjectName)\version.hpp&quot; -DSOURCE_DIR=&quot;$(ProjectDir)&quot; -DPROJECT_NAME=$(ProjectName) -DPROJECT_VERSION=$(VsVersion) -DPROJECT_VERSION_MAJOR=$(VsVersionMajor) -DPROJECT_VERSION_MINOR=$(VsVersionMinor) -DPROJECT_VERSION_PATCH=$(VsVersionPatch) -P &quot;$(ProjectDir)cmake\WriteVersion.cmake&quot;" />
+    <Exec Command="&quot;$(VsCMakePath)&quot; -DTEMPLATE=&quot;$(MSBuildProjectDirectory)\include\$(ProjectName)\version.hpp.in&quot; -DOUTPUT=&quot;$(GeneratedIncludeDir)$(ProjectName)\version.hpp&quot; -DSOURCE_DIR=&quot;$(MSBuildProjectDirectory)&quot; -DPROJECT_NAME=$(ProjectName) -DPROJECT_VERSION=$(VsVersion) -DPROJECT_VERSION_MAJOR=$(VsVersionMajor) -DPROJECT_VERSION_MINOR=$(VsVersionMinor) -DPROJECT_VERSION_PATCH=$(VsVersionPatch) -P &quot;$(MSBuildProjectDirectory)\cmake\WriteVersion.cmake&quot;" />
     <!-- The export header: the static-build version of the one CMake generates
          with generate_export_header(). -->
     <ItemGroup>
