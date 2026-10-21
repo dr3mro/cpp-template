@@ -67,22 +67,92 @@ yours is older, `pipx install cmake` gives you a current one.
 
 ## Windows
 
+The template works on Windows x64 and on Windows ARM64. Both use the same
+steps; only the developer-shell architecture differs.
+
 1. Install **Visual Studio 2022 or 2026** (Community is free) with the
    **Desktop development with C++** workload. It includes the compiler, CMake
    and Ninja. Visual Studio 2019 works too: the template's own solution opens
    in it without CMake (see [Visual Studio](Visual-Studio)).
-2. In a terminal:
+
+   On Windows ARM64, also tick **MSVC v143/v145 - VS 2022/2026 C++ ARM64
+   build tools** (and the ARM64 Windows SDK) in the installer's **Individual
+   components** tab. Without them Visual Studio cannot build the ARM64
+   solution platform.
+
+2. LLVM is optional, but needed for clang-format 20+, clang-tidy, fuzzing and
+   coverage. Install LLVM 20 or newer:
+
+   ```powershell
+   winget install LLVM.LLVM
+   # later: winget upgrade LLVM.LLVM
+   ```
+
+   If you use LLVM's `clang++`/`clang-cl` with the Visual Studio standard
+   library, keep it up to date: an older LLVM is rejected by a newer STL
+   ("STL1000: Unexpected compiler version"). `cl` never has this problem.
+
+3. Install vcpkg with a **full clone** (the manifest pins a baseline commit,
+   so `--depth 1` would not contain it):
 
    ```powershell
    git clone https://github.com/microsoft/vcpkg C:\vcpkg
    C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
    ```
 
-3. Set `VCPKG_ROOT` as a **user environment variable**: Start → "Edit
+4. Set `VCPKG_ROOT` as a **user environment variable**: Start → "Edit
    environment variables for your account" → New → name `VCPKG_ROOT`, value
    `C:\vcpkg`. Restart terminals and Visual Studio afterwards.
-4. Use the `vs2022` or `vs2026` preset (or the others from a
-   "Developer PowerShell for VS").
+
+5. Allow the project script. Windows blocks downloaded PowerShell scripts by
+   default. Either allow signed local scripts once per user (no administrator
+   needed), or bypass the policy for one run:
+
+   ```powershell
+   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+   # ...or:
+   powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 bank_app
+   ```
+
+   If the template came from a GitHub zip download, `RemoteSigned` still
+   refuses it because Windows marks the file as downloaded. Unblock it once:
+
+   ```powershell
+   Unblock-File .\scripts\new-project.ps1
+   ```
+
+6. Generate a project and change into it:
+
+   ```powershell
+   .\scripts\new-project.ps1 bank_app C:\dev\bank_app --std 20
+   cd C:\dev\bank_app
+   ```
+
+   The PowerShell-style options work too (`-Std 20 -Lib -NoGit`), and both
+   scripts accept the same command line.
+
+7. Build it in one of three ways:
+
+   - **Developer shell** (the CMake presets need it for the MSVC environment):
+
+     ```powershell
+     & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+     # x64:
+     & "<that path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64
+     # ARM64:
+     & "<that path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64
+
+     cmake --preset debug
+     cmake --build --preset debug
+     ctest --preset debug
+     ```
+
+   - **A Visual Studio generator preset**, which finds MSVC itself and does
+     not need a developer shell: `cmake --preset vs2022` or
+     `cmake --preset vs2026`, then build with the matching build/test preset.
+
+   - **The checked-in solution**, with no CMake at all: `start bank_app.sln`.
+     See [Visual Studio](Visual-Studio).
 
 To build without CMake at all, open `<name>.sln` in the project root in
 Visual Studio; see [Visual Studio](Visual-Studio).
@@ -90,17 +160,17 @@ Visual Studio; see [Visual Studio](Visual-Studio).
 ### Creating a project on Windows
 
 No Git Bash needed: `scripts/new-project.ps1` does the same as the bash
-script, in Windows PowerShell 5.1 and in PowerShell 7.
+script, in Windows PowerShell 5.1 and in PowerShell 7. It accepts both
+`-Std 20 -Lib -NoGit` and `--std 20 --lib --no-git`.
 
 ```powershell
 pwsh -File scripts\new-project.ps1 bank_app
 ```
 
-If the execution policy blocks the script, allow it for that one call:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bank_app
-```
+If the execution policy blocks the script, use the two fixes from step 5
+above (`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or
+`-ExecutionPolicy Bypass` for one run). Unblock a zip download with
+`Unblock-File`.
 
 For a shortcut, add a function to your PowerShell profile
 (`$PROFILE`):

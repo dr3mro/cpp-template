@@ -13,19 +13,32 @@ builds skip them, so the debugger and the sanitizers stay usable. The flags
 are set in `cmake/Hardening.cmake`, and each configure prints the exact list
 on a `Hardening (optimised configs):` line.
 
-GCC and Clang:
+The flags depend on the platform and on the **standard library**, not just on
+the compiler. The configure output lists exactly what was chosen.
 
-| Flag | What it protects against |
+| Platform / compiler | Flags |
 | --- | --- |
-| `-fstack-protector-strong` | stack buffer overflows overwriting the return address (a "canary" is checked on return) |
-| `-D_FORTIFY_SOURCE=3` | overflows in `memcpy`, `strcpy`, `sprintf` and friends, checked at compile and run time |
-| `-fstack-clash-protection` | a huge stack allocation jumping over the guard page (when the compiler supports it) |
-| `-fcf-protection=full` | return- and jump-oriented programming, using Intel CET (x86 only, when supported) |
-| `-D_GLIBCXX_ASSERTIONS` (libstdc++) or `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` (libc++) | out-of-bounds `operator[]`, `front()` and similar in the standard library |
-| `-Wl,-z,relro,-z,now,-z,noexecstack` (Linux) | overwriting function pointers in the GOT, and running code from the stack |
+| GCC/Clang on Linux (libstdc++ or libc++) | `-fstack-protector-strong`, `-D_FORTIFY_SOURCE=3`, `-fstack-clash-protection`, `-fcf-protection=full` on x64, `-mbranch-protection=standard` on ARM64, `-Wl,-z,relro,-z,now,-z,noexecstack` |
+| Apple Clang / Clang on macOS | the same stack, stack-clash and branch-protection flags, plus `-D_FORTIFY_SOURCE=3` (Apple's libc); no RELRO or CET flags |
+| Clang on Windows (GNU-style `clang++`) | `-mguard=cf` at compile time, `-Wl,/guard:cf -Wl,/DYNAMICBASE -Wl,/NXCOMPAT -Wl,/HIGHENTROPYVA`, `-Wl,/CETCOMPAT` on x64 only, `-mbranch-protection=standard` on ARM64 |
+| Clang on Windows (`clang-cl`) | `/guard:cf` at compile time, `/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`, `/CETCOMPAT` on x64 only |
+| MSVC (`cl`) | `/GS /guard:cf`, `/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`, `/CETCOMPAT` on x64 only |
 
-MSVC: `/GS` (stack checks), `/guard:cf` (Control Flow Guard), `/DYNAMICBASE` and
-`/HIGHENTROPYVA` (ASLR), `/NXCOMPAT` (DEP), plus `/CETCOMPAT` on x64.
+The standard library's own checks are detected with a test compile, so they
+work with any compiler:
+
+| Standard library | Flag |
+| --- | --- |
+| libstdc++ (`__GLIBCXX__`) | `-D_GLIBCXX_ASSERTIONS` |
+| libc++ (`_LIBCPP_VERSION`) | `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` |
+| Visual Studio STL (`_MSVC_STL_VERSION`) | `-D_MSVC_STL_HARDENING=1`, only when that STL is new enough to know it |
+
+`_FORTIFY_SOURCE` is only added with glibc or Apple's libc. It is a glibc
+feature and does nothing with the Visual Studio STL, so it is left out on
+Windows, as is `_GLIBCXX_ASSERTIONS` (a libstdc++ feature).
+
+Every flag is probed first (`check_cxx_compiler_flag`,
+`check_linker_flag`), so an older clang that does not know one just skips it.
 
 Every build is also position-independent (PIE for executables, PIC for
 libraries) so address-space layout randomisation applies; that is set in

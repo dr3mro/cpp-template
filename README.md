@@ -26,8 +26,21 @@ ctest --preset debug             # test
 
 `new-project.sh <name>` makes an app; add `--lib` for an installable library,
 `--std 20` for C++20. On Windows, `scripts/new-project.ps1` does the same
-without bash. See
+without bash and accepts both option styles (`-Std 20` and `--std 20`). See
 [Creating a project](https://github.com/dr3mro/cpp-template/wiki/Creating-a-Project).
+
+### On Windows
+
+- PowerShell refuses downloaded scripts until you either allow them once
+  (`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, no administrator
+  needed) or bypass the policy for one run
+  (`powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 ...`).
+  A zip download also needs `Unblock-File .\scripts\new-project.ps1`.
+- The `debug`, `release` and other Ninja presets need a **developer shell**
+  for your architecture (`-Arch amd64` on x64, `-Arch arm64` on ARM64). The
+  `vs2022`/`vs2026` presets and the checked-in `.sln` do not.
+- `scripts/new-project.ps1` and `new-project.sh` accept the same command
+  line, so `--std 20 --lib --no-git` works in both.
 
 ## What you get
 

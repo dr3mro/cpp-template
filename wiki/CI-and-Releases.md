@@ -24,7 +24,7 @@ those PRs, so merge them when they're green.
 | Job | Checks | Run it locally |
 | --- | --- | --- |
 | `build-and-test` (Linux, macOS) | builds with the `ci` preset (ASan + UBSan, warnings are errors) and runs the tests | `cmake --preset ci && cmake --build --preset ci && ctest --preset ci` |
-| `build-and-test` (Windows) | builds and tests the `release` preset with MSVC | `cmake --preset vs2022` on Windows |
+| `build-and-test` (Windows x64 and ARM64) | builds and tests the `release` preset with MSVC on `windows-latest` and `windows-11-arm` | `cmake --preset vs2022` on Windows |
 | `version` | the CMake project version matches `vcpkg.json` | `cmake --preset debug-nosan` and compare `build/debug-nosan/generated/include/myapp/version.hpp` |
 | `tsan` | the tests under ThreadSanitizer | `cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan` |
 | `coverage` | builds the coverage report and uploads the HTML as an artifact | `cmake --preset coverage && cmake --build --preset coverage --target coverage` |
@@ -62,12 +62,21 @@ generates projects with `new-project.sh` (an app, an app with C++20 and a
 library), checks that no `myapp` placeholder is left, and builds and tests
 every one of them.
 
-On Windows it does one more thing: it builds the checked-in Visual Studio
-solution with MSBuild, for an app project and for a library project:
+On Windows it does more: it builds the checked-in Visual Studio solution with
+MSBuild, for an app project and for a library project, on both
+`windows-latest` (x64) and `windows-11-arm` (ARM64):
 
-```bash
-msbuild vsapp.sln /p:Configuration=Release /p:Platform=x64
+```powershell
+msbuild vsapp.sln /p:Configuration=Release /p:Platform=x64     # x64
+msbuild vsapp.sln /p:Configuration=Release /p:Platform=ARM64   # ARM64
 ```
+
+The Windows job also generates a project with `new-project.ps1` using the
+bash-style options (`--std 20 --lib --no-git`) and diffs it against the
+`-Std 20 -Lib -NoGit` result, and it checks the compiler guard: in a plain
+PowerShell window `cmake --preset release` must stop with the developer-shell
+message (not `STL1000`), while inside the developer shell CMake must choose
+MSVC.
 
 That job is the only place the Visual Studio project is really built, since
 MSBuild needs Windows. See [Visual Studio](Visual-Studio).

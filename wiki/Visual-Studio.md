@@ -15,6 +15,33 @@ in `version.hpp`.
 vcpkg is optional: when it is set up, the project uses the manifest in
 `vcpkg.json`, so dependencies you add later also work in the solution.
 
+## Opening a developer shell
+
+Visual Studio itself needs no shell, and neither do the `vs2022`/`vs2026`
+CMake presets. The Ninja presets (`debug`, `release`, `ci`, ...) do: they need
+the MSVC environment (`cl.exe`, the Windows SDK, `INCLUDE` and `LIB`). CMake
+stops with an explanation instead of picking a stray clang++ when it is not in
+one. Find Visual Studio first:
+
+```powershell
+& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+```
+
+Then start the developer shell for this machine's architecture, using the
+path that `vswhere` printed:
+
+```powershell
+# Windows x64
+& "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64
+
+# Windows ARM64
+& "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64
+```
+
+Run the CMake commands in that shell. If you want LLVM's clang instead of
+`cl`, pass it explicitly (`-DCMAKE_CXX_COMPILER=clang-cl` or
+`-DCMAKE_CXX_COMPILER=clang++`) or set `CXX`; CMake then skips the guard.
+
 ## Opening it
 
 Double-click `<name>.sln` in the project root, or in Visual Studio:

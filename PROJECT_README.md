@@ -20,6 +20,17 @@ Use `--preset release` for an optimised build, and
 `cmake --install build/release` to install it into `build/install/release/`.
 All presets and options: [Building and running](https://github.com/dr3mro/cpp-template/wiki/Building-and-Running).
 
+### On Windows
+
+The presets need a **Developer PowerShell for VS** (`-Arch amd64` on x64,
+`-Arch arm64` on ARM64), or use the `vs2022`/`vs2026` presets, or open
+`myapp.sln` and skip CMake. To create another project from the template,
+allow the downloaded script once with
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (or use
+`powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 ...`),
+and run `Unblock-File` after a zip download. `new-project.ps1` accepts both
+`-Std 20` and `--std 20`.
+
 ## Open in Visual Studio
 
 `myapp.sln` in the project root opens directly in Visual Studio 2019, 2022 and

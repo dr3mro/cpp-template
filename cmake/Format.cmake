@@ -6,7 +6,9 @@
 #
 # .clang-format uses options that need clang-format 20 or newer, so an older
 # copy is rejected with a warning instead of reformatting with the wrong rules.
-# Homebrew's LLVM is preferred over the (usually older) one on PATH.
+# Homebrew's LLVM is preferred over the (usually older) one on PATH; on Windows
+# the LLVM installer's folder is searched as well. The "too old" warning gives
+# the install command for the host OS.
 # =============================================================================
 include_guard(DIRECTORY)
 

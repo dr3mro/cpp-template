@@ -15,20 +15,39 @@ newcpp bank_app --no-git                # don't create a git repository
 
 Options can be combined: `newcpp bank_lib ~/dev/bank_lib --lib --std 20`.
 
-The PowerShell version takes the same options with their PowerShell names:
+The PowerShell version takes the same options with their PowerShell names,
+and also understands the bash-style names, so the same command line works
+with both scripts:
 
 ```powershell
 pwsh -NoProfile -File scripts/new-project.ps1 bank_app
 pwsh -NoProfile -File scripts/new-project.ps1 bank_app C:\dev\bank -Std 20 -GitHubUser dr3mro
 pwsh -NoProfile -File scripts/new-project.ps1 bank_lib -Lib -NoGit
+pwsh -NoProfile -File scripts/new-project.ps1 bank_app C:\dev\bank --std 20 --github-user dr3mro
+pwsh -NoProfile -File scripts/new-project.ps1 bank_lib --lib --no-git
 ```
 
+`--std 20`, `--std=20`, `--lib`, `--no-git`, `--github-user <user>` and
+`--github-user=<user>` are all accepted. `-h` and `--help` print the usage.
+
 On Windows PowerShell 5.1 (the one that comes with Windows) the execution
-policy may block the script; `-ExecutionPolicy Bypass` for that one call is
-enough:
+policy may block a downloaded script with *"running scripts is disabled on
+this system"*. Two fixes:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bank_app
+# Once per user: no administrator needed.
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+# ...or for one run only:
+powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 bank_app
+```
+
+If the template was downloaded as a zip from GitHub, `RemoteSigned` still
+blocks the script because Windows marks the file as "downloaded from the
+internet". Unblock it once:
+
+```powershell
+Unblock-File .\scripts\new-project.ps1
 ```
 
 Both scripts produce the same project, byte for byte (apart from the random

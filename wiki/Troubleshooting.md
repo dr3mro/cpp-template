@@ -6,6 +6,52 @@ configure again. Old build folders cause many odd errors.
 
 ## Setup and configure
 
+**`running scripts is disabled on this system` (Windows)**
+PowerShell blocked the downloaded script. Allow signed local scripts once per
+user (no administrator needed), or bypass the policy for a single run:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+# ...or:
+powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 bank_app
+```
+
+Then open a new terminal. If the template came from a GitHub zip download,
+`RemoteSigned` still blocks it because the file carries the "downloaded from
+the internet" mark; run `Unblock-File .\scripts\new-project.ps1` once.
+
+**`A positional parameter cannot be found that accepts argument '--std'`**
+An older copy of `new-project.ps1` only knew the PowerShell names. The script
+now accepts both `--std 20` and `-Std 20` (likewise `--lib`, `--no-git`,
+`--github-user`), so update the template or use `-Std 20` for that copy.
+
+**`No Visual Studio compiler: the Visual Studio tools ... are only set up
+inside a developer shell`**
+CMake was run from a plain PowerShell window. This is deliberate: outside a
+developer shell it would pick whichever `clang++` or `g++` is on `PATH`, and
+that compiler cannot use the Visual Studio standard library. Pick one:
+
+- open the checked-in `<name>.sln` in Visual Studio (no CMake);
+- use `cmake --preset vs2022` or `cmake --preset vs2026`, which find MSVC
+  themselves;
+- or start a developer shell for your architecture and configure there:
+
+  ```powershell
+  & "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64   # x64
+  & "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64   # ARM64
+  ```
+
+  Find `<VS path>` with
+  `vswhere -latest -property installationPath` (under
+  `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\`).
+
+**`STL1000: Unexpected compiler version, expected Clang 20 or newer`**
+You are building with LLVM's clang (or clang-cl) against a newer Visual
+Studio standard library than that LLVM supports. Update LLVM
+(`winget upgrade LLVM.LLVM`) or build with `cl` (a developer shell, or a
+`vs2022`/`vs2026` preset). If you meant to use clang, you can also pass a
+newer `-DCMAKE_CXX_COMPILER=clang-cl`.
+
 **`Toolchain file not found: /scripts/buildsystems/vcpkg.cmake`**
 `VCPKG_ROOT` is empty in this terminal (that's why the path starts with
 `/scripts`). Run `echo $VCPKG_ROOT`. If it prints nothing, add the `export`
@@ -66,6 +112,12 @@ The compiler is fixed when a build folder is first configured. Use
 `cmake --preset <name> --fresh -DCMAKE_CXX_COMPILER=...`.
 
 ## Building
+
+**I ran CMake in the template folder by mistake**
+Harmless: everything went to that folder's git-ignored `build/`, and no
+project was generated. Remove it with
+`cmake --build --preset release --target distclean`, or just delete `build/`.
+Then `cd` into the new project folder and configure there.
 
 **A warning breaks the build under `ci`, but not under `debug`**
 That's by design: `ci` turns warnings into errors, as CI does. Fix the
