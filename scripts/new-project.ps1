@@ -525,7 +525,9 @@ if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 
 # The developer shell of the newest Visual Studio that has the C++ tools for
 # this architecture. vswhere prints the installation path of the instance.
 function Get-DeveloperShell {
-    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    $programFilesX86 = ${env:ProgramFiles(x86)}
+    if (-not $programFilesX86) { return $null }
+    $vswhere = Join-Path $programFilesX86 'Microsoft Visual Studio\Installer\vswhere.exe'
     if (-not (Test-Path -LiteralPath $vswhere)) { return $null }
     $component = if ($arch -eq 'arm64') {
         'Microsoft.VisualStudio.Component.VC.Tools.ARM64'
