@@ -60,10 +60,11 @@ after "Add > New Item", revert that change in the `.vcxproj`.
 Everything the build writes stays under `build/vs/`: the program, the
 intermediate files, the generated headers and the vcpkg packages. Only `.vs/`
 (Visual Studio's own folder) and an optional `<name>.vcxproj.user` appear in
-the project root, and both are git-ignored. The tests are not part of the
-solution (they need doctest from CMake), so they keep running through
-`cmake --preset debug && cmake --build --preset debug && ctest --preset
-debug`.
+the project root, and both are git-ignored. The IntelliSense cache can be
+moved per user via **Tools → Options → Text Editor → C/C++ → Advanced →
+Fallback Location**. The tests are not part of the solution (they need doctest
+from CMake), so they keep running through `cmake --preset debug && cmake
+--build --preset debug && ctest --preset debug`.
 
 `cmake --preset vs2026` is still there for a CMake-generated solution; the
 two approaches don't conflict, because they build into different folders.

@@ -5,7 +5,9 @@
 PROJECT_NAME           = "@PROJECT_NAME@"
 PROJECT_NUMBER         = "@PROJECT_VERSION@"
 OUTPUT_DIRECTORY       = "@PROJECT_BINARY_DIR@/class-diagrams"
-INPUT                  = @PROJECT_SOURCE_DIR@/include @PROJECT_SOURCE_DIR@/src @MYAPP_DOXY_EXTRA_INPUT@
+# Every path is quoted: a project folder may contain spaces, and an unquoted
+# path would be split into two.
+INPUT                  = "@PROJECT_SOURCE_DIR@/include" "@PROJECT_SOURCE_DIR@/src" @MYAPP_DOXY_EXTRA_INPUT@
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
 EXTRACT_ALL            = YES

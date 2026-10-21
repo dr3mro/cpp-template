@@ -94,6 +94,22 @@ jobs:
       - name: Doxygen docs workflow
         run: (cd /tmp/app20 && cmake --workflow --preset docs)
 
+      - name: Build a project in a folder with a space and special characters
+        # A path with a space (and 'c++') breaks the regular expressions that
+        # clang-tidy and the coverage report use, and the paths in the Doxygen
+        # configuration. Building there keeps that honest.
+        run: |
+          dir="/tmp/my c++ (work)/spc"
+          rm -rf "$dir"
+          mkdir -p "$dir"
+          ./scripts/new-project.sh spaced "$dir/spaced" --no-git
+          cd "$dir/spaced"
+          cmake --preset debug
+          cmake --build --preset debug
+          ctest --preset debug
+          cmake --build --preset debug --target tidy
+          cmake --workflow --preset docs
+
       - name: clang-tidy (Linux)
         if: runner.os == 'Linux'
         run: |

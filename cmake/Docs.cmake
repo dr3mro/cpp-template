@@ -29,9 +29,10 @@ else()
     set(MYAPP_DOXY_HAVE_DOT NO)
 endif()
 # main.cpp is app-only; library mode would otherwise warn about a missing input.
+# The path is quoted: a project folder may contain spaces.
 set(MYAPP_DOXY_EXTRA_INPUT "")
 if(EXISTS "${PROJECT_SOURCE_DIR}/main.cpp")
-    set(MYAPP_DOXY_EXTRA_INPUT "${PROJECT_SOURCE_DIR}/main.cpp")
+    set(MYAPP_DOXY_EXTRA_INPUT "\"${PROJECT_SOURCE_DIR}/main.cpp\"")
 endif()
 
 configure_file("${PROJECT_SOURCE_DIR}/Doxyfile.in" "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)

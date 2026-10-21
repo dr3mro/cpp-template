@@ -18,14 +18,33 @@ if(MYAPP_TIDY_WERROR)
     list(APPEND _myapp_tidy_args "-warnings-as-errors=*")
 endif()
 
+# The project folder can contain spaces, '+' and other characters that mean
+# something in a regular expression, so the path is escaped before it is used
+# as one. Otherwise the pattern matches nothing and clang-tidy checks no file
+# at all.
+myapp_regex_escape(_myapp_tidy_source_dir "${PROJECT_SOURCE_DIR}")
+set(_myapp_tidy_pattern "${_myapp_tidy_source_dir}/(main.cpp|src/.*|tests/.*)")
+
+# Check that the pattern really matches the project's sources, so a broken
+# pattern fails the build instead of quietly checking nothing.
+file(GLOB_RECURSE _myapp_tidy_files
+     "${PROJECT_SOURCE_DIR}/src/*.cpp" "${PROJECT_SOURCE_DIR}/tests/*.cpp")
+list(APPEND _myapp_tidy_files "${PROJECT_SOURCE_DIR}/main.cpp")
+list(FILTER _myapp_tidy_files INCLUDE REGEX "${_myapp_tidy_pattern}")
+if(NOT _myapp_tidy_files)
+    message(FATAL_ERROR
+        "clang-tidy would check no files: the pattern ${_myapp_tidy_pattern} "
+        "matches none of the project's sources.")
+endif()
+
 add_custom_target(tidy
     COMMAND "${MYAPP_RUN_CLANG_TIDY}" ${_myapp_tidy_args}
             # Report findings in the project's own headers only. Anchored at the
             # source tree so the generated build/**/generated/include/<name>/
             # headers can never match.
-            "-header-filter=^${PROJECT_SOURCE_DIR}/(include|src)/${PROJECT_NAME}/"
+            "-header-filter=^${_myapp_tidy_source_dir}/(include|src)/${PROJECT_NAME}/"
             # Files to check (a regex over compile_commands.json entries).
-            "${PROJECT_SOURCE_DIR}/(main.cpp|src/.*|tests/.*)"
+            "${_myapp_tidy_pattern}"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     COMMENT "Running clang-tidy on the project"
     VERBATIM)

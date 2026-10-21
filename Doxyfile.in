@@ -3,13 +3,15 @@
 PROJECT_NAME           = "@PROJECT_NAME@"
 PROJECT_NUMBER         = "@PROJECT_VERSION@"
 PROJECT_BRIEF          = "C++ application"
-OUTPUT_DIRECTORY       = @MYAPP_DOCS_DIR@
+OUTPUT_DIRECTORY       = "@MYAPP_DOCS_DIR@"
 HTML_OUTPUT            = .
-INPUT                  = @PROJECT_SOURCE_DIR@/include @PROJECT_SOURCE_DIR@/src @PROJECT_SOURCE_DIR@/README.md @PROJECT_SOURCE_DIR@/SECURITY.md @MYAPP_DOXY_EXTRA_INPUT@
-USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/README.md
-IMAGE_PATH             = @MYAPP_DIAGRAMS_DIR@
-STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@
-STRIP_FROM_INC_PATH    = @PROJECT_SOURCE_DIR@/include
+# Every path is quoted: a project folder may contain spaces, and an unquoted
+# path would be split into two.
+INPUT                  = "@PROJECT_SOURCE_DIR@/include" "@PROJECT_SOURCE_DIR@/src" "@PROJECT_SOURCE_DIR@/README.md" "@PROJECT_SOURCE_DIR@/SECURITY.md" @MYAPP_DOXY_EXTRA_INPUT@
+USE_MDFILE_AS_MAINPAGE = "@PROJECT_SOURCE_DIR@/README.md"
+IMAGE_PATH             = "@MYAPP_DIAGRAMS_DIR@"
+STRIP_FROM_PATH        = "@PROJECT_SOURCE_DIR@"
+STRIP_FROM_INC_PATH    = "@PROJECT_SOURCE_DIR@/include"
 FILE_PATTERNS          = *.hpp *.cpp *.md
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */build/* */docs/* */.git/*

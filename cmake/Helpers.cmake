@@ -9,6 +9,7 @@
 #   myapp_read_manifest_version()  read "version" from vcpkg.json
 #   myapp_find_llvm_program()      find clang-format, llvm-cov, clang++, ...
 #   myapp_find_dependency()        find_package() + record it for the package config
+#   myapp_regex_escape()           make a path safe to use as a regular expression
 # =============================================================================
 include_guard(GLOBAL)
 
@@ -44,6 +45,17 @@ function(myapp_find_llvm_program var)
         list(APPEND _hints "${_compiler_dir}")
     endif()
     find_program(${var} NAMES ${ARG_UNPARSED_ARGUMENTS} HINTS ${_hints} ${MYAPP_LLVM_HINTS})
+endfunction()
+
+# myapp_regex_escape(<out-var> <text>)
+#
+# Escapes the characters that mean something in a regular expression, so a
+# path can be used as one. A project folder may contain spaces, '+' or other
+# characters that would otherwise change the meaning of the pattern (and
+# silently match nothing).
+function(myapp_regex_escape out_var text)
+    string(REGEX REPLACE "([]^$.|?*+(){}\\\\])" "\\\\\\1" _escaped "${text}")
+    set(${out_var} "${_escaped}" PARENT_SCOPE)
 endfunction()
 
 # myapp_find_dependency(<package> [PUBLIC] [find_package arguments...])

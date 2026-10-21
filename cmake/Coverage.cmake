@@ -79,7 +79,12 @@ function(myapp_add_coverage_report)
     set(_tests "$<TARGET_FILE:${PROJECT_NAME}_tests>")
     # Report only the project's own code: not the tests, fuzzers or the
     # vcpkg packages (in-tree or, with presets, inside the build dir).
-    set(_ignore "--ignore-filename-regex=${PROJECT_SOURCE_DIR}/(tests|fuzz|vcpkg_installed)/|${PROJECT_BINARY_DIR}/vcpkg_installed/")
+    # The paths are escaped: a project folder with a space or a '+' in it
+    # would otherwise change the meaning of the pattern and let the tests
+    # into the report.
+    myapp_regex_escape(_myapp_coverage_source_dir "${PROJECT_SOURCE_DIR}")
+    myapp_regex_escape(_myapp_coverage_binary_dir "${PROJECT_BINARY_DIR}")
+    set(_ignore "--ignore-filename-regex=${_myapp_coverage_source_dir}/(tests|fuzz|vcpkg_installed)/|${_myapp_coverage_binary_dir}/vcpkg_installed/")
 
     add_custom_target(coverage
         COMMAND ${CMAKE_COMMAND} -E rm -f ${_out}/default.profraw ${_out}/merged.profdata
