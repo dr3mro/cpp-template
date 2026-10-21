@@ -91,6 +91,7 @@ if(PROJECT_IS_TOP_LEVEL)
     myapp_add_coverage_report() # `coverage` target (needs the tests)
     include(CompileCommands)    # build/compile_commands.json for clangd
     include(Format)             # `format` and `format-check` targets
+    include(CMakeLint)          # `cmake-lint` target
     include(Tidy)               # `tidy` target
     include(Docs)               # `docs` target, diagrams included
     include(DistClean)          # `distclean` target

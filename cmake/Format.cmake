@@ -60,22 +60,3 @@ add_custom_target(format-check
     COMMAND "${MYAPP_CLANG_FORMAT}" --dry-run --Werror ${_myapp_format_files}
     COMMENT "Checking formatting with clang-format"
     VERBATIM)
-
-# cmake-lint reads .cmake-format.yaml from the source directory (100 columns,
-# the naming scheme and the complexity limits). It is not part of this module's
-# clang-format setup: the target exists only when the tool is installed.
-find_program(MYAPP_CMAKE_LINT cmake-lint)
-if(MYAPP_CMAKE_LINT)
-    # One level of subdirectories covers this layout (src/, tests/, fuzz/,
-    # examples/); GLOB_RECURSE would descend into build/ and vcpkg_installed/.
-    file(GLOB _myapp_cmake_files CONFIGURE_DEPENDS
-        "${PROJECT_SOURCE_DIR}/CMakeLists.txt"
-        "${PROJECT_SOURCE_DIR}/*/CMakeLists.txt"
-        "${PROJECT_SOURCE_DIR}/cmake/*.cmake"
-        "${PROJECT_SOURCE_DIR}/cmake/*.cmake.in")
-    add_custom_target(cmake-lint
-        COMMAND "${MYAPP_CMAKE_LINT}" ${_myapp_cmake_files}
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-        COMMENT "Linting CMake files with cmake-lint"
-        VERBATIM)
-endif()
