@@ -72,8 +72,22 @@ if(MSVC)
         message(FATAL_ERROR
             "MYAPP_SANITIZER=${MYAPP_SANITIZER} is not supported with MSVC; only address is.")
     endif()
+
     target_compile_options(${PROJECT_NAME}_options INTERFACE /fsanitize=address)
     return()
+endif()
+
+# MemorySanitizer only works when everything it runs is instrumented: the
+# standard library and every dependency. With an uninstrumented libc++ it
+# reports uninitialized values inside std:: and in the test framework, and
+# the build fails there instead of in the project's own code.
+if(MYAPP_SANITIZER STREQUAL "memory")
+    message(WARNING
+        "MYAPP_SANITIZER=memory (MemorySanitizer) needs an instrumented C++ "
+        "standard library and instrumented dependencies. With an uninstrumented "
+        "libc++ the standard library itself reports uninitialized values and the "
+        "build fails in the test framework. See the wiki: "
+        "Debugging-and-Sanitizers#using-memorysanitizer")
 endif()
 
 # address also gets UBSan, so the everyday debug preset catches both memory

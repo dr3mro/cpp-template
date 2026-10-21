@@ -237,11 +237,29 @@ if [[ $VCPKG_READY -eq 0 ]]; then
     cat <<MSG
 
 vcpkg is not set up yet (VCPKG_ROOT missing or invalid), so the first build
-will fail. One-time setup first:
+will fail. The Visual Studio solution does not need it. One-time setup
+(a full clone: vcpkg.json pins a baseline commit, so no --depth 1):
 
-  git clone --depth 1 https://github.com/microsoft/vcpkg.git ~/.vcpkg
+MSG
+    case "$(uname -s 2>/dev/null || echo unknown)" in
+        MINGW*|MSYS*|CYGWIN*|Windows_NT)
+            cat <<MSG
+  git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+  C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+  [Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\vcpkg", "User")
+
+Then open a new terminal (and restart Visual Studio).
+MSG
+            ;;
+        *)
+            cat <<MSG
+  git clone https://github.com/microsoft/vcpkg.git ~/.vcpkg
   ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics
-  echo 'export VCPKG_ROOT="\$HOME/.vcpkg"' >> ~/.zshrc
+  export VCPKG_ROOT="\$HOME/.vcpkg"     # add this line to your shell profile
+MSG
+            ;;
+    esac
+    cat <<MSG
 
 See README.md for details.
 MSG

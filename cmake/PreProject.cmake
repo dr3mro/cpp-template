@@ -47,12 +47,32 @@ if(MYAPP_USE_LLVM_CLANG AND NOT DEFINED CMAKE_CXX_COMPILER)
 endif()
 
 # ---- vcpkg toolchain -----------------------------------------------------------
-set(_myapp_vcpkg_setup_help
-    "One-time vcpkg setup:\n"
-    "  git clone --depth 1 https://github.com/microsoft/vcpkg.git ~/.vcpkg\n"
-    "  ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics\n"
-    "  echo 'export VCPKG_ROOT=\"$HOME/.vcpkg\"' >> ~/.zshrc\n"
-    "Then open a new terminal (or run 'source ~/.zshrc') and configure again.")
+# The setup steps depend on the host OS. vcpkg.json pins a baseline commit, so
+# the clone has to be complete: a shallow clone does not contain that commit
+# and the first configure fails with "failed to git show versions/baseline.json".
+if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
+    set(_myapp_vcpkg_setup_help
+        "One-time vcpkg setup:\n"
+        "  git clone https://github.com/microsoft/vcpkg.git C:\\vcpkg\n"
+        "  C:\\vcpkg\\bootstrap-vcpkg.bat -disableMetrics\n"
+        "Then set VCPKG_ROOT as a user environment variable\n"
+        "(System Properties -> Environment Variables -> New) and open a new\n"
+        "terminal (and restart Visual Studio).")
+elseif(CMAKE_HOST_APPLE)
+    set(_myapp_vcpkg_setup_help
+        "One-time vcpkg setup:\n"
+        "  git clone https://github.com/microsoft/vcpkg.git ~/.vcpkg\n"
+        "  ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics\n"
+        "  echo 'export VCPKG_ROOT=\"$HOME/.vcpkg\"' >> ~/.zshrc\n"
+        "Then open a new terminal (or run 'source ~/.zshrc') and configure again.")
+else()
+    set(_myapp_vcpkg_setup_help
+        "One-time vcpkg setup:\n"
+        "  git clone https://github.com/microsoft/vcpkg.git ~/.vcpkg\n"
+        "  ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics\n"
+        "  echo 'export VCPKG_ROOT=\"$HOME/.vcpkg\"' >> ~/.bashrc\n"
+        "Then open a new terminal (or run 'source ~/.bashrc') and configure again.")
+endif()
 
 # Plain `cmake` (e.g. Zed's built-in "CMake: Configure" task) skips the presets,
 # so fall back to the vcpkg toolchain from $VCPKG_ROOT when none was given.

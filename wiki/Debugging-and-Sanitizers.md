@@ -137,6 +137,24 @@ variable. Fix it by protecting the variable with a `std::mutex`, making it a
 TSan only sees races that actually happen during the run, so exercise the
 threaded code in tests, ideally many times.
 
+## Using MemorySanitizer
+
+MemorySanitizer (MSan) is the strictest of the three: it needs **every** piece
+of code it runs to be instrumented, including the C++ standard library and
+every dependency.
+
+```bash
+cmake -S . -B build/msan -DMYAPP_SANITIZER=memory -DMYAPP_USE_LLVM_CLANG=ON
+cmake --build build/msan
+```
+
+With a normal (uninstrumented) standard library, MSan reports uninitialized
+values inside `std::` code and in the test framework, and the build fails
+there rather than in your code. Building an instrumented libc++ and
+instrumented dependencies is possible, but it is a lot of work for a template
+project: use AddressSanitizer (`debug`) and UndefinedBehaviorSanitizer for
+everyday work, and TSan (`tsan`) for threads.
+
 ## Useful runtime options
 
 Sanitizers read options from environment variables, as `key=value` pairs
