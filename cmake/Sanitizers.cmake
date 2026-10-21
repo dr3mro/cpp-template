@@ -75,16 +75,19 @@ if(MSVC)
     endif()
 
     # MSVC's AddressSanitizer does not go together with the run-time checks
-    # (/RTC1) or with Edit and Continue (/ZI), and it needs the linker to
-    # disable incremental linking.
-    #   /RTC1 and /Zi live in the debug flags of the compiler, so they are
-    #   removed from them here (the flags of every target in this build);
-    #   /ZI is added by the Visual Studio generator and is turned off too.
-    string(REGEX REPLACE "/RTC1|/RTCs|/RTCu|/Zi" "" _myapp_msvc_debug_flags
+    # (/RTC1) or with Edit and Continue, and it needs the linker to disable
+    # incremental linking.
+    #   /RTC1 lives in the debug flags of the compiler, so it is removed from
+    #   them here. A normal variable (not the cache) shadows CMake's default
+    #   for this build only, so turning the sanitizer off restores it.
+    #   The debug information format is a property of the compiler, not a
+    #   flag: with CMake 3.25 (CMP0141) it decides between /Zi and /Z7.
+    #   Setting it here, before any target is created, makes every target
+    #   pick it up.
+    string(REGEX REPLACE "/RTC1|/RTCs|/RTCu" "" _myapp_msvc_debug_flags
            "${CMAKE_CXX_FLAGS_DEBUG}")
-    set(CMAKE_CXX_FLAGS_DEBUG "${_myapp_msvc_debug_flags}"
-        CACHE STRING "Debug flags" FORCE)
-    set_property(GLOBAL PROPERTY VS_GLOBAL_EditAndContinue OFF)
+    set(CMAKE_CXX_FLAGS_DEBUG "${_myapp_msvc_debug_flags}")
+    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "Embedded")
 
     # The ASan runtime is a separate component of Visual Studio ("C++
     # AddressSanitizer"), and it is not part of every install: on ARM64 it
@@ -107,8 +110,7 @@ if(MSVC)
     endif()
 
     target_compile_options(${PROJECT_NAME}_options INTERFACE
-        /fsanitize=address
-        /Z7)             # debug info: /ZI (Edit and Continue) is not supported
+        /fsanitize=address)
     target_link_options(${PROJECT_NAME}_options INTERFACE
         /fsanitize=address
         /INCREMENTAL:NO) # incremental linking is not supported with ASan

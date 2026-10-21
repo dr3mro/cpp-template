@@ -68,13 +68,27 @@ jobs:
       - name: Build and test with ASan
         run: |
           cmake --preset debug
-          cmake --build --preset debug
+          if ($LASTEXITCODE -ne 0) { throw "cmake --preset debug failed" }
+          cmake --build --preset debug 2>&1 | Tee-Object -Variable log
+          if ($LASTEXITCODE -ne 0) { throw "the ASan build failed" }
+          # The ASan build must not have the run-time checks (/RTC1), and it
+          # must not let the compiler warn about overriding /Zi with /Z7
+          # (D9025): the debug information format is set properly instead.
+          if ($log -match 'D9025') {
+            throw "the compiler warned D9025 (overriding /Zi with /Z7) in the ASan build"
+          }
+          if ($log -match '/RTC1') {
+            throw "the ASan build still uses the run-time checks (/RTC1)"
+          }
           ctest --preset debug
 
   # MSVC + AddressSanitizer on windows-11-arm is deliberately not a job here:
   # the MSVC ASan runtime for ARM64 is not part of every Visual Studio install,
-  # so the debug preset cannot be promised to link. The windows-11-arm entry in
-  # build-and-test still builds and tests the release preset there; the x64
+  # so the debug preset cannot be promised to link. CMake checks that (it
+  # compiles and links a test program) and stops with the fix; until the
+  # "C++ AddressSanitizer" component and the ARM64 build tools are installed,
+  # the debug-nosan preset is the one to use there. The windows-11-arm entry
+  # in build-and-test still builds and tests the release preset there; the x64
   # msvc-asan job keeps the sanitizer itself covered.
 
   version:
