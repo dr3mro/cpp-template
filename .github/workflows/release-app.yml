@@ -24,7 +24,22 @@ env:
   VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-binary-cache
 
 jobs:
+  check-version:
+    name: Check tag matches vcpkg.json version
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Compare tag and vcpkg.json version
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(jq -r .version vcpkg.json)"
+          [ "$tag" = "$ver" ] || { echo "::error::tag v$tag does not match vcpkg.json version $ver"; exit 1; }
+
   build:
+
     name: ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -81,13 +96,6 @@ jobs:
             extension: ".exe"
 
     steps:
-      - name: Check tag matches vcpkg.json version
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          ver="$(python3 -c 'import json,sys;print(json.load(open("vcpkg.json"))["version"])')"
-          if [ "$tag" != "$ver" ]; then echo "tag $tag != vcpkg.json version $ver" >&2; exit 1; fi
       - name: Check out repository
         uses: actions/checkout@v7
 
@@ -118,16 +126,22 @@ jobs:
           cp "build/release/myapp${{ matrix.extension }}" "dist/myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
 
       - name: Package binary
-        shell: bash
+        shell: ${{ matrix.os == 'windows' && 'pwsh' || 'bash' }}
         run: |
-          archive="myapp-${{ matrix.os }}-${{ matrix.arch }}"
-          tar -czf "dist/${archive}.tar.gz" -C dist "myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+          $archive = "myapp-${{ matrix.os }}-${{ matrix.arch }}"
+          if ("${{ matrix.os }}" -eq "windows") {
+            Compress-Archive -Path "dist/myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}" -DestinationPath "dist/${archive}.zip" -Force
+          } else {
+            tar -czf "dist/${archive}.tar.gz" -C dist "myapp-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}"
+          }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: myapp-${{ matrix.os }}-${{ matrix.arch }}
-          path: dist/myapp-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+          path: |
+            dist/myapp-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+            dist/myapp-${{ matrix.os }}-${{ matrix.arch }}.zip
           if-no-files-found: error
 
   publish:
@@ -146,7 +160,9 @@ jobs:
       - name: Publish release assets
         uses: softprops/action-gh-release@v3
         with:
-          files: dist/*.tar.gz
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
           generate_release_notes: true
           # A pushed tag (v1.2.0) names the release after itself; a manual run
           # uses the release_tag input, or build-<run number> when that is blank.

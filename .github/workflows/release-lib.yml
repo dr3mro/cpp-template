@@ -24,7 +24,22 @@ env:
   VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-binary-cache
 
 jobs:
+  check-version:
+    name: Check tag matches vcpkg.json version
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Compare tag and vcpkg.json version
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(jq -r .version vcpkg.json)"
+          [ "$tag" = "$ver" ] || { echo "::error::tag v$tag does not match vcpkg.json version $ver"; exit 1; }
+
   build:
+
     name: ${{ matrix.os }} ${{ matrix.arch }}
     # The template repo is an app, so a v* tag would otherwise also run the
     # library build here and attach same-named archives as the app release.
@@ -67,13 +82,6 @@ jobs:
             cmake_args: "-DVCPKG_TARGET_TRIPLET=arm64-windows"
 
     steps:
-      - name: Check tag matches vcpkg.json version
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          ver="$(python3 -c 'import json,sys;print(json.load(open("vcpkg.json"))["version"])')"
-          if [ "$tag" != "$ver" ]; then echo "tag $tag != vcpkg.json version $ver" >&2; exit 1; fi
       - name: Check out repository
         uses: actions/checkout@v7
 
@@ -97,11 +105,27 @@ jobs:
           cmake --preset release -DMYAPP_BUILD_TESTS=OFF ${{ matrix.cmake_args }}
           cmake --build --preset release
           cmake --install build/release --prefix "$prefix"
-          lib="$(find "$prefix" -type f \( -name '*.so' -o -name '*.dylib' -o -name '*.a' -o -name '*.lib' \) | head -1)"
-          file "$lib"
-          case "${{ matrix.arch }}" in
-            x64) file "$lib" | grep -qiE 'x86-64|x86_64' ;;
-            arm64) file "$lib" | grep -qiE 'aarch64|arm64' ;;
+          lib="$(find "$prefix" -type f \( -name '*.so' -o -name '*.dylib' -o -name '*.a' -o -name '*.lib' -o -name '*.dll' \) | head -1)"
+          if [ -z "$lib" ]; then echo "::error::no installed library found under $prefix" >&2; exit 1; fi
+          case "${{ matrix.os }}" in
+            linux)
+              out="$(objdump -f "$lib")"; echo "$out"
+              case "${{ matrix.arch }}" in
+                x64) echo "$out" | grep -m1 architecture | grep -q 'x86-64' ;;
+                arm64) echo "$out" | grep -m1 architecture | grep -q 'aarch64' ;;
+              esac ;;
+            macos)
+              out="$(lipo -info "$lib")"; echo "$out"
+              case "${{ matrix.arch }}" in
+                x64) echo "$out" | grep -q 'x86_64' ;;
+                arm64) echo "$out" | grep -q 'arm64' ;;
+              esac ;;
+            windows)
+              out="$(dumpbin /headers "$lib")"; echo "$out"
+              case "${{ matrix.arch }}" in
+                x64) echo "$out" | grep -q '8664 machine (x64)' ;;
+                arm64) echo "$out" | grep -q 'AA64 machine (ARM64)' ;;
+              esac ;;
           esac
 
       - name: Package library

@@ -73,7 +73,7 @@ jobs:
         # Every MYAPP/myapp must have been renamed; a miss means the script
         # (or a new file) still hard-codes the template name.
         run: |
-          if grep -rIl 'myapp\|MYAPP' /tmp/app17 /tmp/app20 /tmp/mylib --exclude-dir=.git; then
+          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' /tmp/app17 /tmp/app20 /tmp/mylib --exclude-dir=.git; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
@@ -379,7 +379,7 @@ jobs:
       - name: No placeholder names left behind
         shell: bash
         run: |
-          if grep -rIl 'myapp\|MYAPP' "$RUNNER_TEMP/vsapp" "$RUNNER_TEMP/vslib" --exclude-dir=.git --exclude-dir=build; then
+          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' "$RUNNER_TEMP/vsapp" "$RUNNER_TEMP/vslib" --exclude-dir=.git --exclude-dir=build; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
