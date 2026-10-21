@@ -123,6 +123,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /CETCOMPAT %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -147,6 +148,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -183,7 +185,12 @@
     Both are only rewritten when their content changes, so an unchanged
     header does not rebuild the files that include it.
   -->
-  <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile">
+  <!--
+    GetClCommandLines is the target the Visual Studio design-time build runs.
+    Writing the headers there too means IntelliSense finds them before the
+    first build, instead of marking them as missing.
+  -->
+  <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile;GetClCommandLines">
     <!-- The version lives in vcpkg.json; that is the single source of truth. -->
     <PropertyGroup>
       <VsManifestText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\vcpkg.json'))</VsManifestText>

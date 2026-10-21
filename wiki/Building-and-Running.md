@@ -45,8 +45,9 @@ Visual Studio 2019, 2022 and 2026 **without CMake**. It finds the sources
 under `src/`, the headers under `include/` and the `main.cpp` in the project
 root by wildcard, and writes **everything** it builds to `build/vs/`: the
 program, the intermediate files, the generated headers and the vcpkg packages.
-It needs the **Desktop development with C++** workload and the **C++ CMake
-tools for Windows** component.
+It needs the **Desktop development with C++** workload, and nothing else: the
+solution never runs CMake. (The CMake build below does need CMake and Ninja,
+which come with the same workload.)
 
 The `vs2022` and `vs2026` presets stay available for a CMake-generated
 solution; the two don't conflict, because they build into different folders.

@@ -117,9 +117,20 @@ solution, `build/vs2026/` for the CMake one), so you can use whichever fits
 the moment. The CMake build is the one CI uses, and the one with the
 sanitizers, the tests and the coverage report.
 
+That CMake build also has test presets, so the tests of a Windows project can
+run with the generator of your choice:
+
+```bash
+cmake --preset vs2026 && cmake --build --preset vs2026 && ctest --preset vs2026
+```
+
+The `ctest --preset vs2026` (and `vs2022`) presets build the `Debug`
+configuration and print the output of a failing test.
+
 ## How the files get their names
 
-`new-project.sh` takes care of the bookkeeping:
+`new-project.sh` (or `scripts/new-project.ps1` on Windows) takes care of the
+bookkeeping:
 
 - `myapp.sln` and `myapp.vcxproj` become `<name>.sln` and `<name>.vcxproj`.
 - Every project gets a **fresh project GUID** (the template ships a

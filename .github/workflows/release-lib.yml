@@ -39,29 +39,32 @@ jobs:
           - os: linux
             arch: x64
             runner: ubuntu-latest
-            cmake_args: "-DCMAKE_CXX_COMPILER=g++"
+            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DVCPKG_TARGET_TRIPLET=arm64-linux"
           - os: linux
             arch: arm64
             runner: ubuntu-24.04-arm
-            cmake_args: "-DCMAKE_CXX_COMPILER=g++"
+            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DVCPKG_TARGET_TRIPLET=x64-linux"
           - os: macos
             arch: x64
             runner: macos-14
-            cmake_args: "-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_OSX_ARCHITECTURES=x86_64"
+            cmake_args: "-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_OSX_ARCHITECTURES=x86_64 -DVCPKG_TARGET_TRIPLET=x64-osx"
           - os: macos
             arch: arm64
             runner: macos-14
-            cmake_args: "-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_OSX_ARCHITECTURES=arm64"
+            cmake_args: "-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_OSX_ARCHITECTURES=arm64 -DVCPKG_TARGET_TRIPLET=arm64-osx"
           - os: windows
             arch: x64
             runner: windows-latest
             msvc_arch: amd64
-            cmake_args: ""
+            # The triplet names the packages to build: without it vcpkg would
+            # use the one of the host, and the cross build would link the
+            # wrong libraries.
+            cmake_args: "-DVCPKG_TARGET_TRIPLET=x64-windows"
           - os: windows
             arch: arm64
             runner: windows-latest
             msvc_arch: amd64_arm64
-            cmake_args: ""
+            cmake_args: "-DVCPKG_TARGET_TRIPLET=arm64-windows"
 
     steps:
       - name: Check out repository

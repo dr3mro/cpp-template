@@ -52,6 +52,15 @@ command line tools (`xcode-select --install`).
 Use the `fuzz` preset, which picks LLVM clang. On macOS that must be
 Homebrew's (`brew install llvm`); Apple's clang has no libFuzzer.
 
+**The build fails with a Homebrew LLVM on macOS** (`undefined symbols` from
+`libc++`, or a mismatch between the headers and the library)
+Homebrew's clang++ uses Homebrew's libc++ headers, so the program has to link
+Homebrew's libc++ as well. With `-DMYAPP_USE_LLVM_CLANG=ON` the build adds
+the flags Homebrew's caveats ask for (`-L<prefix>/lib/c++`,
+`-L<prefix>/lib/unwind -lunwind` and an rpath for the libc++). If the build
+still mixes the two standard libraries, check that the compiler really is
+Homebrew's: `cmake -LA build/<preset> | grep CMAKE_CXX_COMPILER`.
+
 **I changed the compiler but CMake keeps the old one**
 The compiler is fixed when a build folder is first configured. Use
 `cmake --preset <name> --fresh -DCMAKE_CXX_COMPILER=...`.
