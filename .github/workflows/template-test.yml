@@ -147,7 +147,9 @@ jobs:
           fi
 
       # A git repository per project, so that the check after the build can see
-      # which files the build created.
+      # which files the build created. The files are committed, not just
+      # staged: a staged file still shows up in "git status" as added, which
+      # would make the check report every file of the project.
       - name: Prepare the projects for the output check
         shell: pwsh
         run: |
@@ -155,6 +157,7 @@ jobs:
             Push-Location "$env:RUNNER_TEMP\$project"
             git init -q
             git add -A
+            git -c user.name=CI -c user.email=ci@example.com commit -q -m "Baseline before the build"
             Pop-Location
           }
 

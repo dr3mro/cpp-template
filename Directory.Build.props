@@ -32,9 +32,8 @@
 
     <!-- The objects and everything the compiler and the linker leave behind:
          .obj, .ilk, .iobj, .ipdb, .tlog, .lastbuildstate, .recipe, the
-         compiler PDB and the code-analysis output. -->
+         compiler PDB (vc*.pdb) and the code-analysis output. -->
     <IntDir Condition="'$(IntDir)' == ''">$(BuildRoot)obj\$(Platform)\$(Configuration)\</IntDir>
-    <ProgramDataBaseFileName Condition="'$(ProgramDataBaseFileName)' == ''">$(IntDir)$(MSBuildProjectName).pdb</ProgramDataBaseFileName>
 
     <!-- The vcpkg manifest installs into vcpkg_installed\ next to the project
          by default. -->
