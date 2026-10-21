@@ -104,9 +104,10 @@ if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
                 "       & \"\${env:ProgramFiles(x86)}\\Microsoft Visual Studio"
                 "\\Installer\\vswhere.exe\""
                 " -latest -property installationPath\n"
-                "     Then start its developer shell (use -Arch arm64 on an ARM64\n"
-                "     machine):\n"
-                "       & \"<the path from vswhere>\\Common7\\Tools\\Launch-VsDevShell.ps1\" "
+                "     Then start its developer shell (the path from vswhere; use -Arch\n"
+                "     arm64 on an ARM64 machine; -SkipAutomaticLocation keeps the\n"
+                "     current folder):\n"
+                "       & \"<VS>\\Common7\\Tools\\Launch-VsDevShell.ps1\" -SkipAutomaticLocation "
                 "-Arch ${_myapp_arch} -HostArch ${_myapp_arch}\n"
                 "     and run 'cmake --preset release' in it.")
         endif()
