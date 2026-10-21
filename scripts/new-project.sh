@@ -230,23 +230,45 @@ if [[ $LIB -eq 1 ]]; then
     # Install from release: the debug preset is ASan-instrumented, so a
     # consumer linked against it would fail without matching sanitizer flags.
     BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug
+  # ...or the optimised build:
   cmake --preset release && cmake --build --preset release
   cmake --install build/release
   cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=\$PWD/build/install/release && cmake --build build/examples"
 else
-    BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug"
+    BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug
+  # ...or the optimised build:
+  cmake --preset release && cmake --build --preset release && ctest --preset release"
 fi
 
-cat <<MSG
+# The next steps differ per platform: Windows has the Visual Studio solution
+# and the developer shell, the other systems build with CMake alone.
+case "$(uname -s 2>/dev/null || echo unknown)" in
+    MINGW*|MSYS*|CYGWIN*|Windows_NT)
+        cat <<MSG
 
 Done. Next steps:
-  cd "$DEST"
+
+  cd "$DEST"  # the new project folder
+
+  # Build with CMake, in a "Developer PowerShell for VS":
+  $BUILD_HINT
+
+  # Or open the solution in Visual Studio (2019, 2022 or 2026), no CMake needed:
+  start $NAME.sln
+MSG
+        ;;
+    *)
+        cat <<MSG
+
+Done. Next steps:
+
+  cd "$DEST"  # the new project folder
+
   $BUILD_HINT
   zed .
-
-On Windows you can also open $NAME.sln in Visual Studio (2019, 2022 or 2026)
-and build there; no CMake needed.
 MSG
+        ;;
+esac
 
 if [[ $VCPKG_READY -eq 0 ]]; then
     cat <<MSG

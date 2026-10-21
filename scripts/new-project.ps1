@@ -515,20 +515,66 @@ $vcpkgReady = $env:VCPKG_ROOT -and
     (Test-Path -LiteralPath (Join-Path $env:VCPKG_ROOT 'scripts/buildsystems/vcpkg.cmake'))
 $onWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
 
+# The architecture of this machine, in the spelling the Visual Studio
+# developer shell uses (-Arch/-HostArch).
+$arch = 'amd64'
+if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') {
+    $arch = 'arm64'
+}
+
+# The developer shell of the newest Visual Studio that has the C++ tools for
+# this architecture. vswhere prints the installation path of the instance.
+function Get-DeveloperShell {
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    if (-not (Test-Path -LiteralPath $vswhere)) { return $null }
+    $component = if ($arch -eq 'arm64') {
+        'Microsoft.VisualStudio.Component.VC.Tools.ARM64'
+    } else {
+        'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
+    }
+    try {
+        $installation = & $vswhere -latest -products * -requires $component -property installationPath 2>$null
+    } catch {
+        return $null
+    }
+    if (-not $installation) { return $null }
+    $shell = Join-Path (@($installation)[0]) 'Common7\Tools\Launch-VsDevShell.ps1'
+    if (-not (Test-Path -LiteralPath $shell)) { return $null }
+    return $shell
+}
+
 Write-Host ''
 Write-Host 'Done. Next steps:'
-Write-Host "  cd `"$Destination`""
+Write-Host ''
+Write-Host "  cd `"$Destination`"  # the new project folder"
+Write-Host ''
 if ($onWindows) {
-    Write-Host "  start $Name.sln                 # Visual Studio 2019, 2022 or 2026, no CMake needed"
+    Write-Host '  # Build with CMake, in a "Developer PowerShell for VS":'
+    Write-Host '  cmake --preset debug && cmake --build --preset debug && ctest --preset debug'
+    Write-Host '  # ...or the optimised build:'
+    Write-Host '  cmake --preset release && cmake --build --preset release && ctest --preset release'
     Write-Host ''
-    Write-Host '  or with CMake, from a "Developer PowerShell for VS":'
-    Write-Host '  cmake --preset release; cmake --build --preset release; ctest --preset release'
+    Write-Host '  # Or open the solution in Visual Studio (2019, 2022 or 2026), no CMake needed:'
+    Write-Host "  start $Name.sln"
 } else {
     Write-Host '  cmake --preset debug && cmake --build --preset debug && ctest --preset debug'
+    Write-Host '  # ...or the optimised build:'
+    Write-Host '  cmake --preset release && cmake --build --preset release && ctest --preset release'
 }
 if ($Lib) {
     Write-Host '  cmake --install build/release'
     Write-Host '  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/build/install/release"; cmake --build build/examples'
+}
+if ($onWindows) {
+    $devShell = Get-DeveloperShell
+    Write-Host ''
+    if ($devShell) {
+        Write-Host "  # Open a developer shell for this machine ($arch) before using the CMake presets:"
+        Write-Host "  & `"$devShell`" -Arch $arch -HostArch $arch"
+    } else {
+        Write-Host "  # Open a developer shell for this machine ($arch) from the Start menu"
+        Write-Host "  # (Developer PowerShell for VS), then run the CMake commands above."
+    }
 }
 
 if (-not $vcpkgReady) {
