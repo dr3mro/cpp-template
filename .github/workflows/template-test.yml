@@ -234,6 +234,9 @@ jobs:
         run: |
           function Get-MaskedCopy([string]$Dir, [string]$Name) {
               $copy = Join-Path $env:RUNNER_TEMP $Name
+              # Copy-Item into an existing folder nests the copy inside it, so
+              # always start from an empty destination.
+              if (Test-Path -LiteralPath $copy) { Remove-Item -LiteralPath $copy -Recurse -Force }
               Copy-Item -Recurse -Force -LiteralPath $Dir -Destination $copy
               Get-ChildItem -LiteralPath $copy -Recurse -File | ForEach-Object {
                   $bytes = [System.IO.File]::ReadAllBytes($_.FullName)
@@ -245,8 +248,8 @@ jobs:
               return $copy
           }
           foreach ($pair in @(@('vsapp', 'psapp'), @('vslib', 'pslib'))) {
+              $bash = Get-MaskedCopy "$env:RUNNER_TEMP\$($pair[0])" "masked-bash-$($pair[0])"
               foreach ($shell in @('powershell', 'pwsh')) {
-                  $bash = Get-MaskedCopy "$env:RUNNER_TEMP\$($pair[0])" "masked-bash-$($pair[0])"
                   $ps = Get-MaskedCopy "$env:RUNNER_TEMP\$($pair[1])-$shell" "masked-ps-$($pair[1])-$shell"
                   git diff --no-index --stat $bash $ps
                   if ($LASTEXITCODE -ne 0) {
