@@ -58,6 +58,7 @@ include(Hardening)          # stack protector, FORTIFY_SOURCE, RELRO, CET, ...
 include(Coverage)           # LLVM coverage instrumentation (coverage preset)
 include(Ccache)             # compiler cache
 include(Version)            # generated <name>/version.hpp (version + git hash)
+include(HomebrewLLVM)       # link Homebrew's libc++ with Homebrew's clang++
 
 # ---- 5. Dependencies ------------------------------------------------------------
 include(Dependencies)       # find_package() calls for third-party libraries

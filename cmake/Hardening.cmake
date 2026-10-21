@@ -65,12 +65,20 @@ else()
     set(CMAKE_REQUIRED_FLAGS "-Werror")
     check_cxx_compiler_flag("-fstack-clash-protection" MYAPP_HAS_STACK_CLASH)
     check_cxx_compiler_flag("-fcf-protection=full" MYAPP_HAS_CF_PROTECTION)
+    # ARM64: branch protection (BTI) needs -mbranch-protection=standard. The
+    # flag does not exist on other architectures, so it is only probed there.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
+        check_cxx_compiler_flag("-mbranch-protection=standard" MYAPP_HAS_BRANCH_PROTECTION)
+    endif()
     unset(CMAKE_REQUIRED_FLAGS)
     if(MYAPP_HAS_STACK_CLASH)
         _myapp_harden(COMPILE -fstack-clash-protection)
     endif()
     if(MYAPP_HAS_CF_PROTECTION)
         _myapp_harden(COMPILE -fcf-protection=full)
+    endif()
+    if(MYAPP_HAS_BRANCH_PROTECTION)
+        _myapp_harden(COMPILE -mbranch-protection=standard)
     endif()
 
     # Standard-library assertions (cheap bounds checks in operator[], front(),
