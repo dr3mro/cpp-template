@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Create a new C++ project from this template.
 #
-#   scripts/new-project.sh <name> [destination-dir] [--std 17|20|23] [--no-git] [--lib]
+#   scripts/new-project.sh <name> [destination-dir] [--std 17|20|23] [--no-git] [--lib] [--author <name>]
 #                          [--github-user <user>]
 #
 # <name> must be a valid C++ identifier in lower_snake_case (for example: inventory, bank_app).
@@ -13,7 +13,7 @@
 # (https://<user>.github.io/<name>/); without it the README keeps a placeholder.
 set -euo pipefail
 
-usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
 NAME=""; DEST=""; STD="17"; GIT=1; LIB=0; GITHUB_USER=""; AUTHOR=""
 while [[ $# -gt 0 ]]; do
@@ -28,8 +28,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z "$AUTHOR" ]]; then AUTHOR="$(git config user.name 2>/dev/null || true)"; fi
+if [[ -z "$AUTHOR" ]] && command -v git >/dev/null 2>&1; then AUTHOR="$(git config user.name 2>/dev/null || true)"; fi
 [[ -z "$AUTHOR" ]] && AUTHOR="Your Name"
+if [[ "$AUTHOR" == *$'\n'* ]]; then echo "error: author must not contain a newline" >&2; exit 1; fi
 [[ -n "$NAME" ]] || usage
 [[ "$NAME" =~ ^[a-z][a-z0-9_]*$ ]] || { echo "error: name must be lower_snake_case, e.g. bank_app" >&2; exit 1; }
 
@@ -97,7 +98,7 @@ else
         --exclude='./install' --exclude='./install-*' --exclude='./vcpkg_installed' \
         --exclude='./.cache' --exclude='./.DS_Store' --exclude='./scripts/new-project.sh' --exclude='./scripts/new-project.ps1' \
         --exclude='./.github/workflows/template-test.yml' --exclude='./wiki' \
-        --exclude='./.github/workflows/wiki.yml' --exclude='./.gitmodules' -cf - .) | (cd "$DEST" && tar -xf -)
+        --exclude='./.github/workflows/wiki.yml' --exclude='./.gitmodules' --exclude='./NOTES.md' -cf - .) | (cd "$DEST" && tar -xf -)
 fi
 rm -f "$DEST/scripts/new-project.sh" "$DEST/scripts/new-project.ps1" "$DEST/scripts/edit-json.pl"
 rmdir "$DEST/scripts" 2>/dev/null || true
@@ -105,6 +106,7 @@ rm -f "$DEST/.github/workflows/template-test.yml"
 # The wiki pages describe the template itself, so new projects start without
 # them (and without the workflow that publishes them).
 rm -rf "$DEST/wiki" "$DEST/.github/workflows/wiki.yml" "$DEST/.gitmodules"
+rm -f "$DEST/NOTES.md"
 
 # Rename every file and folder whose name carries the placeholder, deepest
 # paths first: include/myapp -> include/<name>, src/myapp -> src/<name>,
@@ -149,7 +151,8 @@ done
 # Replace the placeholder in every text file (perl works the same on macOS and
 # Linux). The Visual Studio files are plain text, so they are covered too and
 # keep their CRLF line endings.
-find "$DEST" -type f ! -name '*.png' -print0 | xargs -0 perl -pi -e "s/MYAPP/$UPPER/g; s/myapp/$NAME/g; s/\@AUTHOR\@/$AUTHOR/g"
+export UPPER NAME AUTHOR
+find "$DEST" -type f ! -name '*.png' -print0 | xargs -0 perl -pi -e 's/MYAPP/$ENV{UPPER}/g; s/myapp/$ENV{NAME}/g; s/\@AUTHOR\@/$ENV{AUTHOR}/g'
 
 # vcpkg package names allow hyphens but not underscores: fix up the manifest
 # name. The manifest's "version" field is the project's single source of

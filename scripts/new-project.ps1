@@ -259,7 +259,9 @@ if ($reserved -ccontains $Name) {
 if ($Name.Contains('__') -or $Name.EndsWith('_')) {
     Fail 'name must not contain "__" or end with "_"'
 }
-if (-not $Author) { $Author = (git config user.name 2>$null); if (-not $Author) { $Author = 'Your Name' } }
+if (-not $Author -and (Test-Command 'git')) { $Author = (git config user.name 2>$null); if (-not $Author) { $Author = 'Your Name' } }
+if (-not $Author) { $Author = 'Your Name' }
+if ($Author -match "\n") { Write-Error 'author must not contain a newline'; exit 1 }
 
 if ($GitHubUser -and $GitHubUser -notmatch '^[A-Za-z0-9-]+$') {
     # The same message as new-project.sh gives, whichever spelling was used.
@@ -324,7 +326,7 @@ if ($useGit) {
     $files = $raw -split "`0" | Where-Object { $_ } | Sort-Object -Unique |
         Where-Object { Test-Path -LiteralPath (Join-Path $TemplateDir $_) -PathType Leaf }
 } else {
-    $excludeTop = @('.git', 'build', 'docs', 'install', 'vcpkg_installed', '.cache', 'wiki')
+    $excludeTop = @('.git', 'build', 'docs', 'install', 'vcpkg_installed', '.cache', 'wiki', 'NOTES.md')
     $root = (Resolve-Path -LiteralPath $TemplateDir).Path.TrimEnd('\', '/')
     $files = Get-ChildItem -LiteralPath $root -Recurse -Force -File | ForEach-Object {
         $_.FullName.Substring($root.Length + 1).Replace('\', '/')
@@ -351,7 +353,7 @@ foreach ($rel in $files) {
 foreach ($rel in @('scripts/new-project.sh', 'scripts/new-project.ps1',
                    'scripts/edit-json.pl',
                    '.github/workflows/template-test.yml', '.github/workflows/wiki.yml',
-                   '.gitmodules', 'wiki')) {
+                   '.gitmodules', 'wiki', 'NOTES.md')) {
     $path = Join-Path $Destination $rel
     if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force }
 }
