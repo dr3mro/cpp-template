@@ -41,7 +41,8 @@ add_custom_target(${PROJECT_NAME}_version
     COMMENT "Writing ${PROJECT_NAME}/version.hpp"
     VERBATIM)
 
-# Every target links ${PROJECT_NAME}_options, so they all see the generated
-# headers (version.hpp here, the export header from ExportHeader.cmake). This
-# is also what puts the -I flag into compile_commands.json for clangd.
-target_include_directories(${PROJECT_NAME}_options INTERFACE "${MYAPP_GENERATED_INCLUDE_DIR}")
+# The generated headers (version.hpp here, the export header from
+# ExportHeader.cmake) are public headers of the library: src/CMakeLists.txt
+# adds this folder to the library's PUBLIC include directories, so consumers
+# find them too. It is also what puts the -I flag into
+# compile_commands.json for clangd.

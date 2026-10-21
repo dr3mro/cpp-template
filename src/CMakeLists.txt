@@ -21,15 +21,19 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME}_lib)
 target_compile_features(${PROJECT_NAME}_lib PUBLIC cxx_std_17)
 
 # Public headers. BUILD_INTERFACE keeps the source path out of the installed
-# package, which points at <prefix>/include instead.
+# package, which points at <prefix>/include instead. The generated headers
+# (version.hpp and the export header) are public too: a consumer of the
+# library needs them.
 target_include_directories(${PROJECT_NAME}_lib PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${MYAPP_GENERATED_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-# Project-wide flags (warnings, sanitizers, hardening, generated headers).
-# PUBLIC so every in-tree target that links the library gets them too;
-# BUILD_INTERFACE so they never leak into the installed package.
-target_link_libraries(${PROJECT_NAME}_lib PUBLIC $<BUILD_INTERFACE:${PROJECT_NAME}_options>)
+# Project-wide flags (warnings, sanitizers, hardening). PRIVATE on purpose:
+# they belong to this project, and a consumer that pulls the library in with
+# FetchContent or add_subdirectory() must not inherit them. Every target of
+# this project links ${PROJECT_NAME}_options itself.
+target_link_libraries(${PROJECT_NAME}_lib PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_options>)
 
 # Refresh version.hpp (git hash) before the library compiles.
 add_dependencies(${PROJECT_NAME}_lib ${PROJECT_NAME}_version)

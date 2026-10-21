@@ -66,9 +66,11 @@ include(Dependencies)       # find_package() calls for third-party libraries
 add_subdirectory(src)       # ${PROJECT_NAME}_lib: all the real code
 
 # The app: a thin main() on top of the library. Library mode has no app.
+# It links ${PROJECT_NAME}_options itself: the project-wide flags belong to
+# this project and must not reach a consumer of the library.
 if(NOT MYAPP_LIBRARY_MODE)
     add_executable(${PROJECT_NAME} main.cpp)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib ${PROJECT_NAME}_options)
 endif()
 
 if(MYAPP_BUILD_TESTS)

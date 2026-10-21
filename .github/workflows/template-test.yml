@@ -91,6 +91,47 @@ jobs:
           cmake --build build/shared
           ctest --test-dir build/shared --output-on-failure
 
+      - name: A consumer does not inherit the project's warning flags
+        # The library's flags (-Wall, -Wshadow, ...) belong to this project: a
+        # consumer that pulls it in with FetchContent must not get them, or
+        # its own code fails to compile.
+        run: |
+          rm -rf /tmp/consumer
+          mkdir -p /tmp/consumer
+          cat > /tmp/consumer/CMakeLists.txt <<'EOF'
+          cmake_minimum_required(VERSION 3.25)
+          project(consumer LANGUAGES CXX)
+
+          include(FetchContent)
+          # A local directory instead of a download: the library project was
+          # generated next to this one.
+          set(FETCHCONTENT_SOURCE_DIR_MYLIB "/tmp/mylib")
+          FetchContent_Declare(mylib)
+          FetchContent_MakeAvailable(mylib)
+
+          # Only -Werror: if the library's warning flags (-Wshadow, ...) leaked
+          # into this project, the shadowing in main.cpp would be an error.
+          add_compile_options(-Werror)
+
+          add_executable(consumer main.cpp)
+          target_link_libraries(consumer PRIVATE mylib::mylib)
+          EOF
+          cat > /tmp/consumer/main.cpp <<'EOF'
+          #include <mylib/core/greeter.hpp>
+
+          int main()
+          {
+              int value = 1;
+              {
+                  int value = 2;  // shadows the outer value: -Wshadow warns here
+                  (void)value;
+              }
+              return value;
+          }
+          EOF
+          cmake -S /tmp/consumer -B /tmp/consumer/build
+          cmake --build /tmp/consumer/build
+
       - name: Doxygen docs workflow
         run: (cd /tmp/app20 && cmake --workflow --preset docs)
 

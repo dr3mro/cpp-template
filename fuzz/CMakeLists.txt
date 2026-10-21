@@ -18,7 +18,9 @@ foreach(_source IN LISTS _myapp_fuzz_sources)
     get_filename_component(_name "${_source}" NAME_WE)
 
     add_executable(${_name} "${_source}")
-    target_link_libraries(${_name} PRIVATE ${PROJECT_NAME}_lib)
+    # The project-wide flags (sanitizers, warnings) come from
+    # ${PROJECT_NAME}_options, which every target of this project links itself.
+    target_link_libraries(${_name} PRIVATE ${PROJECT_NAME}_lib ${PROJECT_NAME}_options)
     target_compile_options(${_name} PRIVATE -fsanitize=fuzzer)
     target_link_options(${_name} PRIVATE -fsanitize=fuzzer)
     # Top of this project's build dir, also when it is a subproject.

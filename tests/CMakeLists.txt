@@ -22,7 +22,10 @@ endif()
 
 file(GLOB_RECURSE _myapp_test_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 add_executable(${PROJECT_NAME}_tests ${_myapp_test_sources})
-target_link_libraries(${PROJECT_NAME}_tests PRIVATE ${PROJECT_NAME}_lib doctest::doctest)
+# The project-wide flags (sanitizers, warnings) come from
+# ${PROJECT_NAME}_options, which every target of this project links itself.
+target_link_libraries(${PROJECT_NAME}_tests PRIVATE
+    ${PROJECT_NAME}_lib ${PROJECT_NAME}_options doctest::doctest)
 
 include(${doctest_DIR}/doctest.cmake)
 doctest_discover_tests(${PROJECT_NAME}_tests)
