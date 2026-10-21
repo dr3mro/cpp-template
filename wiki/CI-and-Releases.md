@@ -11,7 +11,7 @@ failing run, and how releases work.
 | **CI** (`ci.yml`) | every push to `main` and every pull request | builds and tests on Linux, macOS and Windows, plus the extra checks below |
 | **CodeQL** (`codeql.yml`) | pushes, pull requests, and weekly | GitHub's static security analysis; findings appear under **Security → Code scanning** |
 | **Publish Doxygen documentation** (`docs.yml`) | every push to `main` | builds the docs and deploys them to GitHub Pages |
-| **Build and publish binaries / library packages** (`release.yml`) | a pushed `v*` tag, or by hand | builds release archives for every platform and publishes a GitHub Release |
+| **Release** (`release.yml`, which runs `release-build.yml`) | a pushed `v*` tag, or by hand | builds release archives for every platform and publishes a GitHub Release |
 | **Template test** (`template-test.yml`) | template repository only | generates projects with `new-project.sh` and builds them; on Windows it also builds the Visual Studio solution with MSBuild |
 | **Publish wiki** (`wiki.yml`) | template repository only | mirrors `wiki/` into the GitHub wiki |
 
@@ -108,26 +108,39 @@ The site is at `https://<user>.github.io/<repo>/`.
 
 ## Releases
 
-The release workflow builds:
+`release.yml` is a few lines that call **`release-build.yml`** with
+`mode: app` or `mode: lib`; the build itself is the same for both kinds of
+project. It builds Linux (x64, x86, arm64), macOS (x64, arm64) and Windows
+(x64, x86, arm64), and attaches to the release:
 
-- **app projects**: the executable for Linux (x64, x86, arm64), macOS (x64,
-  arm64) and Windows (x64, x86, arm64), as a `.zip` on Windows and a
-  `.tar.gz` everywhere else;
-- **library projects**: an installed package (headers, library and CMake
-  files) per platform, one `.tar.gz` each.
+| File | What it is |
+| --- | --- |
+| `<name>-<os>-<arch>.zip` (Windows) / `.tar.gz` (others) | an app: the executable; a library: the installed package (headers, library, CMake files) |
+| `<name>-<os>-<arch>-debug.*` | apps only: the debug symbols, split off the shipped binary (`.debug` on Linux, `.dSYM` on macOS, `.pdb` on Windows) |
+| `<name>-<os>-<arch>-sbom.*` | the SPDX documents vcpkg wrote for every dependency in that build; missing when the project has no dependencies |
+| `SHA256SUMS` | the SHA-256 of every file above (`sha256sum -c SHA256SUMS`) |
 
-Two checks guard a release:
+Every archive also gets a signed **build provenance attestation**, which
+proves it was built by this workflow from this commit:
 
-- **The tag must match the version.** A first job, `check-version`, compares
-  the tag without its `v` (`v1.2.0` → `1.2.0`) with `"version"` in
+```bash
+gh attestation verify myapp-linux-x64.tar.gz --repo <owner>/<repo>
+```
+
+Three checks guard a release:
+
+- **The tag must match the version.** The first job, `check-version`,
+  compares the tag without its `v` (`v1.2.0` → `1.2.0`) with `"version"` in
   `vcpkg.json`, and nothing is built when they differ. Fix it by bumping
   `vcpkg.json`, then moving the tag (`git tag -f v1.2.0`, then
   `git push -f origin v1.2.0`). Manual runs have no tag and skip the check.
-- **Each library is built for the CPU it is named after.** After installing,
-  the library release reads the architecture out of the library itself
-  (`objdump` on Linux, `lipo` on macOS, `dumpbin` on Windows) and fails when
-  it does not match the archive's name. A wrong vcpkg triplet or cross-compile
-  flag still builds, so without this check it would ship the wrong binary.
+- **Every binary is built for the CPU it is named after.** Each build reads
+  the architecture out of the executable or library itself (`objdump` on
+  Linux, `lipo` on macOS, `dumpbin` on Windows) and fails when it does not
+  match. A wrong vcpkg triplet or cross-compile flag still builds, so without
+  this check it would ship the wrong binary.
+- **Least privilege.** Only the final publish job may write to the repository
+  or sign attestations; the builds run read-only.
 
 ### Publishing a release
 
@@ -144,7 +157,7 @@ writes release notes from the merged pull requests.
 
 ### Test builds without a release
 
-**Actions → Build and publish binaries → Run workflow** builds every platform
+**Actions → Release → Run workflow** builds every platform
 and keeps the archives as downloadable artifacts of that run. Tick
 **publish_release** to also publish them as a GitHub Release, with the
 **release_tag** you enter (blank: `build-<run number>`).

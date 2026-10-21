@@ -1,0 +1,288 @@
+name: Release build (reusable)
+
+# The one release pipeline. release.yml (generated from release-app.yml or
+# release-lib.yml) calls it with mode: app or mode: lib; everything else is
+# shared, so the two kinds of project cannot drift apart.
+#
+#   check-version  the tag (v1.2.0) must equal "version" in vcpkg.json
+#   build          one job per platform: build, check the CPU architecture,
+#                  package (.zip on Windows, .tar.gz elsewhere), collect the
+#                  SBOM and, for apps, split off the debug symbols
+#   publish        SHA256SUMS, build-provenance attestations, GitHub Release
+#
+# Permissions are granted per job: only publish can write to the repository
+# or mint the OIDC token the attestations need.
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: app (an executable per platform) or lib (an installed package)
+        required: true
+        type: string
+      publish_release:
+        description: Publish a GitHub Release (a tag push always publishes)
+        required: false
+        type: boolean
+        default: false
+      release_tag:
+        description: Release tag for a manual run; blank uses build-<run number>
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  # Shared binary cache so the composite action can restore built packages.
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-binary-cache
+
+jobs:
+  check-version:
+    name: tag matches vcpkg.json
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Compare the tag with vcpkg.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(jq -r .version vcpkg.json)"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag v$tag does not match vcpkg.json version $version; bump vcpkg.json or move the tag"
+            exit 1
+          fi
+
+  build:
+    name: ${{ matrix.os }} ${{ matrix.arch }}
+    # Every build waits for the tag check. A manual run has no tag, so the
+    # check is skipped, and always() keeps that from skipping the builds too.
+    needs: check-version
+    if: >-
+      always() &&
+      (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # cxxflags: flags for both compiling and linking. -m32 does not reach
+          # vcpkg's triplet detection, so the x86 builds also name the triplet.
+          # The triplet names the packages to build: without it vcpkg would use
+          # the host's, and the cross builds would link the wrong libraries.
+          - { os: linux, arch: x64, runner: ubuntu-latest, compiler: g++, triplet: x64-linux, cxxflags: "", want: "x86-64" }
+          - { os: linux, arch: x86, runner: ubuntu-latest, compiler: g++, triplet: x86-linux, cxxflags: "-m32", want: "i386" }
+          - { os: linux, arch: arm64, runner: ubuntu-24.04-arm, compiler: g++, triplet: arm64-linux, cxxflags: "", want: "aarch64" }
+          - { os: macos, arch: x64, runner: macos-14, compiler: clang++, triplet: x64-osx, osx_arch: x86_64, cxxflags: "", want: "x86_64" }
+          - { os: macos, arch: arm64, runner: macos-14, compiler: clang++, triplet: arm64-osx, osx_arch: arm64, cxxflags: "", want: "arm64" }
+          - { os: windows, arch: x64, runner: windows-latest, msvc_arch: amd64, triplet: x64-windows, want: "8664 machine (x64)" }
+          - { os: windows, arch: x86, runner: windows-latest, msvc_arch: amd64_x86, triplet: x86-windows, want: "14C machine (x86)" }
+          - { os: windows, arch: arm64, runner: windows-latest, msvc_arch: amd64_arm64, triplet: arm64-windows, want: "AA64 machine (ARM64)" }
+    env:
+      ARCHIVE: myapp-${{ matrix.os }}-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Install the Linux 32-bit toolchain
+        if: matrix.os == 'linux' && matrix.arch == 'x86'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y g++-multilib
+
+      - name: Configure MSVC
+        if: matrix.os == 'windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      # Apps are built with debug information, which is split off into its own
+      # archive below, so a crash report can be symbolised without shipping
+      # the symbols. Libraries keep theirs: a static library is linked by the
+      # consumer, who decides what to strip.
+      - name: Configure and build
+        shell: bash
+        run: |
+          args=(-DMYAPP_BUILD_TESTS=OFF "-DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}")
+          if [ -n "${{ matrix.compiler }}" ]; then args+=("-DCMAKE_CXX_COMPILER=${{ matrix.compiler }}"); fi
+          if [ -n "${{ matrix.osx_arch }}" ]; then args+=("-DCMAKE_OSX_ARCHITECTURES=${{ matrix.osx_arch }}"); fi
+          cxxflags="${{ matrix.cxxflags }}"
+          if [ "${{ inputs.mode }}" = app ]; then
+            if [ "${{ matrix.os }}" = windows ]; then
+              # /Zi plus a PDB at link time. The _RELEASE flags only replace
+              # CMake's /INCREMENTAL:NO default, not the /machine flag.
+              args+=(-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=ProgramDatabase
+                     "-DCMAKE_EXE_LINKER_FLAGS_RELEASE=/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF")
+            else
+              cxxflags="$cxxflags -g"
+            fi
+          fi
+          if [ -n "${cxxflags// /}" ]; then args+=("-DCMAKE_CXX_FLAGS=$cxxflags"); fi
+          cmake --preset release "${args[@]}"
+          cmake --build --preset release
+
+      - name: Stage the app
+        if: inputs.mode == 'app'
+        shell: bash
+        run: |
+          exe="myapp"; [ "${{ matrix.os }}" = windows ] && exe="myapp.exe"
+          mkdir -p "dist/$ARCHIVE" dist/debug
+          cp "build/release/$exe" "dist/$ARCHIVE/"
+          echo "BINARY=dist/$ARCHIVE/$exe" >> "$GITHUB_ENV"
+
+      - name: Stage the library
+        if: inputs.mode == 'lib'
+        shell: bash
+        run: |
+          cmake --install build/release --prefix "dist/$ARCHIVE"
+          lib="$(find "dist/$ARCHIVE" -type f \( -name '*.a' -o -name '*.so*' -o -name '*.dylib' -o -name '*.lib' -o -name '*.dll' \) | head -1)"
+          if [ -z "$lib" ]; then
+            echo "::error::no installed library found under dist/$ARCHIVE"
+            exit 1
+          fi
+          echo "BINARY=$lib" >> "$GITHUB_ENV"
+
+      # A swapped triplet or a wrong cross-compile flag still builds, but for
+      # the wrong CPU. Read the architecture out of the binary itself. `file`
+      # cannot do this for a static library ("current ar archive").
+      - name: Check the architecture (Linux, macOS)
+        if: matrix.os != 'windows'
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = macos ]; then
+            out="$(lipo -info "$BINARY")"
+          else
+            out="$(objdump -f "$BINARY" | grep -m1 architecture)"
+          fi
+          echo "$BINARY: $out"
+          if ! grep -qF -- "${{ matrix.want }}" <<<"$out"; then
+            echo "::error::$BINARY is not ${{ matrix.arch }} (expected '${{ matrix.want }}')"
+            exit 1
+          fi
+
+      # PowerShell, not bash: Git Bash would rewrite /headers as if it were a
+      # path. dumpbin comes from the developer shell configured above.
+      - name: Check the architecture (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $out = dumpbin /headers $env:BINARY | Select-String -Pattern 'machine \(' | Select-Object -First 1
+          "$($env:BINARY): $out"
+          if (-not ("$out".Contains('${{ matrix.want }}'))) {
+            throw "$($env:BINARY) is not ${{ matrix.arch }} (expected '${{ matrix.want }}')"
+          }
+
+      - name: Split off the debug symbols
+        if: inputs.mode == 'app'
+        shell: bash
+        run: |
+          case "${{ matrix.os }}" in
+            linux)
+              objcopy --only-keep-debug "$BINARY" "dist/debug/myapp.debug"
+              objcopy --strip-debug --add-gnu-debuglink="dist/debug/myapp.debug" "$BINARY" ;;
+            macos)
+              dsymutil "$BINARY" -o "dist/debug/myapp.dSYM"
+              strip -S "$BINARY" ;;
+            windows)
+              cp build/release/myapp.pdb dist/debug/ ;;
+          esac
+
+      # vcpkg writes an SPDX document for every port it installs. Collected
+      # per platform, they list exactly what went into this binary. A project
+      # without dependencies has none, and gets no SBOM archive.
+      - name: Collect the SBOM
+        shell: bash
+        run: |
+          mkdir -p "dist/sbom/$ARCHIVE"
+          find build/release/vcpkg_installed -name vcpkg.spdx.json 2>/dev/null | while read -r doc; do
+            port="$(basename "$(dirname "$doc")")"
+            cp "$doc" "dist/sbom/$ARCHIVE/$port.spdx.json"
+          done
+          ls "dist/sbom/$ARCHIVE"
+
+      - name: Package (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          Compress-Archive -Path "dist/$env:ARCHIVE" -DestinationPath "out/$env:ARCHIVE.zip"
+          if (Test-Path dist/debug/*) { Compress-Archive -Path dist/debug/* -DestinationPath "out/$env:ARCHIVE-debug.zip" }
+          if (Test-Path "dist/sbom/$env:ARCHIVE/*") { Compress-Archive -Path "dist/sbom/$env:ARCHIVE/*" -DestinationPath "out/$env:ARCHIVE-sbom.zip" }
+
+      - name: Package (Linux, macOS)
+        if: matrix.os != 'windows'
+        shell: bash
+        run: |
+          mkdir -p out
+          tar -czf "out/$ARCHIVE.tar.gz" -C dist "$ARCHIVE"
+          if [ -d dist/debug ] && [ -n "$(ls -A dist/debug)" ]; then
+            tar -czf "out/$ARCHIVE-debug.tar.gz" -C dist/debug .
+          fi
+          if [ -n "$(ls -A "dist/sbom/$ARCHIVE")" ]; then
+            tar -czf "out/$ARCHIVE-sbom.tar.gz" -C dist/sbom "$ARCHIVE"
+          fi
+
+      - name: Upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    name: publish the GitHub Release
+    needs: build
+    # always(): on a manual run check-version is skipped, and a skipped job
+    # further up would otherwise skip this one, even after a good build.
+    if: >-
+      always() && needs.build.result == 'success' &&
+      (startsWith(github.ref, 'refs/tags/') || inputs.publish_release)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write      # create the release
+      id-token: write      # sign the provenance attestation
+      attestations: write  # store it
+    steps:
+      - name: Download the build artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: myapp-*
+          path: dist
+          merge-multiple: true
+
+      - name: Write SHA256SUMS
+        run: |
+          cd dist
+          sha256sum -- * > SHA256SUMS
+          cat SHA256SUMS
+
+      # Signed SLSA build provenance for every archive: anyone can check a
+      # download came from this workflow with
+      #   gh attestation verify <file> --repo <owner>/<repo>
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: dist/*
+          generate_release_notes: true
+          # A pushed tag (v1.2.0) names the release after itself; a manual run
+          # uses the release_tag input, or build-<run number> when it is blank.
+          tag_name: ${{ inputs.release_tag || (github.ref_type == 'tag' && github.ref_name) || format('build-{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
