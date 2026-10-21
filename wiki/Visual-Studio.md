@@ -53,25 +53,80 @@ The solution has one project, `<name>`, which holds the program. The
 debugger starts in the project root, so data files that sit next to the
 sources are found.
 
-## Sources are discovered automatically
+## Sources are discovered automatically (in a read-only project)
 
 The project file uses wildcards, not a list of files:
 
 ```xml
 <ClCompile Include="src\**\*.cpp" />
 <ClCompile Include="main.cpp" Condition="Exists('main.cpp')" />
-<ClInclude Include="include\**\*.hpp;include\**\*.h;src\**\*.hpp;src\**\*.h" />
+<ClInclude Include="include\**\*.hpp" />
+<ClInclude Include="include\**\*.h" />
+<ClInclude Include="src\**\*.hpp" />
+<ClInclude Include="src\**\*.h" />
 ```
 
-So the sources under `src/`, the headers under `include/` and the `main.cpp`
-in the project root are all part of the build. Add a file on disk, then
-reload the solution (**right-click the solution → Reload Project**, or close
-and reopen it) and the file is compiled.
+Every glob has its own `Include`; there are no semicolon-separated lists.
+The sources under `src/`, the headers under `include/` and the `main.cpp` in
+the project root are all part of the build and appear in **Solution
+Explorer**. Adding a file on disk and reloading the solution
+(**right-click the solution → Reload Project**, or close and reopen it) is
+all it takes.
 
-If Visual Studio ever expands those wildcards into explicit entries (it does
-that after "Add > New Item" in some versions), undo that change in the
-`.vcxproj`: the wildcards are what keeps new files out of your version
-control diffs.
+This works because the `.vcxproj` sets:
+
+```xml
+<PropertyGroup Label="Globals">
+  <ReadOnlyProject>true</ReadOnlyProject>
+</PropertyGroup>
+```
+
+Visual Studio does not rewrite a read-only project, so the wildcards and the
+other MSBuild constructs are supported instead of printing *"Wildcards and/or
+some other MSBuild constructs used in project item definitions are not
+supported in VC projects"*. The trade-offs:
+
+- **Property Pages cannot save changes.** Edit the `.vcxproj` by hand, or put
+  your settings in `myapp.user.props` next to it (see below).
+- **"Add > New Item" cannot add a file to the project.** Create the file on
+  disk instead (in Visual Studio: right-click the folder in the file view, or
+  turn on **Show All Files** in Solution Explorer), then reload the solution.
+- **The first load is a little slower**, because Visual Studio cannot use its
+  project cache when the project is read-only. For a one-project solution
+  that is negligible.
+
+Do not remove the `ReadOnlyProject` line to get writable property pages: the
+wildcard warning comes back, and Visual Studio may expand the wildcards into
+an explicit list the next time it saves the project.
+
+### Adding a file
+
+1. Create it on disk under `src/<name>/...` (`.cpp`, `.hpp`) or
+   `include/<name>/...` (`.hpp`). In Visual Studio, right-click the folder in
+   the file view or use **Show All Files**.
+2. Reload the solution. The file is compiled and listed in Solution Explorer.
+
+### Changing settings
+
+- **Project-wide:** edit `<name>.vcxproj` directly. It is a plain XML file,
+  and the comments name the property groups.
+- **Just for your machine:** create `<name>.user.props` next to the
+  `.vcxproj` (it is git-ignored and imported automatically if it exists),
+  for example:
+
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <Project>
+    <ItemDefinitionGroup>
+      <ClCompile>
+        <AdditionalIncludeDirectories>C:\SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      </ClCompile>
+    </ItemDefinitionGroup>
+  </Project>
+  ```
+
+  Debugger settings still go in `<name>.vcxproj.user`, which Visual Studio
+  manages.
 
 ## Where the output goes
 
@@ -97,7 +152,7 @@ committed.
 
 ## What stays in the project root
 
-Two things, and both are git-ignored:
+Three things, and all are git-ignored:
 
 - **`.vs/`**: Visual Studio's own folder next to the solution (window layout,
   the per-user `.suo`, the IntelliSense database, the precompiled headers).
@@ -105,6 +160,8 @@ Two things, and both are git-ignored:
 - **`<name>.vcxproj.user`**: created when someone changes the debugger
   settings in the IDE. The project keeps `LocalDebuggerWorkingDirectory` and
   `DebuggerFlavor` in the `.vcxproj`, so most people never need one.
+- **`<name>.user.props`**: optional, for settings you want without editing the
+  read-only project. The `.vcxproj` imports it when it exists.
 
 The IntelliSense cache can be moved, but only per user: **Tools → Options →
 Text Editor → C/C++ → Advanced → Fallback Location** (set it to a folder

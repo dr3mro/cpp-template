@@ -3,12 +3,19 @@
   <!--
     Universal Visual Studio project for the template.
 
-    It opens in Visual Studio 2019, 2022 and 2026 without CMake: sources and
-    headers are picked up by wildcard, so a new file under src/ or include/ is
-    part of the build after a reload of the solution.
+    It opens in Visual Studio 2019 (16.7+), 2022 and 2026 without CMake:
+    sources and headers are picked up by wildcard, so a new file under src/ or
+    include/ is part of the build after a reload of the solution and shows up
+    in Solution Explorer.
 
-    new-project.sh renames this file, replaces the placeholder GUID with a
-    fresh one and sets the C++ standard.
+    The project is ReadOnlyProject: Visual Studio never edits or saves it, so
+    MSBuild constructs that the IDE otherwise warns about (wildcards, several
+    files in one item) are allowed. Settings change by editing this file, or a
+    <name>.user.props next to it (imported below if it exists, git-ignored).
+    See https://learn.microsoft.com/cpp/build/reference/vcxproj-files-and-wildcards
+
+    new-project.sh and new-project.ps1 rename this file, replace the
+    placeholder GUID with a fresh one and set the C++ standard.
   -->
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -40,6 +47,12 @@
          never the CMake-generated solutions under build/vs2022 or
          build/vs2026. -->
     <VsBuildRootProject>true</VsBuildRootProject>
+    <!-- The project keeps wildcard items, which the IDE supports only in a
+         read-only project. Visual Studio then never rewrites it; new files on
+         disk are still discovered (reload the solution), and Property Pages
+         and "Add > New Item" cannot save into it. Change settings by editing
+         this file, or a myapp.user.props next to it. -->
+    <ReadOnlyProject>true</ReadOnlyProject>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -153,14 +166,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <!-- Wildcards: files added under src/ or include/ are built after a reload.
-         main.cpp sits in the project root. tests/ is not part of this project:
-         the unit tests need doctest from CMake and keep running through ctest. -->
+    <!-- Wildcards: files added under src/ or include/ are built after a reload
+         (and appear in Solution Explorer). One Include per item: a
+         semicolon-separated list is the other construct the IDE warns about.
+         main.cpp sits in the project root. tests/, fuzz/ and examples/ are
+         not part of this project: the unit tests need doctest from CMake and
+         keep running through ctest. -->
     <ClCompile Include="src\**\*.cpp" />
     <ClCompile Include="main.cpp" Condition="Exists('main.cpp')" />
-    <ClInclude Include="include\**\*.hpp;include\**\*.h;src\**\*.hpp;src\**\*.h" />
-    <None Include="README.md;.clang-format;.clang-tidy" />
-    <None Include="include\**\*.in;vcpkg.json" />
+    <ClInclude Include="include\**\*.hpp" />
+    <ClInclude Include="include\**\*.h" />
+    <ClInclude Include="src\**\*.hpp" />
+    <ClInclude Include="src\**\*.h" />
+    <None Include="README.md" />
+    <None Include=".clang-format" />
+    <None Include=".clang-tidy" />
+    <None Include="include\**\*.in" />
+    <None Include="vcpkg.json" />
   </ItemGroup>
   <PropertyGroup>
     <!-- vcpkg: the manifest is used when vcpkg is around, so dependencies added
@@ -246,6 +268,11 @@
     </ItemGroup>
     <WriteLinesToFile File="$(GeneratedIncludeDir)$(ProjectName)\$(ProjectName)_export.h" Lines="@(VsExportHeaderLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
   </Target>
+  <!-- Optional per-user settings. The project is read-only in Visual Studio,
+       so this is the place for machine-specific changes (an extra include
+       folder, a different warning level, a debugger setting) that should not
+       be committed. The file is git-ignored. -->
+  <Import Project="$(MSBuildProjectName).user.props" Condition="Exists('$(MSBuildProjectName).user.props')" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

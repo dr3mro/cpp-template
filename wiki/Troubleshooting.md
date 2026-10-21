@@ -145,10 +145,27 @@ group of the `.vcxproj`). A `.vs/` folder and a `<name>.vcxproj.user` file
 in the root are normal and git-ignored.
 
 **Visual Studio doesn't see the file I just added**
-Reload the solution (right-click the solution → **Reload Project**). If
-Visual Studio replaced the wildcards in the `.vcxproj` with explicit file
-entries, revert that change in the `.vcxproj`: the wildcards are what pick up
-new files.
+Reload the solution (right-click the solution → **Reload Project**). The
+project is read-only and keeps its wildcards, so Visual Studio cannot have
+replaced them; make sure the file is under `src/` or `include/` (or is
+`main.cpp` in the root) and ends in the right extension. See
+[Visual Studio](Visual-Studio#sources-are-discovered-automatically-in-a-read-only-project).
+
+**`Wildcards and/or some other MSBuild constructs used in project item
+definitions are not supported in VC projects`**
+The `.vcxproj` has wildcard items but is not marked read-only. Add one line to
+its `Globals` property group, which is the group that holds `ProjectGuid`:
+
+```xml
+<ReadOnlyProject>true</ReadOnlyProject>
+```
+
+That is exactly what the template does (see
+[Visual Studio](Visual-Studio#sources-are-discovered-automatically-in-a-read-only-project)).
+A project generated before this fix simply lacks that line; adding it removes
+the warning while the wildcards keep discovering new files. Do not use
+`ReplaceWildcardsInProjectItems` instead: it rewrites the project into a
+hand-maintained file list.
 
 ## Running and testing
 

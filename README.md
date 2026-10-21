@@ -63,18 +63,27 @@ without bash and accepts both option styles (`-Std 20` and `--std 20`). See
 
 ### Visual Studio
 
-`<name>.sln` in the project root opens directly in Visual Studio 2019, 2022
-and 2026 (x64 and ARM64, Debug and Release) — **no CMake needed**. It needs
-the **Desktop development with C++** workload. The project finds the sources
-under `src/`, the headers under `include/` and the `main.cpp` in the root by
-wildcard, so a new file on disk is part of the build after you reload the
-solution. If Visual Studio ever expands the wildcards into explicit entries
-after "Add > New Item", revert that change in the `.vcxproj`.
+`<name>.sln` in the project root opens directly in Visual Studio 2019 (16.7+),
+2022 and 2026 (x64 and ARM64, Debug and Release) — **no CMake needed**. It
+needs the **Desktop development with C++** workload. The project finds the
+sources under `src/`, the headers under `include/` and the `main.cpp` in the
+root by wildcard, so a new file on disk is part of the build and appears in
+Solution Explorer after you reload the solution.
+
+The `.vcxproj` is a **read-only project** (`ReadOnlyProject`), which is what
+lets it keep those wildcards without the IDE's wildcard warning. Visual Studio
+never edits or saves it, so add files on disk (in Visual Studio, right-click
+the folder in the file view) and reload the solution instead of using
+"Add > New Item". Change settings by editing the `.vcxproj`, or put
+machine-specific ones in an optional `<name>.user.props` next to it
+(git-ignored). The first solution load is a little slower because Visual
+Studio cannot use its project cache for a read-only project; that is fine for
+a one-project solution.
 
 Everything the build writes stays under `build/vs/`: the program, the
 intermediate files, the generated headers and the vcpkg packages. Only `.vs/`
-(Visual Studio's own folder) and an optional `<name>.vcxproj.user` appear in
-the project root, and both are git-ignored. The IntelliSense cache can be
+(Visual Studio's own folder), an optional `<name>.vcxproj.user` and
+`<name>.user.props` appear in the project root, and all are git-ignored. The IntelliSense cache can be
 moved per user via **Tools → Options → Text Editor → C/C++ → Advanced →
 Fallback Location**. The tests are not part of the solution (they need doctest
 from CMake), so they keep running through `cmake --preset debug && cmake

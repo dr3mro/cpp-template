@@ -21,7 +21,8 @@ myapp/
 │   └── corpus/fuzz_greeter/   seed inputs
 ├── main.cpp                ✏️ the program's entry point (app projects)
 ├── myapp.sln                 Visual Studio solution (opens in VS 2019/2022/2026)
-├── myapp.vcxproj            Visual Studio project (wildcard source discovery)
+├── myapp.vcxproj            Visual Studio project (read-only, wildcard source discovery)
+├── myapp.user.props           optional local settings (create it; git-ignored)
 ├── Directory.Build.props      where MSBuild writes everything (under build/vs/)
 ├── examples/                  a program using the installed library (library projects)
 ├── cmake/                     build modules, one per feature
@@ -80,8 +81,12 @@ New files are picked up automatically on the next build. You don't edit any
 - **`myapp.sln`** and **`myapp.vcxproj`**: the Visual Studio solution and
   project, opened directly in Visual Studio without CMake. Sources and headers
   under `src/` and `include/` are found by wildcard (together with
-  `main.cpp`), so you never edit them to add a file. See
-  [Visual Studio](Visual-Studio).
+  `main.cpp`), so you never edit them to add a file. The project is read-only
+  (`ReadOnlyProject`), which keeps those wildcards warning-free; add files on
+  disk and reload the solution. See [Visual Studio](Visual-Studio).
+- **`myapp.user.props`**: optional and git-ignored. Create it for settings you
+  want only on your machine; the `.vcxproj` imports it when it exists (the
+  read-only project itself cannot be edited by the IDE).
 - **`Directory.Build.props`**: where MSBuild writes everything. It sends the
   binaries, the intermediate files, the NuGet restore files, the vcpkg
   packages and the generated headers to `build/vs/`, so a Visual Studio build

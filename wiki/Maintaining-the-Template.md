@@ -72,6 +72,13 @@ comparison isn't cluttered with mode differences.
 - `myapp.sln` and `myapp.vcxproj` carry a placeholder project GUID
   (`3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69`); `new-project.sh` replaces it with a
   fresh GUID in both files, so don't hard-code it anywhere else.
+- Keep `ReadOnlyProject` in the `.vcxproj`: it is what lets the wildcards work
+  without the IDE warning. When adding a project item, give each glob or file
+  its own `<ClCompile Include="...">` / `<ClInclude Include="...">` line; never
+  put several files in one semicolon-separated `Include`, which is the other
+  construct Visual Studio warns about and cannot represent in a read-only
+  project. Do not add `myapp` to project items except where the source tree
+  really uses the placeholder.
 
 The **Template test** workflow checks this: it generates projects, fails if
 any `myapp` is left, and builds and tests each one.

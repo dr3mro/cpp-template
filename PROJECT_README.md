@@ -33,16 +33,23 @@ and run `Unblock-File` after a zip download. `new-project.ps1` accepts both
 
 ## Open in Visual Studio
 
-`myapp.sln` in the project root opens directly in Visual Studio 2019, 2022 and
-2026 (x64 and ARM64, Debug and Release) — no CMake needed. It needs the
-**Desktop development with C++** workload. Sources under `src/`, headers under
-`include/` and the `myapp` `main.cpp` are found automatically; add a file on
-disk and reload the solution.
+`myapp.sln` in the project root opens directly in Visual Studio 2019 (16.7+),
+2022 and 2026 (x64 and ARM64, Debug and Release) — no CMake needed. It needs
+the **Desktop development with C++** workload. Sources under `src/`, headers
+under `include/` and the `myapp` `main.cpp` are found automatically; add a
+file on disk and reload the solution.
+
+The project is **read-only** (`ReadOnlyProject`) so that the wildcards are
+allowed without the IDE's wildcard warning. Visual Studio never saves it:
+add files on disk, and change settings by editing the `.vcxproj` or the
+optional `myapp.user.props` next to it (git-ignored). The solution loads a
+little slower because a read-only project cannot use Visual Studio's project
+cache.
 
 Everything the build writes stays under `build/vs/`: the program, the
 intermediate files, the generated headers and the vcpkg packages. Only
-`.vs/` (Visual Studio's own folder) and an optional `myapp.vcxproj.user` appear
-in the project root, and both are git-ignored. The IntelliSense cache can be
+`.vs/` (Visual Studio's own folder), an optional `myapp.vcxproj.user` and
+`myapp.user.props` appear in the project root, and all are git-ignored. The IntelliSense cache can be
 moved per user via **Tools → Options → Text Editor → C/C++ → Advanced →
 Fallback Location**.
 

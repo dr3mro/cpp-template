@@ -39,6 +39,7 @@ CMakeUserPresets.json
 *.swo
 # Visual Studio: the solution and the project are tracked, the rest is local
 *.vcxproj.user
+*.user.props
 *.suo
 # Zed / clangd
 .cache/

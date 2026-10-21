@@ -379,11 +379,36 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vsapp ($config)" }
             # The solution must build without CMake.
             if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vsapp ran CMake" }
+            # The wildcards are supported because the project is read-only.
+            if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of vsapp warned about wildcards" }
             Push-Location "$env:RUNNER_TEMP\vsapp"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
             if ($extra) { $extra; throw "msbuild wrote files outside build/vs" }
           }
+
+      - name: A new source file is still discovered
+        shell: pwsh
+        run: |
+          # Automatic discovery has to survive the read-only project: add a
+          # file under src/ and build again. MSBuild evaluates the wildcard on
+          # every run, so no project edit or IDE reload is needed here.
+          $source = "$env:RUNNER_TEMP\vsapp\src\vsapp\core\discovered.cpp"
+          @'
+          namespace vsapp::core
+          {
+              int discovered()
+              {
+                  return 1;
+              }
+          }
+          '@ | Set-Content -LiteralPath $source -Encoding utf8
+          $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
+          if ($LASTEXITCODE -ne 0) { throw "msbuild failed after adding a source file" }
+          if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the rebuild warned about wildcards" }
+          $obj = Get-ChildItem "$env:RUNNER_TEMP\vsapp\build\vs\obj" -Recurse -Filter discovered.obj
+          if (-not $obj) { throw "the new source file src/vsapp/core/discovered.cpp was not compiled" }
 
       - name: Build the library project with MSBuild
         shell: pwsh
@@ -394,6 +419,8 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vslib ($config)" }
             # The solution must build without CMake.
             if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vslib ran CMake" }
+            # The wildcards are supported because the project is read-only.
+            if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of vslib warned about wildcards" }
             Push-Location "$env:RUNNER_TEMP\vslib"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
@@ -408,3 +435,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "msbuild failed for the project of the PowerShell script" }
           # The solution must build without CMake.
           if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of the PowerShell project ran CMake" }
+          # The wildcards are supported because the project is read-only.
+          if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of the PowerShell project warned about wildcards" }
