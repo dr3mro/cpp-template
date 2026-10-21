@@ -234,6 +234,9 @@ jobs:
           if ($text -notmatch 'Launch-VsDevShell\.ps1') {
             throw "the developer-shell error message does not say how to open one"
           }
+          if ($text -notmatch 'Launch-VsDevShell\.ps1.*-SkipAutomaticLocation') {
+            throw "the developer-shell error message does not use -SkipAutomaticLocation"
+          }
           # cmake failing was the expected outcome. Without this the step
           # exits with cmake's exit code (Actions ends pwsh scripts with
           # "exit $LASTEXITCODE") and fails although every check passed.
@@ -336,14 +339,34 @@ jobs:
               throw "--std 20 --lib --no-git and -Std 20 -Lib -NoGit produce different projects"
           }
 
+      - name: The printed next steps work in Windows PowerShell 5.1
+        shell: pwsh
+        run: |
+          # Windows PowerShell 5.1 is the default shell on Windows, and it has
+          # no && operator: a printed command that uses it is a parse error
+          # there. The developer shell must also keep the current folder, or
+          # the CMake commands run in the wrong one.
+          & powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 nextsteps "$env:RUNNER_TEMP\nextsteps" -NoGit 2>&1 | Tee-Object -Variable log
+          if ($LASTEXITCODE -ne 0) { throw "new-project.ps1 failed under Windows PowerShell 5.1" }
+          $text = ($log | Out-String)
+          $bad = $log | Where-Object { $_ -match '&&' }
+          if ($bad) {
+            $bad
+            throw "the printed next steps use &&, which Windows PowerShell 5.1 cannot parse"
+          }
+          if ($text -notmatch '-SkipAutomaticLocation') {
+            throw "the printed developer shell does not use -SkipAutomaticLocation"
+          }
+
       - name: The developer shell makes CMake pick MSVC
         shell: pwsh
         run: |
           # Inside a developer shell, cl.exe comes from the tools that shell
           # set up, not from whichever clang++ or g++ is earlier on PATH.
+          # The generated project renames the MYAPP_ prefix to VSAPP_.
           Push-Location "$env:RUNNER_TEMP\vsapp"
           try {
-            cmake --preset release -DMYAPP_BUILD_TESTS=OFF
+            cmake --preset release -DVSAPP_BUILD_TESTS=OFF
             if ($LASTEXITCODE -ne 0) { throw "cmake --preset release failed in the developer shell" }
             $cache = Get-Content build/release/CMakeCache.txt -Raw
             if ($cache -notmatch 'CMAKE_CXX_COMPILER:FILEPATH=.*cl\.exe') {
@@ -356,7 +379,7 @@ jobs:
       - name: No placeholder names left behind
         shell: bash
         run: |
-          if grep -rIl 'myapp\|MYAPP' "$RUNNER_TEMP/vsapp" "$RUNNER_TEMP/vslib" --exclude-dir=.git; then
+          if grep -rIl 'myapp\|MYAPP' "$RUNNER_TEMP/vsapp" "$RUNNER_TEMP/vslib" --exclude-dir=.git --exclude-dir=build; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
