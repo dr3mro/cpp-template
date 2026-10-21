@@ -24,7 +24,11 @@ All presets and options: [Building and running](https://github.com/dr3mro/cpp-te
 
 The presets need a **Developer PowerShell for VS** (`-Arch amd64` on x64,
 `-Arch arm64` on ARM64), or use the `vs2022`/`vs2026` presets, or open
-`myapp.sln` and skip CMake. To create another project from the template,
+`myapp.sln` and skip CMake. Add `-SkipAutomaticLocation` to the
+`Launch-VsDevShell.ps1 -SkipAutomaticLocation` command, or the shell moves
+you out of the project folder. On ARM64 the `debug` preset (ASan) needs the **C++ AddressSanitizer**
+component of the Visual Studio Installer; use `cmake --preset debug-nosan`
+without it. To create another project from the template,
 allow the downloaded script once with
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (or use
 `powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 ...`),

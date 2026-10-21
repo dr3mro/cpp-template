@@ -31,6 +31,11 @@ mixes results.
 | `docs` | the documentation website | used by `cmake --workflow --preset docs` |
 | `vs2022`, `vs2026` | a CMake-generated Visual Studio solution | Windows only |
 
+On Windows the `debug` preset uses MSVC's AddressSanitizer, which needs the
+**C++ AddressSanitizer** component of the Visual Studio Installer (on ARM64
+the ARM64 build tools as well). Without it, use `debug-nosan`; see
+[Debugging and sanitizers](Debugging-and-Sanitizers#windows-and-msvc).
+
 `cmake --list-presets` shows them all, including your own from
 `CMakeUserPresets.json` ([how to make one](Recipes#keep-personal-build-settings-in-cmakeuserpresetsjson)).
 

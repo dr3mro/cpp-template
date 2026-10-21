@@ -37,13 +37,33 @@ that compiler cannot use the Visual Studio standard library. Pick one:
 - or start a developer shell for your architecture and configure there:
 
   ```powershell
-  & "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64   # x64
-  & "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64   # ARM64
+  & "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation   # x64
+  & "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64 -SkipAutomaticLocation   # ARM64
   ```
 
   Find `<VS path>` with
   `vswhere -latest -property installationPath` (under
-  `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\`).
+  `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\`);
+- or use another compiler you have installed (clang-cl, or the MSYS2/MinGW
+  g++):
+
+  ```powershell
+  cmake --preset release -DCMAKE_CXX_COMPILER=clang-cl
+  ```
+
+  The `CXX` environment variable works as well.
+
+**`MSVC AddressSanitizer does not work here: the ASan runtime for this
+architecture is missing`**
+The AddressSanitizer runtime is a separate component of Visual Studio and is
+not part of every install: on ARM64 it comes with the ARM64 build tools. Open
+the Visual Studio Installer, choose **Modify** → **Individual components** and
+install **C++ AddressSanitizer** (on ARM64 the **MSVC v143 ARM64 build
+tools** as well). Until then, build without the sanitizer:
+
+```powershell
+cmake --preset debug-nosan
+```
 
 **`STL1000: Unexpected compiler version, expected Clang 20 or newer`**
 You are building with LLVM's clang (or clang-cl) against a newer Visual
@@ -119,6 +139,17 @@ project was generated. Remove it with
 `cmake --build --preset release --target distclean`, or just delete `build/`.
 Then `cd` into the new project folder and configure there.
 
+**CMake ran in the wrong folder**
+`Launch-VsDevShell.ps1` without `-SkipAutomaticLocation` moves the current
+folder to `%USERPROFILE%\source\repos`: pass the flag, then `cd` into your
+project again.
+
+```powershell
+& "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+```
+
+The next steps that `new-project.ps1` prints already use that flag.
+
 **A warning breaks the build under `ci`, but not under `debug`**
 That's by design: `ci` turns warnings into errors, as CI does. Fix the
 warning; [Writing code](Writing-Code#rules-that-keep-the-project-healthy)
@@ -185,6 +216,15 @@ under 3.14, for example
 `pipx inject cmakelang pyyaml` (cmake-lint imports PyYAML but cmakelang does
 not declare it). `cmake-lint --version` should print 0.6.13.
 
+The pre-commit hook builds its own environment with the default Python, so it
+fails the same way on Python 3.15. Point it at an older one in
+`.pre-commit-config.yaml`:
+
+```yaml
+default_language_version:
+  python: python3.14
+```
+
 **`cmake [C0301] Line too long (84/80)` in Zed**
 Zed's CMake language server (neocmakelsp) has its own line limit, separate
 from `.cmake-format.yaml`. The template's `.neocmakelint.toml` sets it to 100
@@ -196,9 +236,12 @@ If you still see the old 80-column warning, restart the language server
 `brew install llvm` (macOS) or `pipx install clang-format` (Linux), then
 reconfigure. Or name the binary: `-DMYAPP_CLANG_FORMAT=/path/to/clang-format`.
 
-**`ninja: error: unknown target 'format'` (or `tidy`, `docs`, `coverage`)**
+**`ninja: error: unknown target 'format'` (or `tidy`, `docs`, `coverage`,
+`cmake-lint`)**
 The tool wasn't found when CMake configured, so the target wasn't defined.
-The configure output says why. Install the tool and configure again.
+The configure output says why. Install the tool and configure again. For
+`cmake-lint` that means `pipx install cmakelang==0.6.13`; for the others it is
+the program in the message (clang-format 20+, clang-tidy, dot, ...).
 
 **clangd shows errors the compiler doesn't, or can't find headers**
 Configure the preset you're working with (that refreshes

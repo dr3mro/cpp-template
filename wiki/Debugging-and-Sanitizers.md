@@ -23,6 +23,32 @@ separate presets. Other choices: `-DMYAPP_SANITIZER=memory` (MemorySanitizer,
 Linux + clang only; every dependency must be instrumented too, so it rarely
 works with prebuilt packages) or `-DMYAPP_SANITIZER=` for none.
 
+## Windows and MSVC
+
+On Windows the `debug` preset uses MSVC's AddressSanitizer, whose runtime is
+the **C++ AddressSanitizer** component of the Visual Studio Installer. It is
+not part of every install: on ARM64 it comes with the ARM64 build tools.
+
+CMake compiles *and links* a test program before it turns the sanitizer on, so
+a missing runtime is reported with the fix instead of as a link error in the
+first target:
+
+```text
+MSVC AddressSanitizer does not work here: the ASan runtime for this architecture is missing.
+```
+
+Install the component (Visual Studio Installer → **Modify** → **Individual
+components**), or build without the sanitizer:
+
+```powershell
+cmake --preset debug-nosan
+```
+
+The MSVC build also needs the run-time checks (`/RTC1`) and Edit and Continue
+out of the way, and it uses embedded debug info (`/Z7`). The template does
+that for you, without touching the CMake cache, so turning the sanitizer off
+restores CMake's defaults.
+
 ## Using the debugger
 
 The debugger configurations build and launch from the `debug-nosan` preset,

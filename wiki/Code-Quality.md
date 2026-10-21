@@ -46,7 +46,7 @@ cmake --build --preset debug --target cmake-lint
 ```
 
 `cmake-lint` (from [cmakelang](https://github.com/cheshirekow/cmakelang),
-`pipx install cmakelang`) checks the CMake files against `.cmake-format.yaml`:
+`pipx install cmakelang==0.6.13`) checks the CMake files against `.cmake-format.yaml`:
 lines up to **100 columns** (`C0301`), lower-case command names, the naming
 scheme, and complexity limits for functions. The rules are the same ones CI
 and the pre-commit hook use.
@@ -75,9 +75,10 @@ file(COPY_FILE ...)   # cmakelang predates this CMake 3.21 command
 Silence a check for the whole project with `disabled_codes` in
 `.cmake-format.yaml`, and say why in a comment.
 
-The `cmake-lint` target is only defined when the tool is installed. The same
-check runs in the `cmake-lint` CI job and in the pre-commit hook, over every
-tracked `CMakeLists.txt`, `*.cmake` and `*.cmake.in`.
+The `cmake-lint` target is only defined when the tool is on your PATH; if it
+is missing, the configure step prints a `STATUS` line that says how to install
+it. The same check runs in the `cmake-lint` CI job and in the pre-commit hook,
+over every tracked `CMakeLists.txt`, `*.cmake` and `*.cmake.in`.
 
 ## Static analysis: clang-tidy
 
@@ -118,8 +119,12 @@ not to chase 100%.
 
 `.pre-commit-config.yaml` runs these on the files of each commit: trailing
 whitespace, final newline, YAML/JSON syntax, merge-conflict markers, large
-files, clang-format and cmake-lint (install cmakelang with
-`pipx install cmakelang` first).
+files, clang-format and cmake-lint.
+
+The cmake-lint hook needs nothing on your PATH: pre-commit builds its own
+environment for it and installs `cmakelang==0.6.13` there. Installing
+cmakelang yourself (`pipx install cmakelang==0.6.13`) is still useful for the
+`cmake-lint` CMake target above.
 
 ```bash
 pipx install pre-commit      # or: brew install pre-commit

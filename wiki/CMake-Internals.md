@@ -58,7 +58,7 @@ reads, so you can read any one of them on its own.
 | `cmake/ExportHeader.cmake`                                                    | shared-library settings and `<name>_export.h`                                   |
 | `cmake/Dependencies.cmake`                                                    | **you edit this**: third-party packages                                         |
 | `cmake/CompileCommands.cmake`                                                 | the `build/compile_commands.json` link for clangd                               |
-| `cmake/Format.cmake`, `Tidy.cmake`                                            | the `format`, `format-check` and `tidy` targets                                 |
+| `cmake/Format.cmake`, `CMakeLint.cmake`, `Tidy.cmake`                         | the `format`, `format-check`, `cmake-lint` and `tidy` targets                   |
 | `cmake/Docs.cmake`, `ArchitectureDiagram.cmake`, `CollectClassDiagrams.cmake` | the `docs` target and its diagrams                                              |
 | `cmake/Install.cmake`, `Config.cmake.in`                                      | `cmake --install`, the CMake package and CPack                                  |
 | `cmake/DistClean.cmake`                                                       | the full clean                                                                  |

@@ -138,14 +138,20 @@ steps; only the developer-shell architecture differs.
      ```powershell
      & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
      # x64:
-     & "<that path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64
+     & "<that path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
      # ARM64:
-     & "<that path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64
+     & "<that path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64 -SkipAutomaticLocation
 
      cmake --preset debug
      cmake --build --preset debug
      ctest --preset debug
      ```
+
+     `-SkipAutomaticLocation` keeps the current folder: without it the
+     developer shell moves you to `%USERPROFILE%\source\repos`, and CMake
+     would configure in the wrong folder. On ARM64 the `debug` preset needs
+     the **C++ AddressSanitizer** component of the Visual Studio Installer;
+     use `cmake --preset debug-nosan` if it is not installed.
 
    - **A Visual Studio generator preset**, which finds MSVC itself and does
      not need a developer shell: `cmake --preset vs2022` or

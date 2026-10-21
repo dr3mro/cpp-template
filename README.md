@@ -37,8 +37,13 @@ without bash and accepts both option styles (`-Std 20` and `--std 20`). See
   (`powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 ...`).
   A zip download also needs `Unblock-File .\scripts\new-project.ps1`.
 - The `debug`, `release` and other Ninja presets need a **developer shell**
-  for your architecture (`-Arch amd64` on x64, `-Arch arm64` on ARM64). The
-  `vs2022`/`vs2026` presets and the checked-in `.sln` do not.
+  for your architecture (`-Arch amd64` on x64, `-Arch arm64` on ARM64). Add
+  `-SkipAutomaticLocation` to the `Launch-VsDevShell.ps1` command, or the
+  shell moves you out of your project folder. The `vs2022`/`vs2026` presets
+  and the checked-in `.sln` do not need a shell.
+- On ARM64 the `debug` preset (ASan) needs the **C++ AddressSanitizer**
+  component of the Visual Studio Installer; use `cmake --preset debug-nosan`
+  without it.
 - `scripts/new-project.ps1` and `new-project.sh` accept the same command
   line, so `--std 20 --lib --no-git` works in both.
 
@@ -96,6 +101,11 @@ two approaches don't conflict, because they build into different folders.
 
 The presets, the sanitizers, the coverage report, the fuzzers and the
 documentation website are CMake features and keep working the same way.
+
+The `pre-commit` hooks need nothing on your `PATH`: pre-commit builds its
+own environment for the cmake-lint hook. The `cmake-lint` CMake target does
+need the tool itself (`pipx install cmakelang==0.6.13`); without it the
+configure step says so.
 
 ## Learn more
 

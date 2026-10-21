@@ -32,11 +32,20 @@ path that `vswhere` printed:
 
 ```powershell
 # Windows x64
-& "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64
+& "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
 
 # Windows ARM64
-& "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64
+& "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64 -HostArch arm64 -SkipAutomaticLocation
 ```
+
+`-SkipAutomaticLocation` keeps the current folder. Without it the developer
+shell moves you to `%USERPROFILE%\source\repos`, and the CMake commands you
+run there would configure in the wrong folder.
+
+On ARM64, the `debug` preset (ASan) needs the **C++ AddressSanitizer**
+component of the Visual Studio Installer and the ARM64 build tools; without
+them CMake stops with an explanation. Use `cmake --preset debug-nosan` until
+they are installed.
 
 Run the CMake commands in that shell. If you want LLVM's clang instead of
 `cl`, pass it explicitly (`-DCMAKE_CXX_COMPILER=clang-cl` or
