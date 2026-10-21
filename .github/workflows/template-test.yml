@@ -47,10 +47,12 @@ jobs:
 
       - name: The PowerShell script produces the same project
         # scripts/new-project.ps1 must produce the same project as
-        # new-project.sh, apart from the random Visual Studio GUID.
+        # new-project.sh, apart from the random Visual Studio GUID. Same names
+        # as the bash projects above (in their own folders), so the only
+        # difference left is the GUID.
         run: |
-          pwsh -NoProfile -File scripts/new-project.ps1 psapp /tmp/psapp -NoGit
-          pwsh -NoProfile -File scripts/new-project.ps1 pslib /tmp/pslib -NoGit -Lib
+          pwsh -NoProfile -File scripts/new-project.ps1 app17 /tmp/ps/app17 -Std 17 -NoGit
+          pwsh -NoProfile -File scripts/new-project.ps1 mylib /tmp/ps/mylib -NoGit -Lib
 
           masked() {
             cp -R "$1" "$2"
@@ -61,10 +63,10 @@ jobs:
             done
           }
           masked /tmp/app17 /tmp/masked-bash-app
-          masked /tmp/psapp /tmp/masked-ps-app
+          masked /tmp/ps/app17 /tmp/masked-ps-app
           diff -r /tmp/masked-bash-app /tmp/masked-ps-app
           masked /tmp/mylib /tmp/masked-bash-lib
-          masked /tmp/pslib /tmp/masked-ps-lib
+          masked /tmp/ps/mylib /tmp/masked-ps-lib
           diff -r /tmp/masked-bash-lib /tmp/masked-ps-lib
 
       - name: No placeholder names left behind
