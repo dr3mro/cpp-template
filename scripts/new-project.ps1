@@ -43,6 +43,8 @@
     powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 bank_lib -Lib
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '',
+    Justification = 'The script prints its progress to the person who runs it.')]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$Name,
@@ -318,7 +320,7 @@ function ConvertTo-PyJson($Value, [int]$Level = 0) {
     return ([string]$Value)
 }
 
-function Remove-JsonEntries([string]$Path, [string]$ListKey, [string]$Key, [string[]]$Unwanted) {
+function Select-JsonEntry([string]$Path, [string]$ListKey, [string]$Key, [string[]]$Unwanted) {
     if (-not (Test-Path -LiteralPath $Path)) { return }
     $text = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
     # -InputObject, not the pipeline: Windows PowerShell 5.1 and PowerShell 7
@@ -350,9 +352,9 @@ if ($Lib) {
         $kept = $lines | Where-Object { $_ -notmatch '"label": "run"' -and $_ -notmatch '"label": "run debug"' }
         [System.IO.File]::WriteAllText($zedTasks, (($kept -join "`n") + "`n"), $Bytes)
     }
-    Remove-JsonEntries (Join-Path $Destination '.zed/debug.json') '' 'label' @("Debug $Name")
-    Remove-JsonEntries (Join-Path $Destination '.vscode/tasks.json') 'tasks' 'label' @('run')
-    Remove-JsonEntries (Join-Path $Destination '.vscode/launch.json') 'configurations' 'name' @("Debug $Name")
+    Select-JsonEntry (Join-Path $Destination '.zed/debug.json') '' 'label' @("Debug $Name")
+    Select-JsonEntry (Join-Path $Destination '.vscode/tasks.json') 'tasks' 'label' @('run')
+    Select-JsonEntry (Join-Path $Destination '.vscode/launch.json') 'configurations' 'name' @("Debug $Name")
 
     Remove-Item -LiteralPath (Join-Path $workflows 'release-app.yml') -Force -ErrorAction SilentlyContinue
     Move-Item -LiteralPath (Join-Path $workflows 'release-lib.yml') -Destination (Join-Path $workflows 'release.yml')
