@@ -86,6 +86,26 @@ if(MSVC)
         CACHE STRING "Debug flags" FORCE)
     set_property(GLOBAL PROPERTY VS_GLOBAL_EditAndContinue OFF)
 
+    # The ASan runtime is a separate component of Visual Studio ("C++
+    # AddressSanitizer"), and it is not part of every install: on ARM64 it
+    # comes with the ARM64 build tools. Compile *and* link a probe program
+    # first, so a missing runtime is reported here with the fix instead of as
+    # a link error in the first target.
+    set(CMAKE_REQUIRED_FLAGS "/fsanitize=address")
+    set(CMAKE_REQUIRED_LINK_OPTIONS "/fsanitize=address /INCREMENTAL:NO")
+    check_cxx_source_compiles("int main() { return 0; }" MYAPP_HAS_MSVC_ASAN)
+    unset(CMAKE_REQUIRED_FLAGS)
+    unset(CMAKE_REQUIRED_LINK_OPTIONS)
+    if(NOT MYAPP_HAS_MSVC_ASAN)
+        message(FATAL_ERROR
+            "MSVC AddressSanitizer does not work here: the ASan runtime for this "
+            "architecture is missing.\n"
+            "Install the \"C++ AddressSanitizer\" component in the Visual Studio "
+            "Installer (on ARM64 the ARM64 build tools as well), or build without "
+            "the sanitizer with the debug-nosan preset:\n"
+            "  cmake --preset debug-nosan")
+    endif()
+
     target_compile_options(${PROJECT_NAME}_options INTERFACE
         /fsanitize=address
         /Z7)             # debug info: /ZI (Edit and Continue) is not supported
