@@ -226,6 +226,25 @@ if [[ -n "${VCPKG_ROOT:-}" && -f "${VCPKG_ROOT:-}/scripts/buildsystems/vcpkg.cma
     VCPKG_READY=1
 fi
 
+# The architecture of this machine, in the spelling the Visual Studio
+# developer shell uses (-Arch/-HostArch).
+ARCH='amd64'
+if [[ "${PROCESSOR_ARCHITECTURE:-}" == 'ARM64' ]]; then
+    ARCH='arm64'
+fi
+
+# The preset for the everyday debug build. On ARM64 the MSVC AddressSanitizer
+# runtime is not part of every Visual Studio install, so the debug preset
+# (ASan) does not always link there; debug-nosan is the same build without
+# the sanitizer.
+DEBUG_PRESET='debug'
+PS_DEBUG_NOTE=''
+if [[ $ARCH == 'arm64' ]]; then
+    DEBUG_PRESET='debug-nosan'
+    PS_DEBUG_NOTE='  #    (the debug preset uses ASan, which needs the "C++ AddressSanitizer"
+  #    component of the Visual Studio Installer on ARM64)'
+fi
+
 if [[ $LIB -eq 1 ]]; then
     # Install from release: the debug preset is ASan-instrumented, so a
     # consumer linked against it would fail without matching sanitizer flags.
@@ -234,31 +253,64 @@ if [[ $LIB -eq 1 ]]; then
   cmake --preset release && cmake --build --preset release
   cmake --install build/release
   cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=\$PWD/build/install/release && cmake --build build/examples"
+
+    # The same commands for Windows PowerShell: one command per line, because
+    # Windows PowerShell 5.1 (the default shell) cannot chain commands.
+    PS_BUILD_HINT="cmake --preset $DEBUG_PRESET
+  cmake --build --preset $DEBUG_PRESET
+  ctest --preset $DEBUG_PRESET
+$PS_DEBUG_NOTE
+  cmake --preset release
+  cmake --build --preset release
+  ctest --preset release
+  cmake --install build/release
+  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=\"\$PWD/build/install/release\"
+  cmake --build build/examples"
+
 else
     BUILD_HINT="cmake --preset debug && cmake --build --preset debug && ctest --preset debug
   # ...or the optimised build:
   cmake --preset release && cmake --build --preset release && ctest --preset release"
+
+    PS_BUILD_HINT="cmake --preset $DEBUG_PRESET
+  cmake --build --preset $DEBUG_PRESET
+  ctest --preset $DEBUG_PRESET
+$PS_DEBUG_NOTE
+  cmake --preset release
+  cmake --build --preset release
+  ctest --preset release"
 fi
 
 # The next steps differ per platform: Windows has the Visual Studio solution
 # and the developer shell, the other systems build with CMake alone.
+# The Windows branch can be shown on another system for testing with
+# MYAPP_FORCE_WINDOWS=1. It is not part of the usage text.
+ON_WINDOWS=0
 case "$(uname -s 2>/dev/null || echo unknown)" in
-    MINGW*|MSYS*|CYGWIN*|Windows_NT)
-        cat <<MSG
+    MINGW*|MSYS*|CYGWIN*|Windows_NT) ON_WINDOWS=1 ;;
+esac
+if [[ "${MYAPP_FORCE_WINDOWS:-0}" == '1' ]]; then
+    ON_WINDOWS=1
+fi
+
+if [[ $ON_WINDOWS -eq 1 ]]; then
+    cat <<MSG
 
 Done. Next steps:
 
   cd "$DEST"  # the new project folder
 
-  # Build with CMake, in a "Developer PowerShell for VS":
-  $BUILD_HINT
+  # 1) Open a developer shell for this machine ($ARCH):
+  & "<VS path>\Common7\Tools\Launch-VsDevShell.ps1" -Arch $ARCH -HostArch $ARCH -SkipAutomaticLocation
 
-  # Or open the solution in Visual Studio (2019, 2022 or 2026), no CMake needed:
+  # 2) From the project folder, build with CMake (one command per line: Windows PowerShell 5.1 cannot chain commands):
+  $PS_BUILD_HINT
+
+  # 3) Or open the solution in Visual Studio (2019, 2022 or 2026), no CMake needed (step 2 not required):
   start $NAME.sln
 MSG
-        ;;
-    *)
-        cat <<MSG
+else
+    cat <<MSG
 
 Done. Next steps:
 
@@ -267,8 +319,7 @@ Done. Next steps:
   $BUILD_HINT
   zed .
 MSG
-        ;;
-esac
+fi
 
 if [[ $VCPKG_READY -eq 0 ]]; then
     cat <<MSG
@@ -278,24 +329,21 @@ will fail. The Visual Studio solution does not need it. One-time setup
 (a full clone: vcpkg.json pins a baseline commit, so no --depth 1):
 
 MSG
-    case "$(uname -s 2>/dev/null || echo unknown)" in
-        MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            cat <<MSG
+    if [[ $ON_WINDOWS -eq 1 ]]; then
+        cat <<MSG
   git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
   C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
   [Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\vcpkg", "User")
 
 Then open a new terminal (and restart Visual Studio).
 MSG
-            ;;
-        *)
-            cat <<MSG
+    else
+        cat <<MSG
   git clone https://github.com/microsoft/vcpkg.git ~/.vcpkg
   ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics
   export VCPKG_ROOT="\$HOME/.vcpkg"     # add this line to your shell profile
 MSG
-            ;;
-    esac
+    fi
     cat <<MSG
 
 See README.md for details.

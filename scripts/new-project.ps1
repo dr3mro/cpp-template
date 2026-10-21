@@ -514,12 +514,26 @@ if (-not $NoGit -and (Test-Command 'git')) {
 $vcpkgReady = $env:VCPKG_ROOT -and
     (Test-Path -LiteralPath (Join-Path $env:VCPKG_ROOT 'scripts/buildsystems/vcpkg.cmake'))
 $onWindows = [System.IO.Path]::DirectorySeparatorChar -eq '\'
+# The Windows next steps can be shown on another system for testing with
+# MYAPP_FORCE_WINDOWS=1. It is not part of the usage text.
+if ($env:MYAPP_FORCE_WINDOWS -eq '1') {
+    $onWindows = $true
+}
 
 # The architecture of this machine, in the spelling the Visual Studio
 # developer shell uses (-Arch/-HostArch).
 $arch = 'amd64'
 if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') {
     $arch = 'arm64'
+}
+
+# The preset for the everyday debug build. On ARM64 the MSVC AddressSanitizer
+# runtime is not part of every Visual Studio install, so the debug preset
+# (ASan) does not always link there; debug-nosan is the same build without
+# the sanitizer.
+$debugPreset = 'debug'
+if ($arch -eq 'arm64') {
+    $debugPreset = 'debug-nosan'
 }
 
 # The developer shell of the newest Visual Studio that has the C++ tools for
@@ -540,7 +554,9 @@ function Get-DeveloperShell {
         return $null
     }
     if (-not $installation) { return $null }
-    $shell = Join-Path (@($installation)[0]) 'Common7\Tools\Launch-VsDevShell.ps1'
+    # The shell is started with -SkipAutomaticLocation, so that it keeps the
+    # current folder (the CMake presets run there).
+    $shell = Join-Path (@($installation)[0]) 'Common7\Tools\Launch-VsDevShell.ps1'  # -SkipAutomaticLocation
     if (-not (Test-Path -LiteralPath $shell)) { return $null }
     return $shell
 }
@@ -551,31 +567,59 @@ Write-Host ''
 Write-Host "  cd `"$Destination`"  # the new project folder"
 Write-Host ''
 if ($onWindows) {
-    Write-Host '  # Build with CMake, in a "Developer PowerShell for VS":'
-    Write-Host '  cmake --preset debug && cmake --build --preset debug && ctest --preset debug'
-    Write-Host '  # ...or the optimised build:'
-    Write-Host '  cmake --preset release && cmake --build --preset release && ctest --preset release'
+    # The developer shell comes before the CMake commands: the presets need
+    # cl.exe, which only exists inside one. -SkipAutomaticLocation keeps the
+    # current folder, so the commands below run in the project.
+    $devShell = Get-DeveloperShell
+    if ($devShell) {
+        Write-Host "  # 1) Open a developer shell for this machine ($arch):"
+        Write-Host "  & `"$devShell`" -Arch $arch -HostArch $arch -SkipAutomaticLocation"
+    } else {
+        Write-Host "  # 1) Open a developer shell for this machine ($arch) from the Start menu"
+        Write-Host '  #    (Developer PowerShell for VS), or start it yourself with:'
+        Write-Host "  #    & `"<VS path>\Common7\Tools\Launch-VsDevShell.ps1`" -Arch $arch -HostArch $arch -SkipAutomaticLocation"
+    }
     Write-Host ''
-    Write-Host '  # Or open the solution in Visual Studio (2019, 2022 or 2026), no CMake needed:'
+    # One command per line: Windows PowerShell 5.1 (the default shell on
+    # Windows) cannot chain commands.
+    Write-Host '  # 2) From the project folder, build with CMake:'
+    if ($debugPreset -eq 'debug-nosan') {
+        # The MSVC AddressSanitizer runtime for ARM64 is not part of every
+        # Visual Studio install, so the debug preset (ASan) does not always
+        # link there. debug-nosan is the same build without the sanitizer.
+        Write-Host '  cmake --preset debug-nosan'
+        Write-Host '  cmake --build --preset debug-nosan'
+        Write-Host '  ctest --preset debug-nosan'
+        Write-Host '  #    (the debug preset uses ASan, which needs the "C++ AddressSanitizer"'
+        Write-Host '  #    component of the Visual Studio Installer on ARM64)'
+    } else {
+        Write-Host '  cmake --preset debug'
+        Write-Host '  cmake --build --preset debug'
+        Write-Host '  ctest --preset debug'
+    }
+    Write-Host '  cmake --preset release'
+    Write-Host '  cmake --build --preset release'
+    Write-Host '  ctest --preset release'
+    if ($Lib) {
+        Write-Host '  cmake --install build/release'
+        Write-Host '  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/build/install/release"'
+        Write-Host '  cmake --build build/examples'
+    }
+    Write-Host ''
+    Write-Host '  # 3) Or open the solution in Visual Studio (2019, 2022 or 2026), no CMake needed:'
     Write-Host "  start $Name.sln"
 } else {
-    Write-Host '  cmake --preset debug && cmake --build --preset debug && ctest --preset debug'
+    Write-Host '  cmake --preset debug'
+    Write-Host '  cmake --build --preset debug'
+    Write-Host '  ctest --preset debug'
     Write-Host '  # ...or the optimised build:'
-    Write-Host '  cmake --preset release && cmake --build --preset release && ctest --preset release'
-}
-if ($Lib) {
-    Write-Host '  cmake --install build/release'
-    Write-Host '  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/build/install/release"; cmake --build build/examples'
-}
-if ($onWindows) {
-    $devShell = Get-DeveloperShell
-    Write-Host ''
-    if ($devShell) {
-        Write-Host "  # Open a developer shell for this machine ($arch) before using the CMake presets:"
-        Write-Host "  & `"$devShell`" -Arch $arch -HostArch $arch"
-    } else {
-        Write-Host "  # Open a developer shell for this machine ($arch) from the Start menu"
-        Write-Host "  # (Developer PowerShell for VS), then run the CMake commands above."
+    Write-Host '  cmake --preset release'
+    Write-Host '  cmake --build --preset release'
+    Write-Host '  ctest --preset release'
+    if ($Lib) {
+        Write-Host '  cmake --install build/release'
+        Write-Host '  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/build/install/release"'
+        Write-Host '  cmake --build build/examples'
     }
 }
 
