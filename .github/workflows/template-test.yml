@@ -219,8 +219,9 @@ jobs:
           # This job deliberately does not configure MSVC: the environment is
           # a plain PowerShell window, like the one the error message is for.
           cmake --preset release -DMYAPP_BUILD_TESTS=OFF 2>&1 | Tee-Object -Variable log
+          $code = $LASTEXITCODE
           $text = ($log | Out-String)
-          if ($LASTEXITCODE -eq 0) {
+          if ($code -eq 0) {
             throw "cmake --preset release succeeded outside a developer shell; the compiler guard did not run"
           }
           if ($text -match 'STL1000') {
@@ -233,6 +234,10 @@ jobs:
           if ($text -notmatch 'Launch-VsDevShell\.ps1') {
             throw "the developer-shell error message does not say how to open one"
           }
+          # cmake failing was the expected outcome. Without this the step
+          # exits with cmake's exit code (Actions ends pwsh scripts with
+          # "exit $LASTEXITCODE") and fails although every check passed.
+          exit 0
 
   visual-studio:
     # The checked-in Visual Studio solution must build with MSBuild, without
@@ -246,6 +251,9 @@ jobs:
         os: [windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v7
+      # The developer-shell step runs a CMake configure, which needs vcpkg and
+      # the VCPKG_DEFAULT_BINARY_CACHE folder (set workflow-wide) to exist.
+      - uses: ./.github/actions/setup-vcpkg
       - uses: microsoft/setup-msbuild@v2
 
       - name: Configure MSVC

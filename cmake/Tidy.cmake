@@ -13,7 +13,18 @@ if(NOT MYAPP_RUN_CLANG_TIDY)
     return()
 endif()
 
-set(_myapp_tidy_args -quiet -p "${PROJECT_BINARY_DIR}")
+# run-clang-tidy only looks for clang-tidy on PATH, and Homebrew's LLVM is not
+# on PATH (it is keg-only). Find clang-tidy next to run-clang-tidy first, so
+# both come from the same LLVM, and pass it explicitly.
+get_filename_component(_myapp_run_clang_tidy_dir "${MYAPP_RUN_CLANG_TIDY}" DIRECTORY)
+find_program(MYAPP_CLANG_TIDY NAMES clang-tidy
+             HINTS "${_myapp_run_clang_tidy_dir}" ${MYAPP_LLVM_HINTS})
+if(NOT MYAPP_CLANG_TIDY)
+    return()
+endif()
+
+set(_myapp_tidy_args -quiet -p "${PROJECT_BINARY_DIR}"
+                     "-clang-tidy-binary=${MYAPP_CLANG_TIDY}")
 if(MYAPP_TIDY_WERROR)
     list(APPEND _myapp_tidy_args "-warnings-as-errors=*")
 endif()
