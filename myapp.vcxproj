@@ -174,39 +174,47 @@
     <LocalDebuggerWorkingDirectory>$(MSBuildProjectDirectory)\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <!--
-    The two headers that CMake generates are written here, before every
-    compile, so the project builds straight from a clean checkout:
-      version.hpp       from include/<name>/version.hpp.in, with the version
-                        from vcpkg.json and the current git hash
+    The two headers the CMake build generates are written here, before every
+    compile, in plain MSBuild: the solution never runs CMake.
+      version.hpp       include/<name>/version.hpp.in with the version from
+                        vcpkg.json and the current git hash (the same
+                        substitution cmake/WriteVersion.cmake makes)
       <name>_export.h   the static-build export header
+    Both are only rewritten when their content changes, so an unchanged
+    header does not rebuild the files that include it.
   -->
   <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile">
-    <PropertyGroup>
-      <VsCMakePath>$(DevEnvDir)CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</VsCMakePath>
-      <VsCMakePath Condition="!Exists('$(VsCMakePath)')">$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</VsCMakePath>
-      <VsCMakePath Condition="!Exists('$(VsCMakePath)')">$(CMAKE_COMMAND)</VsCMakePath>
-      <VsCMakePath Condition="'$(VsCMakePath)'==''">cmake</VsCMakePath>
-    </PropertyGroup>
-    <Exec Command="&quot;$(VsCMakePath)&quot; --version" ContinueOnError="true" StandardOutputImportance="low" ConsoleToMSBuild="true">
-      <Output TaskParameter="ExitCode" PropertyName="VsCMakeExitCode" />
-    </Exec>
-    <Error Condition="'$(VsCMakeExitCode)'!='0'" Text="CMake was not found. Install the 'C++ CMake tools for Windows' component of the 'Desktop development with C++' workload in Visual Studio (or add cmake to PATH) and build again." />
     <!-- The version lives in vcpkg.json; that is the single source of truth. -->
-    <Exec Command="powershell -NoProfile -NonInteractive -Command &quot;[Console]::Out.Write((Get-Content -Raw '$(MSBuildProjectDirectory)\vcpkg.json' | ConvertFrom-Json).version)&quot;"
-          ConsoleToMSBuild="true" StandardOutputImportance="high" ContinueOnError="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="VsVersionOutput" />
-      <Output TaskParameter="ExitCode" PropertyName="VsVersionExitCode" />
-    </Exec>
-    <Error Condition="'$(VsVersionExitCode)'!='0'" Text="Could not read the version from vcpkg.json. Check that the file exists and holds a valid JSON object with a &quot;version&quot; field." />
     <PropertyGroup>
-      <VsVersion>$(VsVersionOutput)</VsVersion>
-      <VsVersion Condition="'$(VsVersion)'==''">0.0.0</VsVersion>
+      <VsManifestText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\vcpkg.json'))</VsManifestText>
+      <VsHasVersion>$([System.Text.RegularExpressions.Regex]::IsMatch($(VsManifestText), '"version"\s*:\s*"\d+\.\d+\.\d+'))</VsHasVersion>
+    </PropertyGroup>
+    <Error Condition="'$(VsHasVersion)'!='True'" Text="Could not read the version from vcpkg.json. It needs a &quot;version&quot; field such as &quot;0.1.0&quot;." />
+    <PropertyGroup>
+      <VsVersion>$([System.Text.RegularExpressions.Regex]::Replace($(VsManifestText), '(?s)^.*?"version"\s*:\s*"(\d+\.\d+\.\d+[^"]*)".*$', '$1'))</VsVersion>
       <VsVersionMajor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^(\d+)\..*$', '$1'))</VsVersionMajor>
       <VsVersionMinor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.(\d+).*$', '$1'))</VsVersionMinor>
       <VsVersionPatch>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.\d+\.(\d+).*$', '$1'))</VsVersionPatch>
     </PropertyGroup>
-    <MakeDir Directories="$(GeneratedIncludeDir)" />
-    <Exec Command="&quot;$(VsCMakePath)&quot; -DTEMPLATE=&quot;$(MSBuildProjectDirectory)\include\$(ProjectName)\version.hpp.in&quot; -DOUTPUT=&quot;$(GeneratedIncludeDir)$(ProjectName)\version.hpp&quot; -DSOURCE_DIR=&quot;$(MSBuildProjectDirectory)&quot; -DPROJECT_NAME=$(ProjectName) -DPROJECT_VERSION=$(VsVersion) -DPROJECT_VERSION_MAJOR=$(VsVersionMajor) -DPROJECT_VERSION_MINOR=$(VsVersionMinor) -DPROJECT_VERSION_PATCH=$(VsVersionPatch) -P &quot;$(MSBuildProjectDirectory)\cmake\WriteVersion.cmake&quot;" />
+    <!-- The short git hash, or "unknown" without git or outside a repository,
+         exactly like WriteVersion.cmake. Git is optional. -->
+    <Exec Command="git rev-parse --short HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+          IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EchoOff="true"
+          StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="VsGitOutput" />
+      <Output TaskParameter="ExitCode" PropertyName="VsGitExitCode" />
+    </Exec>
+    <PropertyGroup>
+      <VsGitHash>unknown</VsGitHash>
+      <VsGitCandidate Condition="'$(VsGitExitCode)'=='0'">$(VsGitOutput.Trim())</VsGitCandidate>
+      <VsGitHash Condition="'$(VsGitCandidate)'!='' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(VsGitCandidate)', '^[0-9a-f]{4,40}$'))">$(VsGitCandidate)</VsGitHash>
+      <VsVersionText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\include\$(ProjectName)\version.hpp.in'))</VsVersionText>
+      <VsVersionText>$(VsVersionText.Replace('@PROJECT_NAME@', '$(ProjectName)').Replace('@PROJECT_VERSION_MAJOR@', '$(VsVersionMajor)').Replace('@PROJECT_VERSION_MINOR@', '$(VsVersionMinor)').Replace('@PROJECT_VERSION_PATCH@', '$(VsVersionPatch)').Replace('@PROJECT_VERSION@', '$(VsVersion)').Replace('@MYAPP_GIT_HASH@', '$(VsGitHash)').TrimEnd())</VsVersionText>
+    </PropertyGroup>
+    <MakeDir Directories="$(GeneratedIncludeDir)$(ProjectName)" />
+    <!-- Escape(): the header contains ";", which would otherwise split it into
+         separate lines. -->
+    <WriteLinesToFile File="$(GeneratedIncludeDir)$(ProjectName)\version.hpp" Lines="$([MSBuild]::Escape($(VsVersionText)))" Overwrite="true" WriteOnlyWhenDifferent="true" />
     <!-- The export header: the static-build version of the one CMake generates
          with generate_export_header(). -->
     <ItemGroup>
@@ -229,7 +237,7 @@
       <VsExportHeaderLine Include="#define MYAPP_DEPRECATED_NO_EXPORT MYAPP_NO_EXPORT MYAPP_DEPRECATED" />
       <VsExportHeaderLine Include="#endif" />
     </ItemGroup>
-    <WriteLinesToFile File="$(GeneratedIncludeDir)$(ProjectName)\$(ProjectName)_export.h" Lines="@(VsExportHeaderLine)" Overwrite="true" />
+    <WriteLinesToFile File="$(GeneratedIncludeDir)$(ProjectName)\$(ProjectName)_export.h" Lines="@(VsExportHeaderLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

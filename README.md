@@ -51,12 +51,11 @@ ctest --preset debug             # test
 
 `<name>.sln` in the project root opens directly in Visual Studio 2019, 2022
 and 2026 (x64 and ARM64, Debug and Release) — **no CMake needed**. It needs
-the **Desktop development with C++** workload and the **C++ CMake tools for
-Windows** component. The project finds the sources under `src/`, the headers
-under `include/` and the `main.cpp` in the root by wildcard, so a new file on
-disk is part of the build after you reload the solution. If Visual Studio
-ever expands the wildcards into explicit entries after "Add > New Item",
-revert that change in the `.vcxproj`.
+the **Desktop development with C++** workload. The project finds the sources
+under `src/`, the headers under `include/` and the `main.cpp` in the root by
+wildcard, so a new file on disk is part of the build after you reload the
+solution. If Visual Studio ever expands the wildcards into explicit entries
+after "Add > New Item", revert that change in the `.vcxproj`.
 
 Everything the build writes stays under `build/vs/`: the program, the
 intermediate files, the generated headers and the vcpkg packages. Only `.vs/`

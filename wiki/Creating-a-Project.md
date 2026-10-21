@@ -76,8 +76,7 @@ the template uses it.
 
 `bank_app.sln` is in the project root: double-click it and Visual Studio
 2019, 2022 or 2026 opens it, with no CMake needed. It needs the **Desktop
-development with C++** workload and the **C++ CMake tools for Windows**
-component. See [Visual Studio](Visual-Studio).
+development with C++** workload. See [Visual Studio](Visual-Studio).
 
 ## After creating the project
 

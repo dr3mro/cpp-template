@@ -69,9 +69,7 @@ yours is older, `pipx install cmake` gives you a current one.
 
 1. Install **Visual Studio 2022 or 2026** (Community is free) with the
    **Desktop development with C++** workload. It includes the compiler, CMake
-   and Ninja. Add the **C++ CMake tools for Windows** component: the
-   Visual Studio solution uses its `cmake.exe` to write the generated
-   headers. Visual Studio 2019 works too: the template's own solution opens
+   and Ninja. Visual Studio 2019 works too: the template's own solution opens
    in it without CMake (see [Visual Studio](Visual-Studio)).
 2. In a terminal:
 

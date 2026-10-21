@@ -22,12 +22,11 @@ All presets and options: [Building and running](https://github.com/dr3mro/cpp-te
 
 ## Open in Visual Studio
 
-`myapp.sln` in the project root opens directly in Visual Studio 2019, 2022
-and 2026 (x64 and ARM64, Debug and Release) — no CMake needed. It needs the
-**Desktop development with C++** workload and the **C++ CMake tools for
-Windows** component. Sources under `src/`, headers under `include/` and the
-`myapp` `main.cpp` are found automatically; add a file on disk and reload the
-solution.
+`myapp.sln` in the project root opens directly in Visual Studio 2019, 2022 and
+2026 (x64 and ARM64, Debug and Release) — no CMake needed. It needs the
+**Desktop development with C++** workload. Sources under `src/`, headers under
+`include/` and the `myapp` `main.cpp` are found automatically; add a file on
+disk and reload the solution.
 
 Everything the build writes stays under `build/vs/`: the program, the
 intermediate files, the generated headers and the vcpkg packages. Only

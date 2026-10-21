@@ -97,6 +97,9 @@ generate_guid() {
     else
         uuid="$(cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '00000000-0000-4000-8000-000000000000')"
     fi
+    # A python3 that is only a Windows Store stub prints nothing; never
+    # write an empty GUID into the project.
+    [[ "$uuid" =~ ^[0-9A-Fa-f-]{36}$ ]] || uuid="$(cat /proc/sys/kernel/random/uuid 2>/dev/null || od -An -N16 -tx1 /dev/urandom | tr -d ' \n' | sed -E 's/(.{8})(.{4})(.{4})(.{4})(.{12})/\1-\2-\3-\4-\5/')"
     printf '%s' "$(printf '%s' "$uuid" | tr '[:lower:]' '[:upper:]')"
 }
 

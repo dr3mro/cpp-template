@@ -7,10 +7,10 @@ Release) **without CMake**: no generate step, no configure.
 
 ## What you need
 
-Visual Studio with the **Desktop development with C++** workload, plus the
-**C++ CMake tools for Windows** component (it ships the `cmake.exe` the
-project uses to write the version header). Everything else — the compiler,
-the Windows SDK — comes with the workload.
+Visual Studio with the **Desktop development with C++** workload. That is
+all: the compiler and the Windows SDK come with it, and the solution never
+runs CMake. Git on the `PATH` is optional; it only fills in the commit hash
+in `version.hpp`.
 
 vcpkg is optional: when it is set up, the project uses the manifest in
 `vcpkg.json`, so dependencies you add later also work in the solution.
@@ -90,14 +90,16 @@ Two headers are generated, and the project writes them itself before every
 compile:
 
 - `<name>/version.hpp`: the version from `vcpkg.json` (the single source of
-  truth) and the current git hash. The project runs
-  `cmake -P cmake/WriteVersion.cmake` — the same script the CMake build
-  uses — with the CMake that ships with Visual Studio.
+  truth) and the current git hash (`unknown` without git or outside a
+  repository). The project fills in `include/<name>/version.hpp.in` itself,
+  in plain MSBuild — the same substitution `cmake/WriteVersion.cmake` makes
+  for the CMake build — so CMake is never run.
 - `<name>/<name>_export.h`: the export header, in its static-build version.
   `MYAPP_STATIC_DEFINE` is defined for every configuration.
 
-If CMake is missing, the build stops with a message that says which
-component to install.
+Both headers are only rewritten when their content changes, so a rebuild
+does not recompile everything. If `vcpkg.json` has no `version` field, the
+build stops with a message saying so.
 
 ## What is *not* in the solution
 

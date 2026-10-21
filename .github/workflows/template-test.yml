@@ -167,8 +167,10 @@ jobs:
         shell: pwsh
         run: |
           foreach ($config in @('Debug', 'Release')) {
-            msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=$config -p:Platform=x64 -m
+            msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=$config -p:Platform=x64 -m | Tee-Object -Variable log
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vsapp ($config)" }
+            # The solution must build without CMake.
+            if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vsapp ran CMake" }
             Push-Location "$env:RUNNER_TEMP\vsapp"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
@@ -179,8 +181,10 @@ jobs:
         shell: pwsh
         run: |
           foreach ($config in @('Debug', 'Release')) {
-            msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=x64 -m
+            msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=x64 -m | Tee-Object -Variable log
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vslib ($config)" }
+            # The solution must build without CMake.
+            if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vslib ran CMake" }
             Push-Location "$env:RUNNER_TEMP\vslib"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location

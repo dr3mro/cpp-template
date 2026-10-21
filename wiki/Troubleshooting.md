@@ -74,12 +74,6 @@ to rebuild. A file in a new top-level folder needs CMake lines; see
 found by wildcard, so reload the solution after adding a file; see
 [Visual Studio](Visual-Studio).
 
-**Visual Studio says "CMake was not found"**
-The solution writes the generated headers with the CMake that ships with
-Visual Studio. Install the **C++ CMake tools for Windows** component of the
-**Desktop development with C++** workload (Visual Studio → Installer → Modify),
-or put a `cmake` on the `PATH`, and build again.
-
 **Visual Studio left files in the project root**
 The output paths live in `Directory.Build.props`, so everything should land
 under `build/vs/`. If you see `obj\`, `Debug\`, `Release\` or

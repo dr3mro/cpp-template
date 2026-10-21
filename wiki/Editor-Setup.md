@@ -7,8 +7,7 @@ clangd works too (CLion, Neovim, Emacs, Sublime).
 
 On Windows there is also **Visual Studio**: the project ships `<name>.sln`,
 which opens in VS 2019, 2022 and 2026 without CMake. It needs the
-**Desktop development with C++** workload and the **C++ CMake tools for
-Windows** component. See [Visual Studio](Visual-Studio).
+**Desktop development with C++** workload. See [Visual Studio](Visual-Studio).
 
 ## How clangd finds your build
 
