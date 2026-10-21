@@ -101,10 +101,13 @@ if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
                 "  3. Open a developer shell for your architecture and configure from\n"
                 "     there. Find Visual Studio (this needs the Visual Studio\n"
                 "     Installer):\n"
-                "       & \"\${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath\n"
+                "       & \"\${env:ProgramFiles(x86)}\\Microsoft Visual Studio"
+                "\\Installer\\vswhere.exe\""
+                " -latest -property installationPath\n"
                 "     Then start its developer shell (use -Arch arm64 on an ARM64\n"
                 "     machine):\n"
-                "       & \"<the path from vswhere>\\Common7\\Tools\\Launch-VsDevShell.ps1\" -Arch ${_myapp_arch} -HostArch ${_myapp_arch}\n"
+                "       & \"<the path from vswhere>\\Common7\\Tools\\Launch-VsDevShell.ps1\" "
+                "-Arch ${_myapp_arch} -HostArch ${_myapp_arch}\n"
                 "     and run 'cmake --preset release' in it.")
         endif()
     endif()

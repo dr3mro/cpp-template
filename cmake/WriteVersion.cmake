@@ -45,6 +45,9 @@ function(myapp_write_version_header)
     endif()
 
     configure_file("${ARG_TEMPLATE}" "${ARG_OUTPUT}.tmp" @ONLY)
+    # cmake-lint: disable=E1126
+    # cmakelang predates file(COPY_FILE ...) (CMake 3.21), so it reports a
+    # false "invalid form discriminator" here. The command is correct.
     file(COPY_FILE "${ARG_OUTPUT}.tmp" "${ARG_OUTPUT}" ONLY_IF_DIFFERENT)
     file(REMOVE "${ARG_OUTPUT}.tmp")
 endfunction()

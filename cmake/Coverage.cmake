@@ -22,8 +22,10 @@ if(MYAPP_ENABLE_COVERAGE)
             "compiler is ${CMAKE_CXX_COMPILER_ID}. Use the coverage preset or "
             "-DMYAPP_USE_LLVM_CLANG=ON.")
     endif()
-    target_compile_options(${PROJECT_NAME}_options INTERFACE -fprofile-instr-generate -fcoverage-mapping)
-    target_link_options(${PROJECT_NAME}_options INTERFACE -fprofile-instr-generate -fcoverage-mapping)
+    target_compile_options(${PROJECT_NAME}_options INTERFACE
+        -fprofile-instr-generate -fcoverage-mapping)
+    target_link_options(${PROJECT_NAME}_options INTERFACE
+        -fprofile-instr-generate -fcoverage-mapping)
 endif()
 
 # _myapp_xcrun_find(<var> <tool>)
@@ -94,12 +96,16 @@ function(myapp_add_coverage_report)
     # into the report.
     myapp_regex_escape(_myapp_coverage_source_dir "${PROJECT_SOURCE_DIR}")
     myapp_regex_escape(_myapp_coverage_binary_dir "${PROJECT_BINARY_DIR}")
-    set(_ignore "--ignore-filename-regex=${_myapp_coverage_source_dir}/(tests|fuzz|vcpkg_installed)/|${_myapp_coverage_binary_dir}/vcpkg_installed/")
+    string(CONCAT _ignore
+        "--ignore-filename-regex=${_myapp_coverage_source_dir}"
+        "/(tests|fuzz|vcpkg_installed)/"
+        "|${_myapp_coverage_binary_dir}/vcpkg_installed/")
 
     add_custom_target(coverage
         COMMAND ${CMAKE_COMMAND} -E rm -f ${_out}/default.profraw ${_out}/merged.profdata
         COMMAND ${CMAKE_COMMAND} -E env "LLVM_PROFILE_FILE=${_out}/default.profraw" ${_tests}
-        COMMAND ${MYAPP_LLVM_PROFDATA} merge -sparse ${_out}/default.profraw -o ${_out}/merged.profdata
+        COMMAND ${MYAPP_LLVM_PROFDATA} merge -sparse ${_out}/default.profraw
+                -o ${_out}/merged.profdata
         COMMAND ${MYAPP_LLVM_COV} report ${_tests} -instr-profile=${_out}/merged.profdata ${_ignore}
         COMMAND ${MYAPP_LLVM_COV} show ${_tests} -instr-profile=${_out}/merged.profdata ${_ignore}
                 -format=html -output-dir=${_out}/html

@@ -25,7 +25,8 @@ function(_myapp_use_sanitizer compile_flag link_flag what)
     if(NOT ${_result})
         message(FATAL_ERROR "This compiler cannot build with ${compile_flag} (${what}).")
     endif()
-    target_compile_options(${PROJECT_NAME}_options INTERFACE ${compile_flag} -fno-omit-frame-pointer)
+    target_compile_options(${PROJECT_NAME}_options INTERFACE
+        ${compile_flag} -fno-omit-frame-pointer)
     target_link_options(${PROJECT_NAME}_options INTERFACE ${link_flag})
     # UBSan only prints a report and carries on by default, so a test (or a
     # fuzz input) that hits undefined behaviour would still pass. Make every
