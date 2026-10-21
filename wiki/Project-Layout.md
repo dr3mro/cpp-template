@@ -36,6 +36,8 @@ myapp/
 ├── Doxyfile.in                documentation settings
 ├── .clang-format              code style
 ├── .clang-tidy                static-analysis checks
+├── .cmake-format.yaml         CMake lint rules (formatting is off)
+├── .neocmakelint.toml         line length and command case for neocmakelsp
 ├── .clangd                    tells clangd where the build is
 ├── .editorconfig              whitespace rules for every editor
 ├── .pre-commit-config.yaml    checks run before each commit
@@ -76,6 +78,9 @@ New files are picked up automatically on the next build. You don't edit any
   [Options reference](Options-Reference).
 - **`CMakePresets.json`**: the shared presets. Don't put personal paths here;
   use `CMakeUserPresets.json`.
+- **`.cmake-format.yaml`** and **`.neocmakelint.toml`**: the CMake lint rules
+  (100 columns, naming, complexity) and the duplicate line-length setting for
+  Zed's language server. See [Code quality](Code-Quality#cmake-lint-cmake-lint).
 - **`CMakeLists.txt`** and the rest of **`cmake/`**: the build logic, explained in
   [CMake internals](CMake-Internals).
 - **`myapp.sln`** and **`myapp.vcxproj`**: the Visual Studio solution and

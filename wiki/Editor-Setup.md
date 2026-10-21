@@ -45,6 +45,18 @@ Open the project folder (`zed .`). Zed picks up `.zed/`:
   tests**. Both build the `debug-nosan` preset first. Click left of a line
   number to set a breakpoint.
 
+## CMake lint in the editor
+
+Zed's CMake language server, **neocmakelsp**, reads `.neocmakelint.toml` from
+the project root: line length (100, matching `.cmake-format.yaml`), command
+case, and optionally the external `cmake-lint` checks. Restart the language
+server after changing the file (**editor: restart language server** in the
+command palette); otherwise the old limits stay loaded.
+
+In VS Code, a CMake extension that uses **cmakelang** picks up
+`.cmake-format.yaml` from the root. That is the same file `cmake-lint` and the
+`cmake-lint` target use, so the editor and CI agree.
+
 ## VS Code
 
 Open the folder (`code .`). Accept the prompt to install the recommended

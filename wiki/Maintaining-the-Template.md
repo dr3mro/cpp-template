@@ -111,6 +111,10 @@ presets, and a shared library build (`-DBUILD_SHARED_LIBS=ON`).
 
 - A new build feature becomes a module in `cmake/`; follow the checklist in
   [CMake internals](CMake-Internals#adding-a-module-checklist).
+- A new public `myapp_*` function or macro needs a signature under
+  `parse.additional_commands` in `.cmake-format.yaml`, or `cmake-lint`
+  (and `cmake-format`) treat its arguments as plain words. Add the module's
+  private `_myapp_*` helpers there too when they take keyword arguments.
 - A new user-facing switch goes in `cmake/Options.cmake` and the
   [Options reference](Options-Reference).
 - A user-visible change gets a line in `CHANGELOG.md` under `[Unreleased]`.

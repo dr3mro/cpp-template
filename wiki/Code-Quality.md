@@ -7,6 +7,7 @@ of them also run in CI.
 | --- | --- | --- |
 | Compiler warnings | suspicious code: shadowed names, lossy conversions, unused values | every build; the `ci` preset makes them errors |
 | clang-format | inconsistent style | `--target format` (fix) / `--target format-check` (check) |
+| cmake-lint | CMake style, naming and complexity | `--target cmake-lint` |
 | clang-tidy | bug-prone patterns, modernisation hints, performance issues | `--target tidy` |
 | Unit tests | wrong behaviour | `ctest --preset debug` |
 | Sanitizers | memory errors, undefined behaviour, data races | tests under `debug` / `tsan` |
@@ -37,6 +38,46 @@ Zed formats on save, and VS Code does too with "Format On Save" enabled.
 The targets cover `include/`, `src/`, `tests/`, `fuzz/`, `main.cpp` and
 `examples/`. A folder you add yourself (like `tools/`) must be added to the
 globs in `cmake/Format.cmake`.
+
+## CMake lint: cmake-lint
+
+```bash
+cmake --build --preset debug --target cmake-lint
+```
+
+`cmake-lint` (from [cmakelang](https://github.com/cheshirekow/cmakelang),
+`pipx install cmakelang`) checks the CMake files against `.cmake-format.yaml`:
+lines up to **100 columns** (`C0301`), lower-case command names, the naming
+scheme, and complexity limits for functions. The rules are the same ones CI
+and the pre-commit hook use.
+
+The naming scheme in `.cmake-format.yaml`:
+
+| Name | Use |
+| --- | --- |
+| `myapp_do_thing()` | public functions and macros |
+| `_myapp_do_thing()` | private helpers |
+| `MYAPP_SOME_OPTION` | cache variables and options (public) |
+| `_myapp_some_value` | variables local to one module or function |
+
+Formatting is deliberately **off** (`format.disable: true`): the CMake files
+are hand-formatted (keywords on the command's first line, aligned trailing
+comments, wrapped `message()` text), which `cmake-format` cannot reproduce.
+Only the lint runs; `cmake-format -i` changes nothing.
+
+To silence one finding, put a pragma on the line (or the line before it):
+
+```cmake
+# cmake-lint: disable=E1126
+file(COPY_FILE ...)   # cmakelang predates this CMake 3.21 command
+```
+
+Silence a check for the whole project with `disabled_codes` in
+`.cmake-format.yaml`, and say why in a comment.
+
+The `cmake-lint` target is only defined when the tool is installed. The same
+check runs in the `cmake-lint` CI job and in the pre-commit hook, over every
+tracked `CMakeLists.txt`, `*.cmake` and `*.cmake.in`.
 
 ## Static analysis: clang-tidy
 
@@ -77,7 +118,8 @@ not to chase 100%.
 
 `.pre-commit-config.yaml` runs these on the files of each commit: trailing
 whitespace, final newline, YAML/JSON syntax, merge-conflict markers, large
-files, and clang-format.
+files, clang-format and cmake-lint (install cmakelang with
+`pipx install cmakelang` first).
 
 ```bash
 pipx install pre-commit      # or: brew install pre-commit

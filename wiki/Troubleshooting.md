@@ -178,6 +178,20 @@ Debug builds are unoptimised and sanitized; measure speed with `release`.
 
 ## Tools and editor
 
+**`cmake-lint` fails on Python 3.15 (`re.Scanner` / `NoneType`)**
+cmakelang 0.6.13 is old and does not run on the newest Python. Install it
+under 3.14, for example
+`pipx reinstall cmakelang --python /opt/homebrew/bin/python3.14`, then
+`pipx inject cmakelang pyyaml` (cmake-lint imports PyYAML but cmakelang does
+not declare it). `cmake-lint --version` should print 0.6.13.
+
+**`cmake [C0301] Line too long (84/80)` in Zed**
+Zed's CMake language server (neocmakelsp) has its own line limit, separate
+from `.cmake-format.yaml`. The template's `.neocmakelint.toml` sets it to 100
+columns (matching `format.line_width`) and turns on lower-case command names.
+If you still see the old 80-column warning, restart the language server
+(**editor: restart language server**) so it re-reads the file.
+
 **`clang-format ... is too old: .clang-format needs version 20+`**
 `brew install llvm` (macOS) or `pipx install clang-format` (Linux), then
 reconfigure. Or name the binary: `-DMYAPP_CLANG_FORMAT=/path/to/clang-format`.

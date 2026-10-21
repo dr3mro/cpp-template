@@ -53,8 +53,8 @@ without bash and accepts both option styles (`-Std 20` and `--std 20`). See
   fuzzers share; a library mode with an installable CMake package
 - **vcpkg** dependencies, pinned and cached
 - **doctest** unit tests in CTest, **libFuzzer** fuzz targets, **llvm-cov** coverage
-- **clang-format**, **clang-tidy**, **pre-commit** and **Doxygen** docs with
-  generated diagrams on GitHub Pages
+- **clang-format**, **clang-tidy**, **cmake-lint**, **pre-commit** and
+  **Doxygen** docs with generated diagrams on GitHub Pages
 - **Zed and VS Code** tasks and debugger configs
 - **GitHub Actions**: Linux, macOS and Windows builds, sanitizers, coverage,
   tidy, fuzzing, format check, CodeQL, docs and tagged releases
