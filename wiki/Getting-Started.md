@@ -87,7 +87,29 @@ yours is older, `pipx install cmake` gives you a current one.
 To build without CMake at all, open `<name>.sln` in the project root in
 Visual Studio; see [Visual Studio](Visual-Studio).
 
-`new-project.sh` is a bash script; run it from **Git Bash** or WSL.
+### Creating a project on Windows
+
+No Git Bash needed: `scripts/new-project.ps1` does the same as the bash
+script, in Windows PowerShell 5.1 and in PowerShell 7.
+
+```powershell
+pwsh -File scripts\new-project.ps1 bank_app
+```
+
+If the execution policy blocks the script, allow it for that one call:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bank_app
+```
+
+For a shortcut, add a function to your PowerShell profile
+(`$PROFILE`):
+
+```powershell
+function newcpp { & "$HOME\Templates\cpp-template\scripts\new-project.ps1" @args }
+```
+
+The bash script still works from **Git Bash** or WSL.
 
 ## Check the setup
 

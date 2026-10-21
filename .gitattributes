@@ -1,8 +1,9 @@
 # Everything else is text: git normalises the line endings on commit
 * text=auto
 
-# Shell scripts: bash needs LF line endings, also on Windows (Git Bash)
+# Shell and Perl scripts: they need LF line endings, also on Windows
 *.sh text eol=lf
+*.pl text eol=lf
 
 # Windows scripts: cmd.exe misparses LF-only batch files
 *.cmd text eol=crlf

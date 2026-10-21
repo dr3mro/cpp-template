@@ -1,7 +1,8 @@
 # Creating a project
 
 Every project starts with `scripts/new-project.sh` (or the `newcpp` alias from
-[Getting started](Getting-Started)).
+[Getting started](Getting-Started)). On Windows, or anywhere without bash,
+`scripts/new-project.ps1` does the same thing.
 
 ```bash
 newcpp bank_app                         # creates ./bank_app
@@ -14,11 +15,47 @@ newcpp bank_app --no-git                # don't create a git repository
 
 Options can be combined: `newcpp bank_lib ~/dev/bank_lib --lib --std 20`.
 
+The PowerShell version takes the same options with their PowerShell names:
+
+```powershell
+pwsh -NoProfile -File scripts/new-project.ps1 bank_app
+pwsh -NoProfile -File scripts/new-project.ps1 bank_app C:\dev\bank -Std 20 -GitHubUser dr3mro
+pwsh -NoProfile -File scripts/new-project.ps1 bank_lib -Lib -NoGit
+```
+
+On Windows PowerShell 5.1 (the one that comes with Windows) the execution
+policy may block the script; `-ExecutionPolicy Bypass` for that one call is
+enough:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bank_app
+```
+
+Both scripts produce the same project, byte for byte (apart from the random
+Visual Studio GUID); CI checks that.
+
 ## Choosing a name
 
 The name must be **lower_snake_case**: lower-case letters, digits and
 underscores, starting with a letter (`bank_app`, `inventory`, `text_stats`).
 It becomes a C++ namespace, so it has to be a valid identifier.
+
+A few names are refused, because the project would not build or would break
+the rules of C++:
+
+- **C++ keywords** (`class`, `new`, `delete`, ...) and the reserved
+  namespaces `std` and `posix`.
+- **Names of build targets**: the ones CMake defines (`all`, `clean`,
+  `install`, `test`, `package`, ...) and the ones the template defines
+  (`docs`, `format`, `tidy`, `coverage`, `distclean`, `example`,
+  `fuzz_greeter`), plus `doctest`, the test framework.
+- **Names Windows does not allow** for a file or a folder (`con`, `prn`,
+  `aux`, `nul`, `com1`, `lpt1`, ...).
+- **Names with a double underscore** or a trailing underscore: those are
+  reserved for the implementation.
+
+The script says so and stops; pick another name, for example `bank_app`
+instead of `bank`.
 
 ## What the script does
 
