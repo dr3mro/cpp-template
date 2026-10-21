@@ -159,7 +159,7 @@
     <ClCompile Include="src\**\*.cpp" />
     <ClCompile Include="main.cpp" Condition="Exists('main.cpp')" />
     <ClInclude Include="include\**\*.hpp;include\**\*.h;src\**\*.hpp;src\**\*.h" />
-    <None Include="README.md;CMakeLists.txt;.clang-format;.clang-tidy" />
+    <None Include="README.md;.clang-format;.clang-tidy" />
     <None Include="include\**\*.in;vcpkg.json" />
   </ItemGroup>
   <PropertyGroup>
