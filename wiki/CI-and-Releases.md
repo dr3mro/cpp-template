@@ -149,6 +149,18 @@ and keeps the archives as downloadable artifacts of that run. Tick
 **publish_release** to also publish them as a GitHub Release, with the
 **release_tag** you enter (blank: `build-<run number>`).
 
+## Pinned actions, timeouts and cancelled runs
+
+- **Every third-party action is pinned to a commit SHA**, with its version in
+  a comment: `uses: actions/checkout@<sha> # v7.0.1`. A tag can be moved to
+  other code; a commit cannot. Dependabot's weekly `github-actions` update
+  bumps the SHA and the comment together, so the pins stay current.
+- **Every job has a `timeout-minutes`**, so a hung test or fuzzer stops after
+  minutes instead of after GitHub's six-hour limit.
+- **A new push cancels the older run** of CI, the template test and CodeQL on
+  the same branch or pull request (`concurrency` with `cancel-in-progress`).
+  Release, docs and wiki runs are never cancelled halfway.
+
 ## Pull requests
 
 CI and CodeQL run on every pull request, so a branch protection rule

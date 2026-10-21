@@ -30,7 +30,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Compare tag and vcpkg.json version
         shell: bash
         run: |
@@ -102,9 +102,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
-
-      # Pins vcpkg to the manifest baseline and adds binary/ccache caching,
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # replacing the per-OS vcpkg and Ninja install steps.
       - name: Set up vcpkg
         uses: ./.github/actions/setup-vcpkg
@@ -118,7 +116,7 @@ jobs:
 
       - name: Configure MSVC
         if: matrix.os == 'windows'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         with:
           arch: ${{ matrix.msvc_arch }}
 
@@ -147,7 +145,7 @@ jobs:
           tar -czf "dist/${archive}.tar.gz" -C dist "${archive}${{ matrix.extension }}"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: myapp-${{ matrix.os }}-${{ matrix.arch }}
           path: |
@@ -166,14 +164,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: myapp-*
           path: dist
           merge-multiple: true
 
       - name: Publish release assets
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             dist/*.tar.gz
