@@ -1,6 +1,7 @@
 [
   { "label": "build release", "command": "cmake --preset release && cmake --build --preset release", "hide": "on_success" },
   { "label": "build debug", "command": "cmake --preset debug && cmake --build --preset debug", "hide": "on_success" },
+  { "label": "build debug-nosan", "command": "cmake --preset debug-nosan && cmake --build --preset debug-nosan", "hide": "on_success" },
   { "label": "run", "command": "cmake --preset release && cmake --build --preset release && ./build/release/myapp", "use_new_terminal": true },
   { "label": "run debug", "command": "cmake --preset debug && cmake --build --preset debug && ./build/debug/myapp", "use_new_terminal": true },
   { "label": "test", "command": "cmake --preset debug && cmake --build --preset debug && ctest --preset debug", "hide": "never" },

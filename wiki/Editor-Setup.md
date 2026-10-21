@@ -26,6 +26,7 @@ Open the project folder (`zed .`). Zed picks up `.zed/`:
   | Task | Does |
   | --- | --- |
   | `build debug` / `build release` | configure and build |
+  | `build debug-nosan` | configure and build without sanitizers (what the debugger uses) |
   | `run` / `run debug` | build and run the app |
   | `test` | build and run the tests (`debug` preset) |
   | `build tsan`, `build ci`, `test ci` | the other presets |
@@ -55,7 +56,8 @@ extensions (or install them from the Extensions view):
 Then:
 
 - **Tasks**: **Terminal → Run Task...** lists `configure <preset>`,
-  `build <preset>`, `test`, `run`, `format`, `tidy`, `docs`, `coverage report`,
+  `build <preset>` (including `build debug-nosan`, the unsanitized build the
+  debugger uses), `test`, `run`, `format`, `tidy`, `docs`, `coverage report`,
   `fuzz run`, `clean` and `clean all`. `Cmd/Ctrl+Shift+B` runs the default
   build (`build debug`).
 - **Debugging**: Run and Debug (`Cmd/Ctrl+Shift+D`) → **Debug myapp** or
