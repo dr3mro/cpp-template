@@ -15,18 +15,21 @@ set -euo pipefail
 
 usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
-NAME=""; DEST=""; STD="17"; GIT=1; LIB=0; GITHUB_USER=""
+NAME=""; DEST=""; STD="17"; GIT=1; LIB=0; GITHUB_USER=""; AUTHOR=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --std) STD="${2:?}"; shift 2 ;;
         --no-git) GIT=0; shift ;;
         --lib) LIB=1; shift ;;
         --github-user) GITHUB_USER="${2:?}"; shift 2 ;;
+        --author) AUTHOR="${2:?}"; shift 2 ;;
         -h|--help) usage ;;
         *) if [[ -z "$NAME" ]]; then NAME="$1"; elif [[ -z "$DEST" ]]; then DEST="$1"; else usage; fi; shift ;;
     esac
 done
 
+if [[ -z "$AUTHOR" ]]; then AUTHOR="$(git config user.name 2>/dev/null || true)"; fi
+[[ -z "$AUTHOR" ]] && AUTHOR="Your Name"
 [[ -n "$NAME" ]] || usage
 [[ "$NAME" =~ ^[a-z][a-z0-9_]*$ ]] || { echo "error: name must be lower_snake_case, e.g. bank_app" >&2; exit 1; }
 
@@ -146,7 +149,7 @@ done
 # Replace the placeholder in every text file (perl works the same on macOS and
 # Linux). The Visual Studio files are plain text, so they are covered too and
 # keep their CRLF line endings.
-find "$DEST" -type f ! -name '*.png' -print0 | xargs -0 perl -pi -e "s/MYAPP/$UPPER/g; s/myapp/$NAME/g"
+find "$DEST" -type f ! -name '*.png' -print0 | xargs -0 perl -pi -e "s/MYAPP/$UPPER/g; s/myapp/$NAME/g; s/\@AUTHOR\@/$AUTHOR/g"
 
 # vcpkg package names allow hyphens but not underscores: fix up the manifest
 # name. The manifest's "version" field is the project's single source of

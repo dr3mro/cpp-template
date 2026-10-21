@@ -82,6 +82,8 @@ param(
 
     [string]$GitHubUser = '',
 
+    [string]$Author = '',
+
     [Alias('h')]
     [switch]$Help
 )
@@ -185,6 +187,18 @@ for ($i = 0; $i -lt $tokens.Count; $i++) {
             $Parsed['githubuser'] = $value
             $GitHubUser = $value
         }
+        'author' {
+            if (-not $hasValue) {
+                if ($i + 1 -ge $tokens.Count) { Fail "missing value for $option" }
+                $i++
+                $value = $tokens[$i]
+            }
+            if ($Parsed.ContainsKey('author') -or ($PSBoundParameters.ContainsKey('Author') -and $Author -ne $value)) {
+                Fail 'the author is given twice'
+            }
+            $Parsed['author'] = $value
+            $Author = $value
+        }
         'help' { $Help = $true }
         'h' { $Help = $true }
         default { Fail "unknown option: $token" }
@@ -245,6 +259,8 @@ if ($reserved -ccontains $Name) {
 if ($Name.Contains('__') -or $Name.EndsWith('_')) {
     Fail 'name must not contain "__" or end with "_"'
 }
+if (-not $Author) { $Author = (git config user.name 2>$null); if (-not $Author) { $Author = 'Your Name' } }
+
 if ($GitHubUser -and $GitHubUser -notmatch '^[A-Za-z0-9-]+$') {
     # The same message as new-project.sh gives, whichever spelling was used.
     Fail '--github-user must be a GitHub user name (letters, digits, -)'
@@ -368,7 +384,7 @@ foreach ($vsFile in @("$Name.sln", "$Name.vcxproj")) {
 Get-ChildItem -LiteralPath $Destination -Recurse -Force -File |
     Where-Object { $_.Extension -ne '.png' } |
     ForEach-Object {
-        Edit-File $_.FullName { param($text) $text.Replace('MYAPP', $Upper).Replace('myapp', $Name) }
+        Edit-File $_.FullName { param($text) $text.Replace('MYAPP', $Upper).Replace('myapp', $Name).Replace('@AUTHOR@', $Author) }
     }
 
 # vcpkg package names allow hyphens but not underscores. The manifest's

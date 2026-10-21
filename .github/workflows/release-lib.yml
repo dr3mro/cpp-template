@@ -67,6 +67,13 @@ jobs:
             cmake_args: "-DVCPKG_TARGET_TRIPLET=arm64-windows"
 
     steps:
+      - name: Check tag matches vcpkg.json version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(python3 -c 'import json,sys;print(json.load(open("vcpkg.json"))["version"])')"
+          if [ "$tag" != "$ver" ]; then echo "tag $tag != vcpkg.json version $ver" >&2; exit 1; fi
       - name: Check out repository
         uses: actions/checkout@v7
 
@@ -90,6 +97,12 @@ jobs:
           cmake --preset release -DMYAPP_BUILD_TESTS=OFF ${{ matrix.cmake_args }}
           cmake --build --preset release
           cmake --install build/release --prefix "$prefix"
+          lib="$(find "$prefix" -type f \( -name '*.so' -o -name '*.dylib' -o -name '*.a' -o -name '*.lib' \) | head -1)"
+          file "$lib"
+          case "${{ matrix.arch }}" in
+            x64) file "$lib" | grep -qiE 'x86-64|x86_64' ;;
+            arm64) file "$lib" | grep -qiE 'aarch64|arm64' ;;
+          esac
 
       - name: Package library
         shell: bash
