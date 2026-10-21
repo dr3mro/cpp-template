@@ -39,11 +39,11 @@ jobs:
           - os: linux
             arch: x64
             runner: ubuntu-latest
-            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DVCPKG_TARGET_TRIPLET=arm64-linux"
+            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DVCPKG_TARGET_TRIPLET=x64-linux"
           - os: linux
             arch: arm64
             runner: ubuntu-24.04-arm
-            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DVCPKG_TARGET_TRIPLET=x64-linux"
+            cmake_args: "-DCMAKE_CXX_COMPILER=g++ -DVCPKG_TARGET_TRIPLET=arm64-linux"
           - os: macos
             arch: x64
             runner: macos-14

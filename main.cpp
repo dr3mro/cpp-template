@@ -1,5 +1,5 @@
 /*
- * Amr Osman
+ * @AUTHOR@
  * myapp
  *
  * One-paragraph description of what this program does.
