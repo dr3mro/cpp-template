@@ -6,6 +6,7 @@
 3. [Project layout](Project-Layout)
 4. [Building and running](Building-and-Running)
 5. [Editor setup](Editor-Setup)
+6. [Visual Studio](Visual-Studio)
 
 **Everyday work**
 - [Writing code](Writing-Code)

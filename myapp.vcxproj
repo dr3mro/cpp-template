@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    Universal Visual Studio project for the template.
+
+    It opens in Visual Studio 2019, 2022 and 2026 without CMake: sources and
+    headers are picked up by wildcard, so a new file under src/ or include/ is
+    part of the build after a reload of the solution.
+
+    new-project.sh renames this file, replaces the placeholder GUID with a
+    fresh one and sets the C++ standard.
+  -->
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69}</ProjectGuid>
+    <RootNamespace>myapp</RootNamespace>
+    <ProjectName>myapp</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <!-- An app has main.cpp; a library project does not. -->
+    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <ConfigurationType Condition="Exists('$(ProjectDir)main.cpp')">Application</ConfigurationType>
+    <ConfigurationType Condition="!Exists('$(ProjectDir)main.cpp')">StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <!-- Build output lives under build/, which is git-ignored. -->
+    <OutDir>$(ProjectDir)build\vs\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\vs\obj\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>myapp</TargetName>
+    <!-- The CMake-generated headers (version.hpp, <name>_export.h) are written
+         here before every compile. -->
+    <GeneratedIncludeDir>$(ProjectDir)build\vs\generated\</GeneratedIncludeDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- The same warnings as the CMake build (cmake/Warnings.cmake):
+           /W4 and /permissive-, without warnings-as-errors. -->
+      <WarningLevel>Level4</WarningLevel>
+      <ConformanceMode>true</ConformanceMode>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>MYAPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(GeneratedIncludeDir);$(ProjectDir)include;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <!-- The hardening flags of cmake/Hardening.cmake. -->
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus /GS /guard:cf %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /CETCOMPAT %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <!-- /CETCOMPAT is x86-64 only, so it is left out on ARM64. -->
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus /GS /guard:cf %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <!-- Wildcards: files added under src/ or include/ are built after a reload.
+         main.cpp sits in the project root. tests/ is not part of this project:
+         the unit tests need doctest from CMake and keep running through ctest. -->
+    <ClCompile Include="src\**\*.cpp" />
+    <ClCompile Include="main.cpp" Condition="Exists('main.cpp')" />
+    <ClInclude Include="include\**\*.hpp;include\**\*.h;src\**\*.hpp;src\**\*.h" />
+    <None Include="README.md;CMakeLists.txt;.clang-format;.clang-tidy" />
+    <None Include="include\**\*.in;vcpkg.json" />
+  </ItemGroup>
+  <PropertyGroup>
+    <!-- vcpkg: the manifest is used when vcpkg is around, so dependencies added
+         to vcpkg.json later also work here. Without vcpkg the project still
+         builds. -->
+    <VcpkgEnableManifest Condition="'$(VcpkgRoot)'!='' or '$(VCPKG_ROOT)'!=''">true</VcpkgEnableManifest>
+    <VcpkgEnabledFeature Condition="'$(VcpkgRoot)'!='' or '$(VCPKG_ROOT)'!=''"></VcpkgEnabledFeature>
+    <VcpkgEnableManifest Condition="'$(VcpkgRoot)'=='' and '$(VCPKG_ROOT)'==''">false</VcpkgEnableManifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- The debugger starts in the project root, so data files next to the
+         sources are found. -->
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <!--
+    The two headers that CMake generates are written here, before every
+    compile, so the project builds straight from a clean checkout:
+      version.hpp       from include/<name>/version.hpp.in, with the version
+                        from vcpkg.json and the current git hash
+      <name>_export.h   the static-build export header
+  -->
+  <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile">
+    <PropertyGroup>
+      <VsCMakePath>$(DevEnvDir)CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</VsCMakePath>
+      <VsCMakePath Condition="!Exists('$(VsCMakePath)')">$(CMAKE_COMMAND)</VsCMakePath>
+      <VsCMakePath Condition="'$(VsCMakePath)'==''">cmake</VsCMakePath>
+    </PropertyGroup>
+    <Exec Command="&quot;$(VsCMakePath)&quot; --version" ContinueOnError="true" StandardOutputImportance="low" ConsoleToMSBuild="true">
+      <Output TaskParameter="ExitCode" PropertyName="VsCMakeExitCode" />
+    </Exec>
+    <Error Condition="'$(VsCMakeExitCode)'!='0'" Text="CMake was not found. Install the 'C++ CMake tools for Windows' component of the 'Desktop development with C++' workload in Visual Studio (or add cmake to PATH) and build again." />
+    <!-- The version lives in vcpkg.json; that is the single source of truth. -->
+    <Exec Command="powershell -NoProfile -NonInteractive -Command &quot;[Console]::Out.Write((Get-Content -Raw '$(ProjectDir)vcpkg.json' | ConvertFrom-Json).version)&quot;"
+          ConsoleToMSBuild="true" StandardOutputImportance="high" ContinueOnError="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="VsVersionOutput" />
+      <Output TaskParameter="ExitCode" PropertyName="VsVersionExitCode" />
+    </Exec>
+    <Error Condition="'$(VsVersionExitCode)'!='0'" Text="Could not read the version from vcpkg.json. Check that the file exists and holds a valid JSON object with a &quot;version&quot; field." />
+    <PropertyGroup>
+      <VsVersion>$(VsVersionOutput)</VsVersion>
+      <VsVersion Condition="'$(VsVersion)'==''">0.0.0</VsVersion>
+      <VsVersionMajor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^(\d+)\..*$', '$1'))</VsVersionMajor>
+      <VsVersionMinor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.(\d+).*$', '$1'))</VsVersionMinor>
+      <VsVersionPatch>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.\d+\.(\d+).*$', '$1'))</VsVersionPatch>
+    </PropertyGroup>
+    <MakeDir Directories="$(GeneratedIncludeDir)" />
+    <Exec Command="&quot;$(VsCMakePath)&quot; -DTEMPLATE=&quot;$(ProjectDir)include\$(ProjectName)\version.hpp.in&quot; -DOUTPUT=&quot;$(GeneratedIncludeDir)$(ProjectName)\version.hpp&quot; -DSOURCE_DIR=&quot;$(ProjectDir)&quot; -DPROJECT_NAME=$(ProjectName) -DPROJECT_VERSION=$(VsVersion) -DPROJECT_VERSION_MAJOR=$(VsVersionMajor) -DPROJECT_VERSION_MINOR=$(VsVersionMinor) -DPROJECT_VERSION_PATCH=$(VsVersionPatch) -P &quot;$(ProjectDir)cmake\WriteVersion.cmake&quot;" />
+    <!-- The export header: the static-build version of the one CMake generates
+         with generate_export_header(). -->
+    <ItemGroup>
+      <VsExportHeaderLine Include="#pragma once" />
+      <VsExportHeaderLine Include="// Generated for the Visual Studio build. The static-build version of the" />
+      <VsExportHeaderLine Include="// export header that CMake generates with generate_export_header()." />
+      <VsExportHeaderLine Include="#ifndef MYAPP_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_EXPORT" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_NO_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_NO_EXPORT" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED" />
+      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED __declspec(deprecated)" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED_EXPORT MYAPP_EXPORT MYAPP_DEPRECATED" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED_NO_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED_NO_EXPORT MYAPP_NO_EXPORT MYAPP_DEPRECATED" />
+      <VsExportHeaderLine Include="#endif" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(GeneratedIncludeDir)$(ProjectName)\$(ProjectName)_export.h" Lines="@(VsExportHeaderLine)" Overwrite="true" />
+  </Target>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

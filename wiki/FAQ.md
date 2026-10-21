@@ -15,6 +15,14 @@ even plain `cmake` picks up vcpkg automatically.)
 vcpkg is building the dependencies from source. It caches the results, so
 later configures (and other projects using the same versions) are fast.
 
+### Can I build in Visual Studio without CMake?
+
+Yes. Every project ships `<name>.sln` and `<name>.vcxproj`, which open in
+Visual Studio 2019, 2022 and 2026 and find the sources under `src/` and
+`include/` by wildcard. The tests are not part of that solution (they need
+doctest from CMake), so they still run with `ctest`. See
+[Visual Studio](Visual-Studio).
+
 ### Where did my program go?
 
 Each preset builds into its own folder: `build/debug/myapp`,

@@ -35,8 +35,14 @@ It becomes a C++ namespace, so it has to be a valid identifier.
    | options `MYAPP_SANITIZER`, ... | `BANK_APP_SANITIZER`, ... |
    | helper `myapp_find_dependency()` | `bank_app_find_dependency()` |
    | `"name": "myapp"` in `vcpkg.json` | `"name": "bank-app"` (vcpkg names use hyphens) |
+   | `myapp.sln`, `myapp.vcxproj` | `bank_app.sln`, `bank_app.vcxproj` |
 
-3. Sets the C++ standard you chose.
+   Any file or folder whose name carries the placeholder is renamed, so new
+   template files are covered automatically. The Visual Studio files also get
+   a **fresh project GUID**, so two projects never share one.
+
+3. Sets the C++ standard you chose, in CMake and in the Visual Studio project
+   (`stdcpp17`, `stdcpp20`, `stdcpp23`).
 4. Replaces the README with a project README (with your docs link when you pass
    `--github-user`).
 5. Keeps only the pieces for the mode you picked (see below) and the matching
@@ -58,9 +64,20 @@ It refuses to overwrite a folder that already exists.
 In both modes, all real code lives in the library target `<name>_lib`. The app,
 the tests and the fuzzers link it, so they all exercise the same code.
 
+The Visual Studio project follows the mode too: in a library project it
+builds a static library instead of an executable, because there is no
+`main()`.
+
 Pick **library** when other projects will reuse the code. You can still test it
 fully, and [the tutorial](Library-and-App-Tutorial) shows how an app made from
 the template uses it.
+
+## Opening the project in Visual Studio
+
+`bank_app.sln` is in the project root: double-click it and Visual Studio
+2019, 2022 or 2026 opens it, with no CMake needed. It needs the **Desktop
+development with C++** workload and the **C++ CMake tools for Windows**
+component. See [Visual Studio](Visual-Studio).
 
 ## After creating the project
 

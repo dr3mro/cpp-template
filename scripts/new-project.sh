@@ -6,12 +6,14 @@
 #
 # <name> must be a valid C++ identifier in lower_snake_case (for example: inventory, bank_app).
 # It becomes the CMake project, the executable, the namespace and the include/<name>/ folder.
+# It also names the Visual Studio solution and project (<name>.sln, <name>.vcxproj),
+# which get a fresh project GUID and the C++ standard you chose.
 # Pass --lib to generate an installable library package (with examples/) instead of an app.
 # Pass --github-user to fill in the README's GitHub Pages docs link
 # (https://<user>.github.io/<name>/); without it the README keeps a placeholder.
 set -euo pipefail
 
-usage() { sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
 NAME=""; DEST=""; STD="17"; GIT=1; LIB=0; GITHUB_USER=""
 while [[ $# -gt 0 ]]; do
@@ -67,11 +69,46 @@ rm -f "$DEST/.github/workflows/template-test.yml"
 # them (and without the workflow that publishes them).
 rm -rf "$DEST/wiki" "$DEST/.github/workflows/wiki.yml" "$DEST/.gitmodules"
 
-# Rename folders: include/myapp -> include/<name>, src/myapp -> src/<name>.
-mv "$DEST/include/myapp" "$DEST/include/$NAME"
-mv "$DEST/src/myapp" "$DEST/src/$NAME"
+# Rename every file and folder whose name carries the placeholder, deepest
+# paths first: include/myapp -> include/<name>, src/myapp -> src/<name>,
+# myapp.sln -> <name>.sln, myapp.vcxproj -> <name>.vcxproj, and anything a
+# future version of the template adds.
+find "$DEST" -depth \( -name '*myapp*' -o -name '*MYAPP*' \) -print0 \
+    | while IFS= read -r -d '' path; do
+        parent="$(dirname "$path")"
+        base="$(basename "$path")"
+        newbase="${base//MYAPP/$UPPER}"
+        newbase="${newbase//myapp/$NAME}"
+        [[ "$base" == "$newbase" ]] && continue
+        mv "$path" "$parent/$newbase"
+    done
 
-# Replace the placeholder in every text file (perl works the same on macOS and Linux).
+# Every project gets its own Visual Studio project GUID (the template ships a
+# placeholder, so two projects would otherwise share one). This runs before
+# the placeholder replacement below, so the GUID is not touched by it.
+generate_guid() {
+    local uuid
+    if command -v uuidgen >/dev/null 2>&1; then
+        uuid="$(uuidgen)"
+    elif command -v python3 >/dev/null 2>&1; then
+        uuid="$(python3 -c 'import uuid;print(uuid.uuid4())')"
+    elif command -v python >/dev/null 2>&1; then
+        uuid="$(python -c 'import uuid;print(uuid.uuid4())')"
+    else
+        uuid="$(cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '00000000-0000-4000-8000-000000000000')"
+    fi
+    printf '%s' "$(printf '%s' "$uuid" | tr '[:lower:]' '[:upper:]')"
+}
+
+PROJECT_GUID="$(generate_guid)"
+for vs_file in "$DEST/$NAME.sln" "$DEST/$NAME.vcxproj"; do
+    [[ -f "$vs_file" ]] || continue
+    perl -pi -e "s/3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69/$PROJECT_GUID/g" "$vs_file"
+done
+
+# Replace the placeholder in every text file (perl works the same on macOS and
+# Linux). The Visual Studio files are plain text, so they are covered too and
+# keep their CRLF line endings.
 find "$DEST" -type f ! -name '*.png' -print0 | xargs -0 perl -pi -e "s/MYAPP/$UPPER/g; s/myapp/$NAME/g"
 
 # vcpkg package names allow hyphens but not underscores: fix up the manifest
@@ -87,6 +124,17 @@ fi
 perl -pi -e "s/cxx_std_17/cxx_std_$STD/" "$DEST/src/CMakeLists.txt"
 perl -pi -e "s/^Standard: c\+\+17/Standard: c++$STD/" "$DEST/.clang-format"
 
+# The Visual Studio project follows the same standard. Visual Studio 2019 and
+# 2022 have no "stdcpp23", so C++23 is the latest standard they offer.
+case "$STD" in
+    17) VS_STD="stdcpp17" ;;
+    20) VS_STD="stdcpp20" ;;
+    *) VS_STD="stdcpplatest" ;;
+esac
+if [[ -f "$DEST/$NAME.vcxproj" ]]; then
+    perl -pi -e "s/stdcpp17/$VS_STD/g" "$DEST/$NAME.vcxproj"
+fi
+
 # Swap the template README for the project README, and fill in the GitHub
 # Pages docs link (or leave a placeholder that says what to replace).
 mv "$DEST/PROJECT_README.md" "$DEST/README.md"
@@ -97,6 +145,8 @@ perl -pi -e "s/\@GITHUB_USER\@/$GH_USER_TEXT/g" "$DEST/README.md"
 if [[ $LIB -eq 1 ]]; then
     perl -0pi -e 's/(option\(\w+_LIBRARY_MODE\s+"[^"]*"\s+)OFF\b/${1}ON/' "$DEST/cmake/Options.cmake"
     rm -f "$DEST/main.cpp"
+    # The Visual Studio project needs no change: it builds a static library
+    # when main.cpp is missing, and an executable when it is there.
 
     # A library has no executable, so drop the run tasks and the app debug
     # config. Zed's tasks.json keeps one object per line; filter those lines.
@@ -175,6 +225,9 @@ Done. Next steps:
   cd "$DEST"
   $BUILD_HINT
   zed .
+
+On Windows you can also open $NAME.sln in Visual Studio (2019, 2022 or 2026)
+and build there; no CMake needed.
 MSG
 
 if [[ $VCPKG_READY -eq 0 ]]; then

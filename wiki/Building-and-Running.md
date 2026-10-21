@@ -29,7 +29,7 @@ mixes results.
 | `coverage` | seeing which lines the tests run | needs clang |
 | `fuzz` | fuzzing | needs LLVM clang |
 | `docs` | the documentation website | used by `cmake --workflow --preset docs` |
-| `vs2022`, `vs2026` | a Visual Studio solution | Windows only |
+| `vs2022`, `vs2026` | a CMake-generated Visual Studio solution | Windows only |
 
 `cmake --list-presets` shows them all, including your own from
 `CMakeUserPresets.json` ([how to make one](Recipes#keep-personal-build-settings-in-cmakeuserpresetsjson)).
@@ -37,6 +37,19 @@ mixes results.
 At the end of each configure, CMake prints a summary: mode, library type,
 build type, compiler, sanitizer, tests, install folder. Check it when a build
 doesn't behave as expected.
+
+## Building in Visual Studio instead
+
+The project also ships `<name>.sln`, a solution that opens directly in
+Visual Studio 2019, 2022 and 2026 **without CMake**. It finds the sources
+under `src/`, the headers under `include/` and the `main.cpp` in the project
+root by wildcard, and writes its output to `build/vs/<Platform>/<Configuration>/`.
+It needs the **Desktop development with C++** workload and the **C++ CMake
+tools for Windows** component.
+
+The `vs2022` and `vs2026` presets stay available for a CMake-generated
+solution; the two don't conflict, because they build into different folders.
+See [Visual Studio](Visual-Studio).
 
 ## Build types
 

@@ -5,6 +5,11 @@ The template ships settings for **Zed** and **VS Code**. Both use
 inline errors, and **CodeLLDB** for debugging. Any other editor that speaks
 clangd works too (CLion, Neovim, Emacs, Sublime).
 
+On Windows there is also **Visual Studio**: the project ships `<name>.sln`,
+which opens in VS 2019, 2022 and 2026 without CMake. It needs the
+**Desktop development with C++** workload and the **C++ CMake tools for
+Windows** component. See [Visual Studio](Visual-Studio).
+
 ## How clangd finds your build
 
 clangd needs to know how each file is compiled (include paths, defines, C++
@@ -67,7 +72,8 @@ Then:
 
 Point your editor's clangd at the project; `.clangd` already says where the
 compile commands are. For CLion, open the folder and enable the CMake presets
-(Settings → Build, Execution, Deployment → CMake).
+(Settings → Build, Execution, Deployment → CMake). For Visual Studio, open
+`<name>.sln`; see [Visual Studio](Visual-Studio).
 
 ## Formatting on commit
 

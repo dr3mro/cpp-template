@@ -13,6 +13,7 @@ publishing a release. New to it? Read the **Start here** pages in order.
 3. [Project layout](Project-Layout): what every file and folder is for
 4. [Building and running](Building-and-Running): presets, build types, installing, cleaning
 5. [Editor setup](Editor-Setup): Zed or VS Code with clangd and the debugger
+6. [Visual Studio](Visual-Studio): open `<name>.sln` in VS 2019, 2022 or 2026, no CMake needed
 
 ## Everyday work
 

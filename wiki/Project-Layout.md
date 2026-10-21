@@ -20,6 +20,8 @@ myapp/
 │   ├── fuzz_greeter.cpp
 │   └── corpus/fuzz_greeter/   seed inputs
 ├── main.cpp                ✏️ the program's entry point (app projects)
+├── myapp.sln                 Visual Studio solution (opens in VS 2019/2022/2026)
+├── myapp.vcxproj            Visual Studio project (wildcard source discovery)
 ├── examples/                  a program using the installed library (library projects)
 ├── cmake/                     build modules, one per feature
 │   ├── Dependencies.cmake  ✏️ third-party packages
@@ -74,12 +76,19 @@ New files are picked up automatically on the next build. You don't edit any
   use `CMakeUserPresets.json`.
 - **`CMakeLists.txt`** and the rest of **`cmake/`**: the build logic, explained in
   [CMake internals](CMake-Internals).
+- **`myapp.sln`** and **`myapp.vcxproj`**: the Visual Studio solution and
+  project, opened directly in Visual Studio without CMake. Sources and headers
+  under `src/` and `include/` are found by wildcard (together with
+  `main.cpp`), so you never edit them to add a file. See
+  [Visual Studio](Visual-Studio).
 
 ## Generated folders (never committed)
 
 | Folder | Made by | Contents |
 | --- | --- | --- |
 | `build/<preset>/` | `cmake --preset <preset>` | build files, the compiled program, tests, `compile_commands.json` |
+| `build/vs/<platform>/<config>/` | building the Visual Studio solution | the program and its intermediate files |
+| `build/vs/generated/` | building the Visual Studio solution | the generated headers (`version.hpp`, `<name>_export.h`) |
 | `build/install/<preset>/` | `cmake --install build/<preset>` | the installed result |
 | `build/compile_commands.json` | configuring | a link to the last preset's compile commands, for clangd |
 | `docs/` | the `docs` target | the documentation website and diagrams |

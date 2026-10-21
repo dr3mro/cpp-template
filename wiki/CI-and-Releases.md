@@ -12,7 +12,7 @@ failing run, and how releases work.
 | **CodeQL** (`codeql.yml`) | pushes, pull requests, and weekly | GitHub's static security analysis; findings appear under **Security → Code scanning** |
 | **Publish Doxygen documentation** (`docs.yml`) | every push to `main` | builds the docs and deploys them to GitHub Pages |
 | **Build and publish binaries / library packages** (`release.yml`) | a pushed `v*` tag, or by hand | builds release archives for every platform and publishes a GitHub Release |
-| **Template test** (`template-test.yml`) | template repository only | generates projects with `new-project.sh` and builds them |
+| **Template test** (`template-test.yml`) | template repository only | generates projects with `new-project.sh` and builds them; on Windows it also builds the Visual Studio solution with MSBuild |
 | **Publish wiki** (`wiki.yml`) | template repository only | mirrors `wiki/` into the GitHub wiki |
 
 **Dependabot** (`.github/dependabot.yml`) opens a pull request every week
@@ -54,6 +54,23 @@ those PRs, so merge them when they're green.
      [Fuzzing](Fuzzing) (step 3).
 4. Re-run a flaky job with **Re-run failed jobs**, but treat a TSan or
    fuzz failure as a real bug until proven otherwise.
+
+## The template test
+
+The **Template test** workflow only runs in the template repository. It
+generates projects with `new-project.sh` (an app, an app with C++20 and a
+library), checks that no `myapp` placeholder is left, and builds and tests
+every one of them.
+
+On Windows it does one more thing: it builds the checked-in Visual Studio
+solution with MSBuild, for an app project and for a library project:
+
+```bash
+msbuild vsapp.sln /p:Configuration=Release /p:Platform=x64
+```
+
+That job is the only place the Visual Studio project is really built, since
+MSBuild needs Windows. See [Visual Studio](Visual-Studio).
 
 ## Caching
 

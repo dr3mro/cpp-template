@@ -68,7 +68,10 @@ comparison isn't cluttered with mode differences.
 - avoid the letters `myapp` anywhere else; they'd be renamed too;
 - files that only make sense in the template (like `template-test.yml`,
   `wiki/` and `wiki.yml`) must be removed by `new-project.sh`; see the `rm`
-  lines near the top of the script.
+  lines near the top of the script;
+- `myapp.sln` and `myapp.vcxproj` carry a placeholder project GUID
+  (`3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69`); `new-project.sh` replaces it with a
+  fresh GUID in both files, so don't hard-code it anywhere else.
 
 The **Template test** workflow checks this: it generates projects, fails if
 any `myapp` is left, and builds and tests each one.

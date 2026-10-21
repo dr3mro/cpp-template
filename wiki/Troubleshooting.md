@@ -70,7 +70,21 @@ The function or class isn't marked `MYAPP_EXPORT`; see the
 **My new `.cpp` file isn't compiled**
 It must be under `src/` (or `tests/`, `fuzz/`), end in `.cpp`, and you need
 to rebuild. A file in a new top-level folder needs CMake lines; see
-[Recipes](Recipes#add-a-second-program).
+[Recipes](Recipes#add-a-second-program). In Visual Studio the sources are
+found by wildcard, so reload the solution after adding a file; see
+[Visual Studio](Visual-Studio).
+
+**Visual Studio says "CMake was not found"**
+The solution writes the generated headers with the CMake that ships with
+Visual Studio. Install the **C++ CMake tools for Windows** component of the
+**Desktop development with C++** workload (Visual Studio → Installer → Modify),
+or put a `cmake` on the `PATH`, and build again.
+
+**Visual Studio doesn't see the file I just added**
+Reload the solution (right-click the solution → **Reload Project**). If
+Visual Studio replaced the wildcards in the `.vcxproj` with explicit file
+entries, revert that change in the `.vcxproj`: the wildcards are what pick up
+new files.
 
 ## Running and testing
 

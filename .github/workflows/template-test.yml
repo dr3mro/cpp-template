@@ -121,3 +121,39 @@ jobs:
           cmake --preset fuzz -D"${PREFIX}_FUZZ_SECONDS=10"
           cmake --build --preset fuzz
           cmake --build --preset fuzz --target fuzz-run
+
+  visual-studio:
+    # The checked-in Visual Studio solution must build with MSBuild, without
+    # CMake being run first. This job is the only place it can be verified:
+    # MSBuild needs Windows.
+    if: github.repository == 'dr3mro/cpp-template'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Generate projects from the template
+        shell: bash
+        run: |
+          ./scripts/new-project.sh vsapp /tmp/vsapp --no-git
+          ./scripts/new-project.sh vslib /tmp/vslib --no-git --lib
+
+      - name: No placeholder names left behind
+        shell: bash
+        run: |
+          if grep -rIl 'myapp\|MYAPP' /tmp/vsapp /tmp/vslib --exclude-dir=.git; then
+            echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
+            exit 1
+          fi
+
+      - name: Build the app project with MSBuild
+        shell: bash
+        run: |
+          cd /tmp/vsapp
+          msbuild vsapp.sln /p:Configuration=Release /p:Platform=x64
+
+      - name: Build the library project with MSBuild
+        shell: bash
+        run: |
+          cd /tmp/vslib
+          msbuild vslib.sln /p:Configuration=Release /p:Platform=x64
