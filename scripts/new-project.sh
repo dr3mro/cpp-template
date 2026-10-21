@@ -29,6 +29,40 @@ done
 
 [[ -n "$NAME" ]] || usage
 [[ "$NAME" =~ ^[a-z][a-z0-9_]*$ ]] || { echo "error: name must be lower_snake_case, e.g. bank_app" >&2; exit 1; }
+
+# Names that would produce a project that does not build, or one that breaks
+# the rules of C++: keywords, the reserved std/posix namespaces, targets that
+# CMake or the template already define, the test framework, and folder names
+# Windows does not allow. Keep this list in step with new-project.ps1.
+RESERVED_NAMES="alignas alignof and and_eq asm auto bitand bitor bool break
+case catch char char8_t char16_t char32_t class compl concept
+const consteval constexpr constinit const_cast continue co_await
+co_return co_yield decltype default delete do double dynamic_cast
+else enum explicit export extern false float for friend goto
+if inline int long mutable namespace new noexcept not not_eq
+nullptr operator or or_eq private protected public register
+reinterpret_cast requires return short signed sizeof static
+static_assert static_cast struct switch template this thread_local
+throw true try typedef typeid typename union unsigned using
+virtual void volatile wchar_t while xor xor_eq
+std posix
+all clean help install install_local install_strip test package
+package_source edit_cache rebuild_cache list_install_components
+docs format tidy coverage distclean doctest example fuzz_greeter
+con prn aux nul
+com1 com2 com3 com4 com5 com6 com7 com8 com9
+lpt1 lpt2 lpt3 lpt4 lpt5 lpt6 lpt7 lpt8 lpt9"
+for reserved in $RESERVED_NAMES; do
+    if [[ "$NAME" == "$reserved" ]]; then
+        echo "error: '$NAME' cannot be a project name: it is a C++ keyword, a reserved namespace, a build target name or a reserved Windows name. Pick another, e.g. ${NAME}_app" >&2
+        exit 1
+    fi
+done
+# Identifiers with a double underscore are reserved for the implementation.
+if [[ "$NAME" == *"__"* || "$NAME" == *_ ]]; then
+    echo 'error: name must not contain "__" or end with "_"' >&2
+    exit 1
+fi
 [[ "$STD" =~ ^(17|20|23)$ ]] || { echo "error: --std must be 17, 20 or 23" >&2; exit 1; }
 [[ -z "$GITHUB_USER" || "$GITHUB_USER" =~ ^[A-Za-z0-9-]+$ ]] || { echo "error: --github-user must be a GitHub user name (letters, digits, -)" >&2; exit 1; }
 
@@ -62,7 +96,7 @@ else
         --exclude='./.github/workflows/template-test.yml' --exclude='./wiki' \
         --exclude='./.github/workflows/wiki.yml' --exclude='./.gitmodules' -cf - .) | (cd "$DEST" && tar -xf -)
 fi
-rm -f "$DEST/scripts/new-project.sh" "$DEST/scripts/new-project.ps1"
+rm -f "$DEST/scripts/new-project.sh" "$DEST/scripts/new-project.ps1" "$DEST/scripts/edit-json.pl"
 rmdir "$DEST/scripts" 2>/dev/null || true
 rm -f "$DEST/.github/workflows/template-test.yml"
 # The wiki pages describe the template itself, so new projects start without
@@ -153,40 +187,21 @@ if [[ $LIB -eq 1 ]]; then
 
     # A library has no executable, so drop the run tasks and the app debug
     # config. Zed's tasks.json keeps one object per line; filter those lines.
-    python3 - "$DEST" "$NAME" <<'PY'
-import json, sys, pathlib
+    if [[ -f "$DEST/.zed/tasks.json" ]]; then
+        perl -0pi -e 's/^.*"label": "run".*\n//mg; s/^.*"label": "run debug".*\n//mg' \
+            "$DEST/.zed/tasks.json"
+    fi
 
-dest, name = pathlib.Path(sys.argv[1]), sys.argv[2]
-
-tasks = dest / ".zed" / "tasks.json"
-if tasks.exists():
-    drop = {"run", "run debug"}
-    kept = [ln for ln in tasks.read_text().splitlines()
-            if not any(f'"label": "{d}"' in ln for d in drop)]
-    tasks.write_text("\n".join(kept) + "\n")
-
-def drop_entries(path, key, unwanted):
-    p = pathlib.Path(path)
-    if not p.exists():
-        return
-    items = json.loads(p.read_text())
-    items = [it for it in items if it.get(key) not in unwanted]
-    p.write_text(json.dumps(items, indent=2) + "\n")
-
-drop_entries(dest / ".zed" / "debug.json", "label", {f"Debug {name}"})
-
-vscode_tasks = dest / ".vscode" / "tasks.json"
-if vscode_tasks.exists():
-    data = json.loads(vscode_tasks.read_text())
-    data["tasks"] = [t for t in data["tasks"] if t.get("label") != "run"]
-    vscode_tasks.write_text(json.dumps(data, indent=2) + "\n")
-
-launch = dest / ".vscode" / "launch.json"
-if launch.exists():
-    data = json.loads(launch.read_text())
-    data["configurations"] = [c for c in data["configurations"] if c.get("name") != f"Debug {name}"]
-    launch.write_text(json.dumps(data, indent=2) + "\n")
-PY
+    # The other editor files are JSON. A small perl script (in the core of
+    # perl, so no Python is needed) removes the entries and writes the file
+    # back in the same format Python's json.dumps(indent=2) uses, so this
+    # script and new-project.ps1 produce the same files.
+    EDIT_JSON="$TEMPLATE_DIR/scripts/edit-json.pl"
+    [[ -f "$EDIT_JSON" ]] || EDIT_JSON="$(mktemp)"
+    perl "$EDIT_JSON" "$DEST/.zed/debug.json" "" label "Debug $NAME"
+    perl "$EDIT_JSON" "$DEST/.vscode/tasks.json" tasks label run
+    perl "$EDIT_JSON" "$DEST/.vscode/launch.json" configurations name "Debug $NAME"
+    [[ "$EDIT_JSON" == "$TEMPLATE_DIR/scripts/edit-json.pl" ]] || rm -f "$EDIT_JSON"
 else
     rm -rf "$DEST/examples"
 fi

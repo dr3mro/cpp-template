@@ -98,6 +98,8 @@ $reserved = @(
     'package_source', 'edit_cache', 'rebuild_cache', 'list_install_components',
     # targets the template defines, and its test framework
     'docs', 'format', 'tidy', 'coverage', 'distclean', 'doctest',
+    # the example program and the fuzzer of the template
+    'example', 'fuzz_greeter',
     # names Windows does not allow for a file or folder
     'con', 'prn', 'aux', 'nul',
     'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
@@ -197,6 +199,7 @@ foreach ($rel in $files) {
 # Template-only files: the generator scripts, the template's own test workflow,
 # and the wiki (it describes the template, not the new project).
 foreach ($rel in @('scripts/new-project.sh', 'scripts/new-project.ps1',
+                   'scripts/edit-json.pl',
                    '.github/workflows/template-test.yml', '.github/workflows/wiki.yml',
                    '.gitmodules', 'wiki')) {
     $path = Join-Path $Destination $rel
