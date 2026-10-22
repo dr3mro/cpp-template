@@ -125,6 +125,37 @@ presets, and a shared library build (`-DBUILD_SHARED_LIBS=ON`).
 - Explanations for users go in this wiki; the README stays a short overview
   that links here. See [Editing the wiki](#editing-the-wiki).
 
+## Releasing the template
+
+Tag a template release when a set of changes is worth taking into existing
+projects:
+
+```bash
+git tag -a template-v1.4.0 -m "template 1.4.0"
+git push origin template-v1.4.0
+```
+
+The `template-v` prefix keeps these tags apart from a project's own `v1.2.0`
+release tags, and the release workflow ignores them. Every project generated
+afterwards records the tag in `.template-version` (`template-v1.4.0`, or
+`template-v1.4.0-3-gabc1234` a few commits later), so its owner can run
+`git log template-v1.4.0..` in the template to see what is new. List the
+changes in `CHANGELOG.md` under the tag's version.
+
+## Protecting `main`
+
+Two settings no file in the repository can make, under **Settings → Rules →
+Rulesets** (or **Branches**) for `main`:
+
+- **Require status checks to pass**: CI (`build-and-test`, `msvc-asan`,
+  `vs-generator`, `tidy`, `format`, `cmake-lint`, ...) and Template test;
+- **Require a pull request before merging**, with one approval (CODEOWNERS
+  makes the owner the reviewer). A one-person repository can leave the
+  approval out and keep the required checks.
+
+OpenSSF Scorecard (`scorecard.yml`) checks these settings and reports them
+under **Security → Code scanning**.
+
 ## The GitHub "Use this template" button
 
 You can mark the repository as a template (**Settings → General → Template

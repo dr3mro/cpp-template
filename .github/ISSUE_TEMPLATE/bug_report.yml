@@ -1,0 +1,38 @@
+name: Bug report
+description: Something builds, runs or behaves wrongly
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: The commands, from a fresh clone if possible.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The error message or log (the configure output helps for build problems).
+      render: text
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: OS and version, compiler and version, CMake version, and the preset or build path (Ninja preset, vs2022/vs2026 preset, or the .sln).
+      placeholder: macOS 15, Apple Clang 17, CMake 4.1, debug preset
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The release, or the commit (`git rev-parse --short HEAD`). For a project made from the template, also the contents of `.template-version`.

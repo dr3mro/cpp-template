@@ -8,6 +8,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Every third-party action is pinned to a commit SHA; every job has a timeout,
+  and a new push cancels the run it replaces.
+- The VS Code tasks are trimmed to what CMake Tools does not offer.
+- The README is a quick start plus links; the details live in the wiki.
+
 - Warnings as errors is CMake's own `CMAKE_COMPILE_WARNING_AS_ERROR`;
   `MYAPP_WARNINGS_AS_ERRORS` is gone.
 - Public headers are a `FILE_SET HEADERS` of the library and install with it.
@@ -33,7 +38,15 @@ All notable changes to this project are documented here. The format follows
   presets, both run in CI on Linux; `tsan` and `fuzz` hidden on Windows.
 - A `--version` smoke test of the app, and installing the shared libraries
   an app links (`RUNTIME_DEPENDENCY_SET`).
-- `CMakeUserPresets.json.example`.
+- `CMakeUserPresets.json.example`, and workflow presets (`test`, `ci`,
+  `release`, `debug-nosan`, `coverage-report`, `fuzz-run`) that configure,
+  build and test in one command; the VS Code and Zed tasks use them.
+- CI: a `vs-generator` job for the `vs2026` preset; clang-tidy pinned to 21 and
+  limited to the changed lines on pull requests; vcpkg itself cached per
+  baseline; OpenSSF Scorecard; markdownlint and lychee for the docs.
+- Release notes written with git-cliff (`cliff.toml`).
+- `SUPPORTED.md`, `CONTRIBUTING.md`, `CODEOWNERS`, pull request and issue
+  templates, and a scope and supported-versions section in `SECURITY.md`.
 - A personal defaults file for the generator (`AUTHOR`, `GITHUB_USER`, `STD`).
 - `.template-version` in every generated project.
 - Releases carry `SHA256SUMS`, build-provenance attestations, an SBOM per

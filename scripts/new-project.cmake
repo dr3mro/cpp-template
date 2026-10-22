@@ -421,6 +421,41 @@ else()
     _edit(README.md LITERAL "@GITHUB_USER@" "${GITHUB_USER}")
 endif()
 
+# ---- documentation ------------------------------------------------------------------
+# The template's CHANGELOG is the template's history, not the project's: the
+# project starts with an empty one (the part before the first release).
+if(EXISTS "${DEST}/CHANGELOG.md")
+    file(READ "${DEST}/CHANGELOG.md" _changelog)
+    string(FIND "${_changelog}" "\n## [Unreleased]" _at)
+    if(_at GREATER -1)
+        string(SUBSTRING "${_changelog}" 0 ${_at} _changelog)
+        file(WRITE "${DEST}/CHANGELOG.md" "${_changelog}\n## [Unreleased]\n")
+    endif()
+endif()
+# Parts of the docs that are about the template itself sit between
+# <!-- template-only --> and <!-- /template-only --> lines, and are left out.
+file(GLOB_RECURSE _docs "${DEST}/*.md")
+foreach(_doc IN LISTS _docs)
+    file(READ "${_doc}" _text)
+    if(_text MATCHES "<!-- template-only -->")
+        set(_section "\n?<!-- template-only -->[^<]*(<[^!][^<]*)*<!-- /template-only -->\n?")
+        string(REGEX REPLACE "${_section}" "\n" _text "${_text}")
+        file(WRITE "${_doc}" "${_text}")
+    endif()
+endforeach()
+
+# ---- code owners --------------------------------------------------------------------
+# The template's CODEOWNERS names its own author. A project is owned by its
+# GitHub user when one was given, and has no CODEOWNERS otherwise.
+if(EXISTS "${DEST}/.github/CODEOWNERS")
+    if(GITHUB_USER STREQUAL "")
+        file(REMOVE "${DEST}/.github/CODEOWNERS")
+    else()
+        file(WRITE "${DEST}/.github/CODEOWNERS"
+             "# Every change is reviewed by the owner.\n* @${GITHUB_USER}\n")
+    endif()
+endif()
+
 # ---- which template made this project ----------------------------------------------
 # A project never changes with the template, so record where it came from:
 # the template's release tag (template-vX.Y.Z), or "unreleased" plus the
