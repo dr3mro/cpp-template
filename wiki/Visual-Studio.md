@@ -121,8 +121,9 @@ an explicit list the next time it saves the project.
 
 ### Changing settings
 
-- **Project-wide:** edit `<name>.vcxproj` directly. It is a plain XML file,
-  and the comments name the property groups.
+- **Project-wide:** edit `<name>.props` (the settings every project shares)
+  or `<name>.vcxproj` (what is specific to this project) directly. They are
+  plain XML files, and the comments name the property groups.
 - **Just for your machine:** create `<name>.user.props` next to the
   `.vcxproj` (it is git-ignored and imported automatically if it exists),
   for example:
@@ -141,17 +142,41 @@ an explicit list the next time it saves the project.
   Debugger settings still go in `<name>.vcxproj.user`, which Visual Studio
   manages.
 
+## The shared settings
+
+The compiler and linker settings do not live in the `.vcxproj`. They live in
+`<name>.props`, next to it, and every project of the solution imports it:
+
+```xml
+<Import Project="$(MSBuildProjectDirectory)\myapp.props" Label="Shared" />
+```
+
+`<name>.props` holds the warnings (`/W4`, `/permissive-`, `/sdl`), the C++
+standard, the include folders, and the optimisation, runtime library and
+hardening flags of every configuration and platform. `<name>.targets` holds
+the targets the projects share: it writes the generated headers
+(`version.hpp` and `<name>_export.h`) before every compile, the same way the
+CMake build does.
+
+Change a setting there and every project follows. The `.vcxproj` keeps only
+what is specific to it: the sources, the configuration type and the import of
+the two shared files.
+
 ## Where the output goes
 
 **Everything** MSBuild writes stays under `build/vs/`:
 
 | | |
 | --- | --- |
-| Program, import library, linker PDB | `build/vs/<Platform>/<Configuration>/` (for example `build/vs/x64/Release/`) |
-| Intermediate files | `build/vs/obj/<Platform>/<Configuration>/` (objects, `.ilk`, `.iobj`, `.ipdb`, `.tlog`, `.lastbuildstate`, `.recipe`, the compiler PDB, the code-analysis output) |
+| Program, import library, linker PDB | `build/vs/<Platform>/<Configuration>/<project>/` (for example `build/vs/x64/Release/vsapp/`) |
+| Intermediate files | `build/vs/obj/<Platform>/<Configuration>/<project>/` (objects, `.ilk`, `.iobj`, `.ipdb`, `.tlog`, `.lastbuildstate`, `.recipe`, the compiler PDB, the code-analysis output) |
 | NuGet restore files | `build/vs/obj/` |
 | Generated headers | `build/vs/generated/<name>/` |
 | vcpkg packages (manifest mode) | `build/vs/vcpkg_installed/<Platform>/` |
+
+The project name is part of the output path, so that two projects of the same
+solution (the app and the test program) compile and link next to each other
+without writing over each other.
 
 `Directory.Build.props` in the project root sets those paths. MSBuild imports
 it before the project itself, which is what lets it redirect the intermediate
@@ -233,8 +258,8 @@ bookkeeping:
 - `myapp.sln` and `myapp.vcxproj` become `<name>.sln` and `<name>.vcxproj`.
 - Every project gets a **fresh project GUID** (the template ships a
   placeholder, so two projects never share one).
-- The **C++ standard** you chose with `--std` is written into the project
-  file: `stdcpp17` for C++17, `stdcpp20` for C++20 and `stdcpplatest` for
+- The **C++ standard** you chose with `--std` is written into the property
+  sheet: `stdcpp17` for C++17, `stdcpp20` for C++20 and `stdcpplatest` for
   C++23 (Visual Studio 2019 and 2022 have no `stdcpp23`).
 
 Everything else — the wildcards, the output paths, the compiler flags — stays

@@ -14,6 +14,10 @@
     <name>.user.props next to it (imported below if it exists, git-ignored).
     See https://learn.microsoft.com/cpp/build/reference/vcxproj-files-and-wildcards
 
+    The compiler and linker settings are in myapp.props, the targets that
+    write the generated headers in myapp.targets. Both files are shared with
+    the test project, so every project of the template builds the same way.
+
     new-project.sh and new-project.ps1 rename this file, replace the
     placeholder GUID with a fresh one and set the C++ standard.
   -->
@@ -90,6 +94,12 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Label="Shared">
+    <!-- The compiler and linker settings every project of this template
+         shares live in myapp.props, so that the app and the test project
+         build the same way. -->
+    <Import Project="$(MSBuildProjectDirectory)\myapp.props" Label="Shared" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <!-- The output paths (OutDir, IntDir, the vcpkg folder and the folder for
@@ -97,76 +107,6 @@
          file MSBuild writes stays under build/vs/. -->
     <TargetName>myapp</TargetName>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <!-- The same warnings as the CMake build (cmake/Warnings.cmake):
-           /W4, /permissive-, /sdl and the extra /w14xxx warnings that /W4
-           leaves off, without warnings-as-errors. -->
-      <WarningLevel>Level4</WarningLevel>
-      <ConformanceMode>true</ConformanceMode>
-      <SDLCheck>true</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalOptions>/utf-8 /Zc:__cplusplus /w14242 /w14254 /w14263 /w14265 /w14287 /w14296 /w14311 /w14826 /w14905 /w14906 /w14928 %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>MYAPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(GeneratedIncludeDir);$(MSBuildProjectDirectory)\include;$(MSBuildProjectDirectory)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-      <!-- The hardening flags of cmake/Hardening.cmake. -->
-      <AdditionalOptions>/GS /guard:cf /guard:ehcont /ZH:SHA_256 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /CETCOMPAT /guard:ehcont %(AdditionalOptions)</AdditionalOptions>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-      <!-- /CETCOMPAT and /guard:ehcont are x86-64 only, so they are left
-           out on ARM64. -->
-      <AdditionalOptions>/GS /guard:cf /ZH:SHA_256 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA %(AdditionalOptions)</AdditionalOptions>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <!-- Wildcards: files added under src/ or include/ are built after a reload
          (and appear in Solution Explorer). One Include per item: a
@@ -203,85 +143,14 @@
          sources are found. -->
     <LocalDebuggerWorkingDirectory>$(MSBuildProjectDirectory)\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
-  <!--
-    The two headers the CMake build generates are written here, before every
-    compile, in plain MSBuild: the solution never runs CMake.
-      version.hpp       cmake/templates/version.hpp.in with the version from
-                        the VERSION file and `git describe` of the build (the
-                        same substitution cmake/WriteVersion.cmake makes)
-      <name>_export.h   the static-build export header
-    Both are only rewritten when their content changes, so an unchanged
-    header does not rebuild the files that include it.
-  -->
-  <!--
-    GetClCommandLines is the target the Visual Studio design-time build runs.
-    Writing the headers there too means IntelliSense finds them before the
-    first build, instead of marking them as missing.
-  -->
-  <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile;GetClCommandLines">
-    <!-- The version lives in the VERSION file; that is the single source of
-         truth. The file holds the version and nothing else, so it is trimmed
-         and checked. -->
-    <PropertyGroup>
-      <VsVersionFile Condition="Exists('$(MSBuildProjectDirectory)\VERSION')">$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\VERSION'))</VsVersionFile>
-      <VsVersionText Condition="'$(VsVersionFile)'!=''">$(VsVersionFile.Trim())</VsVersionText>
-      <VsHasVersion>$([System.Text.RegularExpressions.Regex]::IsMatch('$(VsVersionText)', '^\d+\.\d+\.\d+$'))</VsHasVersion>
-    </PropertyGroup>
-    <Error Condition="'$(VsHasVersion)'!='True'" Text="Could not read the version from VERSION. It needs a version such as &quot;0.1.0&quot;." />
-    <PropertyGroup>
-      <VsVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersionText)', '(?s)^.*?(\d+\.\d+\.\d+).*$', '$1'))</VsVersion>
-      <VsVersionMajor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^(\d+)\..*$', '$1'))</VsVersionMajor>
-      <VsVersionMinor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.(\d+).*$', '$1'))</VsVersionMinor>
-      <VsVersionPatch>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.\d+\.(\d+).*$', '$1'))</VsVersionPatch>
-    </PropertyGroup>
-    <!-- git describe of the build, or "unknown" without git or outside a
-         repository, exactly like WriteVersion.cmake. Git is optional. -->
-    <Exec Command="git describe --tags --always --dirty" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
-          IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EchoOff="true"
-          StandardOutputImportance="low" StandardErrorImportance="low">
-      <Output TaskParameter="ConsoleOutput" PropertyName="VsGitOutput" />
-      <Output TaskParameter="ExitCode" PropertyName="VsGitExitCode" />
-    </Exec>
-    <PropertyGroup>
-      <VsGitHash>unknown</VsGitHash>
-      <VsGitCandidate Condition="'$(VsGitExitCode)'=='0'">$(VsGitOutput.Trim())</VsGitCandidate>
-      <VsGitHash Condition="'$(VsGitCandidate)'!='' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(VsGitCandidate)', '^[0-9A-Za-z._+-]{4,100}$'))">$(VsGitCandidate)</VsGitHash>
-      <VsVersionText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\cmake\templates\version.hpp.in'))</VsVersionText>
-      <VsVersionText>$(VsVersionText.Replace('@PROJECT_NAME@', '$(ProjectName)').Replace('@PROJECT_VERSION_MAJOR@', '$(VsVersionMajor)').Replace('@PROJECT_VERSION_MINOR@', '$(VsVersionMinor)').Replace('@PROJECT_VERSION_PATCH@', '$(VsVersionPatch)').Replace('@PROJECT_VERSION@', '$(VsVersion)').Replace('@MYAPP_GIT_HASH@', '$(VsGitHash)').TrimEnd())</VsVersionText>
-    </PropertyGroup>
-    <MakeDir Directories="$(GeneratedIncludeDir)$(ProjectName)" />
-    <!-- Escape(): the header contains ";", which would otherwise split it into
-         separate lines. -->
-    <WriteLinesToFile File="$(GeneratedIncludeDir)$(ProjectName)\version.hpp" Lines="$([MSBuild]::Escape($(VsVersionText)))" Overwrite="true" WriteOnlyWhenDifferent="true" />
-    <!-- The export header: the static-build version of the one CMake generates
-         with generate_export_header(). -->
-    <ItemGroup>
-      <VsExportHeaderLine Include="#pragma once" />
-      <VsExportHeaderLine Include="// Generated for the Visual Studio build. The static-build version of the" />
-      <VsExportHeaderLine Include="// export header that CMake generates with generate_export_header()." />
-      <VsExportHeaderLine Include="#ifndef MYAPP_EXPORT" />
-      <VsExportHeaderLine Include="#define MYAPP_EXPORT" />
-      <VsExportHeaderLine Include="#endif" />
-      <VsExportHeaderLine Include="#ifndef MYAPP_NO_EXPORT" />
-      <VsExportHeaderLine Include="#define MYAPP_NO_EXPORT" />
-      <VsExportHeaderLine Include="#endif" />
-      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED" />
-      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED __declspec(deprecated)" />
-      <VsExportHeaderLine Include="#endif" />
-      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED_EXPORT" />
-      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED_EXPORT MYAPP_EXPORT MYAPP_DEPRECATED" />
-      <VsExportHeaderLine Include="#endif" />
-      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED_NO_EXPORT" />
-      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED_NO_EXPORT MYAPP_NO_EXPORT MYAPP_DEPRECATED" />
-      <VsExportHeaderLine Include="#endif" />
-    </ItemGroup>
-    <WriteLinesToFile File="$(GeneratedIncludeDir)$(ProjectName)\$(ProjectName)_export.h" Lines="@(VsExportHeaderLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
-  </Target>
   <!-- Optional per-user settings. The project is read-only in Visual Studio,
        so this is the place for machine-specific changes (an extra include
        folder, a different warning level, a debugger setting) that should not
        be committed. The file is git-ignored. -->
   <Import Project="$(MSBuildProjectName).user.props" Condition="Exists('$(MSBuildProjectName).user.props')" />
+  <!-- The targets every project of this template shares: the generated
+       headers are written before every compile. -->
+  <Import Project="$(MSBuildProjectDirectory)\myapp.targets" Label="Shared" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

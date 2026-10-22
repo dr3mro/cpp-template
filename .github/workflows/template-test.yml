@@ -602,6 +602,8 @@ jobs:
           msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
           if ($LASTEXITCODE -ne 0) { throw "msbuild failed for the project without vcpkg" }
           if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of the project without vcpkg warned about wildcards" }
-          if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg.exe")) {
+          # The program lands in a folder of its own, so that the app and the
+          # test program of the same solution do not write over each other.
+          if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg\vsnovcpkg.exe")) {
             throw "the project without vcpkg produced no executable"
           }

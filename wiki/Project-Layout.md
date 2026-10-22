@@ -21,6 +21,8 @@ myapp/
 ├── main.cpp                ✏️ the program's entry point (app projects)
 ├── myapp.sln                 Visual Studio solution (opens in VS 2019/2022/2026)
 ├── myapp.vcxproj            Visual Studio project (read-only, wildcard source discovery)
+├── myapp.props               the compiler and linker settings every project shares
+├── myapp.targets             the shared targets (the generated headers)
 ├── myapp.user.props           optional local settings (create it; git-ignored)
 ├── Directory.Build.props      where MSBuild writes everything (under build/vs/)
 ├── examples/                  a program using the installed library (library projects)
@@ -99,6 +101,10 @@ New files are picked up automatically on the next build. You don't edit any
   `main.cpp`), so you never edit them to add a file. The project is read-only
   (`ReadOnlyProject`), which keeps those wildcards warning-free; add files on
   disk and reload the solution. See [Visual Studio](Visual-Studio).
+- **`myapp.props`** and **`myapp.targets`**: the compiler and linker settings
+  and the shared targets (the generated headers). Every project of the
+  solution imports them, so they all build the same way; change a setting
+  there and it changes everywhere.
 - **`myapp.user.props`**: optional and git-ignored. Create it for settings you
   want only on your machine; the `.vcxproj` imports it when it exists (the
   read-only project itself cannot be edited by the IDE).
@@ -113,7 +119,7 @@ New files are picked up automatically on the next build. You don't edit any
 | Folder | Made by | Contents |
 | --- | --- | --- |
 | `build/<preset>/` | `cmake --preset <preset>` | build files, the compiled program, tests, `compile_commands.json` |
-| `build/vs/<platform>/<config>/` | building the Visual Studio solution | the program, the import library and the linker PDB |
+| `build/vs/<platform>/<config>/<project>/` | building the Visual Studio solution | the program, the import library and the linker PDB |
 | `build/vs/obj/` | building the Visual Studio solution | the intermediate files (objects, `.tlog`, the compiler PDB, the NuGet restore files) |
 | `build/vs/generated/` | building the Visual Studio solution | the generated headers (`version.hpp`, `<name>_export.h`) |
 | `build/vs/vcpkg_installed/` | building the Visual Studio solution | the vcpkg packages of the manifest mode |

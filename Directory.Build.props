@@ -27,13 +27,17 @@
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(BuildRoot)obj\</BaseIntermediateOutputPath>
     <MSBuildProjectExtensionsPath Condition="'$(MSBuildProjectExtensionsPath)' == ''">$(BuildRoot)obj\</MSBuildProjectExtensionsPath>
 
-    <!-- The program, the import library and the linker PDB. -->
-    <OutDir Condition="'$(OutDir)' == ''">$(BuildRoot)$(Platform)\$(Configuration)\</OutDir>
+    <!-- The program, the import library and the linker PDB. The project name
+         is part of the path, so that two projects of the same solution (the
+         app and the test program) do not write over each other. -->
+    <OutDir Condition="'$(OutDir)' == ''">$(BuildRoot)$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
 
     <!-- The objects and everything the compiler and the linker leave behind:
          .obj, .ilk, .iobj, .ipdb, .tlog, .lastbuildstate, .recipe, the
-         compiler PDB (vc*.pdb) and the code-analysis output. -->
-    <IntDir Condition="'$(IntDir)' == ''">$(BuildRoot)obj\$(Platform)\$(Configuration)\</IntDir>
+         compiler PDB (vc*.pdb) and the code-analysis output. The project name
+         is part of the path: the app and the test program compile the same
+         sources, and their objects would otherwise be the same files. -->
+    <IntDir Condition="'$(IntDir)' == ''">$(BuildRoot)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
 
     <!-- The vcpkg manifest installs into vcpkg_installed\ next to the project
          by default. -->

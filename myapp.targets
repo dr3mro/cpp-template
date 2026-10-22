@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    myapp.targets - the targets every project of this template shares.
+
+    The file is renamed with the project (new-project.sh and new-project.ps1),
+    so <name>.targets belongs to <name>.
+  -->
+  <!--
+    The two headers the CMake build generates are written here, before every
+    compile, in plain MSBuild: the solution never runs CMake.
+      version.hpp       cmake/templates/version.hpp.in with the version from
+                        the VERSION file and `git describe` of the build (the
+                        same substitution cmake/WriteVersion.cmake makes)
+      <name>_export.h   the static-build export header
+    Both are only rewritten when their content changes, so an unchanged
+    header does not rebuild the files that include it.
+  -->
+  <!--
+    GetClCommandLines is the target the Visual Studio design-time build runs.
+    Writing the headers there too means IntelliSense finds them before the
+    first build, instead of marking them as missing.
+  -->
+  <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile;GetClCommandLines">
+    <!-- The version lives in the VERSION file; that is the single source of
+         truth. The file holds the version and nothing else, so it is trimmed
+         and checked. -->
+    <PropertyGroup>
+      <VsVersionFile Condition="Exists('$(MSBuildProjectDirectory)\VERSION')">$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\VERSION'))</VsVersionFile>
+      <VsVersionText Condition="'$(VsVersionFile)'!=''">$(VsVersionFile.Trim())</VsVersionText>
+      <VsHasVersion>$([System.Text.RegularExpressions.Regex]::IsMatch('$(VsVersionText)', '^\d+\.\d+\.\d+$'))</VsHasVersion>
+    </PropertyGroup>
+    <Error Condition="'$(VsHasVersion)'!='True'" Text="Could not read the version from VERSION. It needs a version such as &quot;0.1.0&quot;." />
+    <PropertyGroup>
+      <VsVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersionText)', '(?s)^.*?(\d+\.\d+\.\d+).*$', '$1'))</VsVersion>
+      <VsVersionMajor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^(\d+)\..*$', '$1'))</VsVersionMajor>
+      <VsVersionMinor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.(\d+).*$', '$1'))</VsVersionMinor>
+      <VsVersionPatch>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.\d+\.(\d+).*$', '$1'))</VsVersionPatch>
+    </PropertyGroup>
+    <!-- git describe of the build, or "unknown" without git or outside a
+         repository, exactly like WriteVersion.cmake. Git is optional. -->
+    <Exec Command="git describe --tags --always --dirty" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+          IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EchoOff="true"
+          StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="VsGitOutput" />
+      <Output TaskParameter="ExitCode" PropertyName="VsGitExitCode" />
+    </Exec>
+    <PropertyGroup>
+      <VsGitHash>unknown</VsGitHash>
+      <VsGitCandidate Condition="'$(VsGitExitCode)'=='0'">$(VsGitOutput.Trim())</VsGitCandidate>
+      <VsGitHash Condition="'$(VsGitCandidate)'!='' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(VsGitCandidate)', '^[0-9A-Za-z._+-]{4,100}$'))">$(VsGitCandidate)</VsGitHash>
+      <VsVersionText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\cmake\templates\version.hpp.in'))</VsVersionText>
+      <VsVersionText>$(VsVersionText.Replace('@PROJECT_NAME@', '$(VsHeaderName)').Replace('@PROJECT_VERSION_MAJOR@', '$(VsVersionMajor)').Replace('@PROJECT_VERSION_MINOR@', '$(VsVersionMinor)').Replace('@PROJECT_VERSION_PATCH@', '$(VsVersionPatch)').Replace('@PROJECT_VERSION@', '$(VsVersion)').Replace('@MYAPP_GIT_HASH@', '$(VsGitHash)').TrimEnd())</VsVersionText>
+    </PropertyGroup>
+    <MakeDir Directories="$(GeneratedIncludeDir)$(VsHeaderName)" />
+    <!-- Escape(): the header contains ";", which would otherwise split it into
+         separate lines. -->
+    <WriteLinesToFile File="$(GeneratedIncludeDir)$(VsHeaderName)\version.hpp" Lines="$([MSBuild]::Escape($(VsVersionText)))" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <!-- The export header: the static-build version of the one CMake generates
+         with generate_export_header(). -->
+    <ItemGroup>
+      <VsExportHeaderLine Include="#pragma once" />
+      <VsExportHeaderLine Include="// Generated for the Visual Studio build. The static-build version of the" />
+      <VsExportHeaderLine Include="// export header that CMake generates with generate_export_header()." />
+      <VsExportHeaderLine Include="#ifndef MYAPP_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_EXPORT" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_NO_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_NO_EXPORT" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED" />
+      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED __declspec(deprecated)" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED_EXPORT MYAPP_EXPORT MYAPP_DEPRECATED" />
+      <VsExportHeaderLine Include="#endif" />
+      <VsExportHeaderLine Include="#ifndef MYAPP_DEPRECATED_NO_EXPORT" />
+      <VsExportHeaderLine Include="#define MYAPP_DEPRECATED_NO_EXPORT MYAPP_NO_EXPORT MYAPP_DEPRECATED" />
+      <VsExportHeaderLine Include="#endif" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(GeneratedIncludeDir)$(VsHeaderName)\$(VsHeaderName)_export.h" Lines="@(VsExportHeaderLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+</Project>

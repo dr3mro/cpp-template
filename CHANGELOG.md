@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The Visual Studio solution is made of more files: the compiler and linker
+  settings live in `<name>.props` and the shared targets in `<name>.targets`,
+  so every project of a solution imports them and builds the same way. The
+  program and the intermediate files now land in a folder named after the
+  project (`build/vs/<platform>/<config>/<project>/`), so that two projects of
+  the same solution no longer write over each other.
 - Every third-party action is pinned to a commit SHA; every job has a timeout,
   and a new push cancels the run it replaces.
 - The VS Code tasks are trimmed to what CMake Tools does not offer.

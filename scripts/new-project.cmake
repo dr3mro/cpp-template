@@ -427,7 +427,9 @@ elseif(STD STREQUAL "20")
 else()
     set(_vs_std stdcpplatest)
 endif()
-_edit(${NAME}.vcxproj LITERAL "stdcpp17" "${_vs_std}")
+# The standard is a setting every project of the template shares, so it lives
+# in the property sheet (<name>.props), not in the project file.
+_edit(${NAME}.props LITERAL "stdcpp17" "${_vs_std}")
 
 # ---- README -------------------------------------------------------------------------
 file(REMOVE "${DEST}/README.md")
