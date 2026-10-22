@@ -1,0 +1,45 @@
+name: Docs lint
+
+# The Markdown files (README, CHANGELOG, the wiki, ...) are documentation that
+# breaks quietly: markdownlint checks their structure, lychee their links.
+
+on:
+  push:
+    branches: [main]
+    paths: ["**.md", ".markdownlint-cli2.jsonc", "lychee.toml", ".github/workflows/docs-lint.yml"]
+  pull_request:
+    paths: ["**.md", ".markdownlint-cli2.jsonc", "lychee.toml", ".github/workflows/docs-lint.yml"]
+  schedule:
+    - cron: "0 5 * * 1" # links break without any commit, so check weekly too
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: markdownlint (rules in .markdownlint-cli2.jsonc)
+        uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101 # v22.0.0
+        with:
+          globs: "**/*.md"
+
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the links (settings in lychee.toml)
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: --config lychee.toml --no-progress "./**/*.md"
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # fewer rate limits on github.com links

@@ -100,6 +100,7 @@ CMake ran without a preset, so vcpkg never installed doctest. Use
 `cmake --preset debug`, or turn tests off with `-DMYAPP_BUILD_TESTS=OFF`.
 
 **`Could not find a package configuration file provided by "<pkg>"`**
+
 - A vcpkg package: it's missing from `"dependencies"` in `vcpkg.json`, or the
   name differs (`vcpkg search <pkg>`).
 - Your own library: `CMAKE_PREFIX_PATH` doesn't point at its install folder,

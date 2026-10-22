@@ -1,0 +1,22 @@
+// markdownlint rules for README.md, the wiki and the other Markdown files
+// (the docs-lint workflow and `npx markdownlint-cli2` read this file).
+{
+  "config": {
+    "default": true,
+    // Prose is wrapped where it reads well; tables and links cannot be.
+    "MD013": false,
+    // FAQ questions are third-level headings directly under the title.
+    "MD001": false
+  },
+  "ignores": [
+    "build/**",
+    "docs/**",
+    "vcpkg_installed/**",
+    "node_modules/**",
+    // Fragments, not pages: GitHub's wiki sidebar and footer, and the pull
+    // request template, which becomes the body of a pull request.
+    "wiki/_Sidebar.md",
+    "wiki/_Footer.md",
+    ".github/pull_request_template.md"
+  ]
+}

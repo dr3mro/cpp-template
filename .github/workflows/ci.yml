@@ -109,6 +109,25 @@ jobs:
   # in build-and-test still builds and tests the release preset there; the x64
   # msvc-asan job keeps the sanitizer itself covered.
 
+  vs-generator:
+    name: Visual Studio 2026 generator (windows-latest)
+    # The vs2026 preset: CMake finds MSVC through the Visual Studio generator,
+    # so no developer shell is set up here. The runner has Visual Studio 2026
+    # only, so the vs2022 preset is not tested in CI.
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Build and test with the vs2026 preset
+        run: |
+          cmake --preset vs2026 -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          if ($LASTEXITCODE -ne 0) { throw "cmake --preset vs2026 failed" }
+          cmake --build --preset vs2026
+          if ($LASTEXITCODE -ne 0) { throw "the vs2026 build failed" }
+          ctest --preset vs2026
+          if ($LASTEXITCODE -ne 0) { throw "the vs2026 tests failed" }
+
   version:
     name: version matches vcpkg.json (ubuntu-latest)
     runs-on: ubuntu-latest
@@ -198,15 +217,40 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the pull-request check diffs against the base branch
       - uses: ./.github/actions/setup-vcpkg
       - name: Install clang-tidy
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang-tidy
-      - name: Run clang-tidy
+        # clang-tidy itself is pinned through pipx, like clang-format, so CI
+        # and a local `pipx install clang-tidy==21.1.6` agree on the checks.
+        # apt only provides the run-clang-tidy and clang-tidy-diff scripts,
+        # which work with any clang-tidy they are given.
+        run: |
+          sudo apt-get update && sudo apt-get install --no-install-recommends -y clang-tidy
+          pipx install clang-tidy==21.1.6
+          echo "CLANG_TIDY=$HOME/.local/bin/clang-tidy" >> "$GITHUB_ENV"
+      - name: Configure
         # MYAPP_TIDY_WERROR makes findings fail the build; .clang-tidy keeps
         # warnings-as-errors off so editors still show them as warnings.
+        run: cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON -DMYAPP_CLANG_TIDY="$CLANG_TIDY"
+
+      # A pull request is checked on the lines it changes only, which is quick
+      # and never fails on findings in code it did not touch.
+      - name: clang-tidy on the changed lines (pull requests)
+        if: github.event_name == 'pull_request'
         run: |
-          cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON
-          cmake --build --preset debug-nosan --target tidy
+          cmake --build --preset debug-nosan --target myapp_version
+          git diff -U0 "origin/${{ github.base_ref }}...HEAD" -- '*.cpp' '*.hpp' '*.h' \
+            | clang-tidy-diff -p1 -path build/debug-nosan -clang-tidy-binary "$CLANG_TIDY" -quiet -j 0 \
+            | tee tidy.log
+          if grep -q ': warning:\|: error:' tidy.log; then
+            echo "::error::clang-tidy found problems in the changed lines (see above)"
+            exit 1
+          fi
+
+      - name: clang-tidy on every file (main)
+        if: github.event_name != 'pull_request'
+        run: cmake --build --preset debug-nosan --target tidy
 
   fuzz:
     name: fuzz (ubuntu-latest)

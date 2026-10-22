@@ -99,6 +99,24 @@ numbers, short identifiers, trailing return types, and so on). Findings are
 warnings locally; CI passes `MYAPP_TIDY_WERROR=ON` so they fail the job. clangd
 runs the same checks in the editor, so most findings show up as you type.
 
+CI uses clang-tidy 21, pinned through pipx so the checks do not change under
+you. To get exactly CI's results locally:
+
+```bash
+pipx install clang-tidy==21.1.6
+cmake --preset debug-nosan -DMYAPP_CLANG_TIDY="$HOME/.local/bin/clang-tidy"
+cmake --build --preset debug-nosan --target tidy
+```
+
+On a pull request, CI checks only the lines the pull request changes
+(`clang-tidy-diff`), so old findings elsewhere never block a change.
+
+## Markdown: markdownlint and lychee
+
+The `docs-lint` workflow checks every `.md` file: markdownlint for structure
+(rules in `.markdownlint-cli2.jsonc`) and lychee for broken links
+(`lychee.toml`). Locally: `npx markdownlint-cli2 "**/*.md"`.
+
 To silence one finding you've decided is wrong, add a comment on that line:
 
 ```cpp

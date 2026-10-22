@@ -32,7 +32,7 @@ Open the project folder (`zed .`). Zed picks up `.zed/`:
   | `build debug` / `build release` | configure and build |
   | `build debug-nosan` | configure and build without sanitizers (what the debugger uses) |
   | `run` / `run debug` | build and run the app |
-  | `test` | build and run the tests (`debug` preset) |
+  | `test` | configure, build and run the tests (`cmake --workflow --preset test`) |
   | `build tsan`, `build ci`, `test ci` | the other presets |
   | `coverage report` | coverage HTML report |
   | `build fuzz` / `fuzz run` | fuzzing |
@@ -71,11 +71,16 @@ extensions (or install them from the Extensions view):
 
 Then:
 
-- **Tasks**: **Terminal → Run Task...** lists `configure <preset>`,
-  `build <preset>` (including `build debug-nosan`, the unsanitized build the
-  debugger uses), `test`, `run`, `format`, `tidy`, `docs`, `coverage report`,
-  `fuzz run`, `clean` and `clean all`. `Cmd/Ctrl+Shift+B` runs the default
-  build (`build debug`).
+- **Building and testing**: CMake Tools reads `CMakePresets.json`, so pick a
+  configure preset and a build preset in the status bar and use its Build and
+  Test buttons; every preset is there without a task of its own.
+- **Tasks**: **Terminal → Run Task...** lists what CMake Tools does not offer:
+  `build release`, `build debug-nosan` (the unsanitized build the debugger
+  uses), `run`, `test`, `test ci`, `coverage report`, `fuzz run`, `format`,
+  `cmake-lint`, `tidy`, `docs` and `clean all`. Each is one command, most a
+  CMake workflow preset (`cmake --workflow --preset test`), so they also run
+  in Windows PowerShell 5.1, which cannot chain commands with `&&`.
+  `Cmd/Ctrl+Shift+B` runs the default build (`build release`).
 - **Debugging**: Run and Debug (`Cmd/Ctrl+Shift+D`) → **Debug myapp** or
   **Debug tests**, then `F5`. Each builds `debug-nosan` first.
 

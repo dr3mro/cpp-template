@@ -45,7 +45,7 @@ Both wrappers accept both spellings: `--std 20`, `--std=20` and `-Std 20`;
 `-GitHubUser <user>`; `--author <name>` and `-Author <name>`. `-h` and
 `--help` print the usage.
 
-### Your own defaults
+## Your own defaults
 
 Settings you would type for every project can live in a defaults file, which
 the generator reads first:

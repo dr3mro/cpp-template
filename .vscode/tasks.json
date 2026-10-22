@@ -19,7 +19,7 @@
       "type": "shell",
       "command": "cmake",
       "args": [
-        "--build",
+        "--workflow",
         "--preset",
         "release"
       ],
@@ -29,66 +29,14 @@
       "presentation": {
         "reveal": "always"
       },
-      "dependsOn": [
-        "configure release"
-      ],
       "group": "build"
-    },
-    {
-      "label": "configure debug",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "debug"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
-    },
-    {
-      "label": "build debug",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "debug"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure debug"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
-    },
-    {
-      "label": "configure debug-nosan",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "debug-nosan"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
     },
     {
       "label": "build debug-nosan",
       "type": "shell",
       "command": "cmake",
       "args": [
-        "--build",
+        "--workflow",
         "--preset",
         "debug-nosan"
       ],
@@ -97,192 +45,7 @@
       ],
       "presentation": {
         "reveal": "always"
-      },
-      "dependsOn": [
-        "configure debug-nosan"
-      ]
-    },
-    {
-      "label": "configure tsan",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "tsan"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
       }
-    },
-    {
-      "label": "build tsan",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "tsan"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure tsan"
-      ]
-    },
-    {
-      "label": "configure ci",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "ci"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
-    },
-    {
-      "label": "build ci",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "ci"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure ci"
-      ]
-    },
-    {
-      "label": "test ci",
-      "type": "shell",
-      "command": "ctest",
-      "args": [
-        "--preset",
-        "ci"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "build ci"
-      ]
-    },
-    {
-      "label": "configure coverage",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "coverage"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
-    },
-    {
-      "label": "build coverage",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "coverage"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure coverage"
-      ]
-    },
-    {
-      "label": "coverage report",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "coverage",
-        "--target",
-        "coverage"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "build coverage"
-      ]
-    },
-    {
-      "label": "configure fuzz",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "fuzz"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
-    },
-    {
-      "label": "build fuzz",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "fuzz"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure fuzz"
-      ]
-    },
-    {
-      "label": "fuzz run",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "fuzz",
-        "--target",
-        "fuzz-run"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "build fuzz"
-      ]
     },
     {
       "label": "run",
@@ -302,21 +65,69 @@
     {
       "label": "test",
       "type": "shell",
-      "command": "ctest",
+      "command": "cmake",
       "args": [
+        "--workflow",
         "--preset",
-        "debug"
+        "test"
       ],
-      "problemMatcher": [],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "presentation": {
         "reveal": "always"
       },
-      "dependsOn": [
-        "build debug"
-      ],
       "group": {
         "kind": "test",
         "isDefault": true
+      }
+    },
+    {
+      "label": "test ci",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--workflow",
+        "--preset",
+        "ci"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "coverage report",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--workflow",
+        "--preset",
+        "coverage-report"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "fuzz run",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--workflow",
+        "--preset",
+        "fuzz-run"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always"
       }
     },
     {
@@ -368,7 +179,9 @@
         "--target",
         "tidy"
       ],
-      "problemMatcher": [],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "presentation": {
         "reveal": "always"
       },
@@ -389,25 +202,6 @@
       "presentation": {
         "reveal": "always"
       }
-    },
-    {
-      "label": "clean",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "debug",
-        "--target",
-        "clean"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure debug"
-      ]
     },
     {
       "label": "clean all",

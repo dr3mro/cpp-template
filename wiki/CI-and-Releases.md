@@ -10,6 +10,8 @@ failing run, and how releases work.
 | --- | --- | --- |
 | **CI** (`ci.yml`) | every push to `main` and every pull request | builds and tests on Linux, macOS and Windows, plus the extra checks below |
 | **CodeQL** (`codeql.yml`) | pushes, pull requests, and weekly | GitHub's static security analysis; findings appear under **Security → Code scanning** |
+| **Scorecard** (`scorecard.yml`) | pushes to `main`, and weekly | OpenSSF Scorecard: scores the repository's security practices (pinned actions, permissions, branch protection, ...); findings under **Security → Code scanning**, the score on the README badge |
+| **Docs lint** (`docs-lint.yml`) | changes to Markdown files, and weekly | markdownlint (rules in `.markdownlint-cli2.jsonc`) and the lychee link checker (`lychee.toml`) |
 | **Publish Doxygen documentation** (`docs.yml`) | every push to `main` | builds the docs and deploys them to GitHub Pages |
 | **Release** (`release.yml`, which runs `release-build.yml`) | a pushed `v*` tag, or by hand | builds release archives for every platform and publishes a GitHub Release |
 | **Template test** (`template-test.yml`) | template repository only | generates projects with `new-project.sh` and builds them; on Windows it also builds the Visual Studio solution with MSBuild |
@@ -23,12 +25,15 @@ those PRs, so merge them when they're green.
 
 | Job | Checks | Run it locally |
 | --- | --- | --- |
-| `build-and-test` (Linux, macOS) | builds with the `ci` preset (ASan + UBSan, warnings are errors) and runs the tests | `cmake --preset ci && cmake --build --preset ci && ctest --preset ci` |
-| `build-and-test` (Windows x64 and ARM64) | builds and tests the `release` preset with MSVC on `windows-latest` and `windows-11-arm` | `cmake --preset vs2022` on Windows |
+| `build-and-test` (Linux) | builds and tests with `ci-gcc` and `ci-clang` (ASan + UBSan, warnings are errors) | `cmake --workflow --preset ci` |
+| `build-and-test` (macOS) | the same with the `ci` preset and Apple Clang | `cmake --workflow --preset ci` |
+| `build-and-test` (Windows x64 and ARM64) | builds and tests the `release` preset with MSVC from a developer shell, on `windows-latest` and `windows-11-arm` | the same commands in a developer shell |
+| `msvc-asan` | the `debug` preset (ASan) with MSVC on x64 | `cmake --preset debug` in a developer shell |
+| `vs-generator` | the `vs2026` preset: the Visual Studio generator, no developer shell | `cmake --preset vs2026 && cmake --build --preset vs2026 && ctest --preset vs2026` |
 | `version` | the CMake project version matches `vcpkg.json` | `cmake --preset debug-nosan` and compare `build/debug-nosan/generated/include/myapp/version.hpp` |
 | `tsan` | the tests under ThreadSanitizer | `cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan` |
 | `coverage` | builds the coverage report and uploads the HTML as an artifact | `cmake --preset coverage && cmake --build --preset coverage --target coverage` |
-| `tidy` | clang-tidy, with findings as errors | `cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON && cmake --build --preset debug-nosan --target tidy` |
+| `tidy` | clang-tidy 21 (pinned through pipx), findings are errors: on a pull request only the changed lines, on `main` every file | `cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON && cmake --build --preset debug-nosan --target tidy` |
 | `fuzz` | every fuzzer for 30 seconds | `cmake --preset fuzz -DMYAPP_FUZZ_SECONDS=30 && cmake --build --preset fuzz --target fuzz-run` |
 | `format` | `clang-format --dry-run --Werror` on every source | `cmake --build --preset debug --target format-check` (or `--target format` to fix) |
 
@@ -156,7 +161,9 @@ git push origin main v1.2.0
 
 The tag push starts the workflow. When every platform has built, it creates a
 GitHub Release named after the tag (`v1.2.0`), attaches the archives and
-writes release notes from the merged pull requests.
+writes the release notes from the commit subjects since the previous tag,
+grouped into Added, Changed, Fixed and Removed by their first word
+(`cliff.toml`; preview them with `git cliff --unreleased`).
 
 ### Test builds without a release
 

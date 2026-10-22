@@ -122,7 +122,9 @@
     { "name": "fuzz", "configurePreset": "fuzz" },
     { "name": "docs", "configurePreset": "docs", "targets": ["docs"] },
     { "name": "vs2022", "configurePreset": "vs2022", "configuration": "Debug" },
-    { "name": "vs2026", "configurePreset": "vs2026", "configuration": "Debug" }
+    { "name": "vs2026", "configurePreset": "vs2026", "configuration": "Debug" },
+    { "name": "coverage-report", "configurePreset": "coverage", "targets": ["coverage"] },
+    { "name": "fuzz-run", "configurePreset": "fuzz", "targets": ["fuzz-run"] }
   ],
   "testPresets": [
     { "name": "test-base", "hidden": true, "output": { "outputOnFailure": true } },
@@ -162,6 +164,56 @@
     }
   ],
   "workflowPresets": [
+    {
+      "name": "release",
+      "displayName": "Configure and build release",
+      "steps": [
+        { "type": "configure", "name": "release" },
+        { "type": "build", "name": "release" }
+      ]
+    },
+    {
+      "name": "debug-nosan",
+      "displayName": "Configure and build debug-nosan (the debugger's build)",
+      "steps": [
+        { "type": "configure", "name": "debug-nosan" },
+        { "type": "build", "name": "debug-nosan" }
+      ]
+    },
+    {
+      "name": "test",
+      "displayName": "Configure, build and test with ASan/UBSan",
+      "steps": [
+        { "type": "configure", "name": "debug" },
+        { "type": "build", "name": "debug" },
+        { "type": "test", "name": "debug" }
+      ]
+    },
+    {
+      "name": "ci",
+      "displayName": "Configure, build and test like CI",
+      "steps": [
+        { "type": "configure", "name": "ci" },
+        { "type": "build", "name": "ci" },
+        { "type": "test", "name": "ci" }
+      ]
+    },
+    {
+      "name": "coverage-report",
+      "displayName": "Configure and build with coverage, then write the report",
+      "steps": [
+        { "type": "configure", "name": "coverage" },
+        { "type": "build", "name": "coverage-report" }
+      ]
+    },
+    {
+      "name": "fuzz-run",
+      "displayName": "Configure and build the fuzzers, then run them",
+      "steps": [
+        { "type": "configure", "name": "fuzz" },
+        { "type": "build", "name": "fuzz-run" }
+      ]
+    },
     {
       "name": "docs",
       "displayName": "Configure and build Doxygen docs and diagrams",

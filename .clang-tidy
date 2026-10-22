@@ -24,6 +24,8 @@ WarningsAsErrors: ''
 # build/**/generated/include/<name>/ tree on its own; the tidy target passes
 # an -header-filter anchored at the absolute source directory instead, which
 # keeps generated headers out. (ExcludeHeaderFilterRegex, which would let this
-# file do the exclusion, needs clang-tidy 19+; CI ships 18.)
+# file do the exclusion, needs clang-tidy 19+, and an older clang-tidy refuses
+# a config file with a key it does not know: Ubuntu 24.04 still ships 18.)
+# CI pins clang-tidy 21 (pipx install clang-tidy==21.1.6).
 HeaderFilterRegex: '.*/(include|src)/myapp/.*'
 FormatStyle: file

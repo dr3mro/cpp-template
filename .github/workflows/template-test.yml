@@ -220,7 +220,8 @@ jobs:
           # Generated projects rename the MYAPP_ option prefix, so derive it
           # from the project name instead of hard-coding the template's.
           PREFIX="$(echo app20 | tr '[:lower:]' '[:upper:]')"
-          cmake --preset debug-nosan -D"${PREFIX}_TIDY_WERROR=ON"
+          pipx install clang-tidy==21.1.6
+          cmake --preset debug-nosan -D"${PREFIX}_TIDY_WERROR=ON" -D"${PREFIX}_CLANG_TIDY=$HOME/.local/bin/clang-tidy"
           cmake --build --preset debug-nosan --target tidy
 
       - name: Coverage (Linux)
@@ -443,6 +444,28 @@ jobs:
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
             if ($extra) { $extra; throw "msbuild wrote files outside build/vs" }
+          }
+
+      - name: MSBuild and CMake write the same version.hpp
+        # The .vcxproj fills in cmake/templates/version.hpp.in itself, in
+        # plain MSBuild, so it never runs CMake. The two copies of that logic
+        # must agree. The git description differs (the project became a git
+        # repository between the two builds) and is masked out, as are the
+        # line endings.
+        shell: pwsh
+        run: |
+          $project = "$env:RUNNER_TEMP\vsapp"
+          function Get-Normalized([string]$Path) {
+            if (-not (Test-Path -LiteralPath $Path)) { throw "missing: $Path" }
+            $text = (Get-Content -LiteralPath $Path -Raw) -replace "`r`n", "`n"
+            $text = $text -replace 'kGitHash = "[^"]*"', 'kGitHash = "<git>"'
+            return $text.TrimEnd()
+          }
+          $fromCMake = Get-Normalized "$project\build\release\generated\include\vsapp\version.hpp"
+          $fromMSBuild = Get-Normalized "$project\build\vs\generated\vsapp\version.hpp"
+          if ($fromCMake -ne $fromMSBuild) {
+            "--- CMake ---"; $fromCMake; "--- MSBuild ---"; $fromMSBuild
+            throw "the Visual Studio project and CMake generate different version.hpp files"
           }
 
       - name: A new source file is still discovered
