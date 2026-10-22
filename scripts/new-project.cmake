@@ -354,11 +354,15 @@ function(_rename_path rel out_var)
     set(${out_var} "${rel}" PARENT_SCOPE)
 endfunction()
 
-# file(READ) turns CRLF into LF. _write_like(<hex of the original> <file>
+# file(READ) may turn CRLF into LF. _write_like(<hex of the original> <file>
 # <text>) writes <text> back with CRLF when the original had it (the Visual
 # Studio files), so line endings never change.
 function(_write_like hex path text)
     if(hex MATCHES "^([0-9a-f][0-9a-f])*0d0a")
+        # Some CMake builds keep the CR on read (Windows), others drop it
+        # (Linux): drop it first, or a kept one becomes \r\r\n, which MSVC
+        # reports as "Mac file format" (C4335).
+        string(REPLACE "\r\n" "\n" text "${text}")
         string(REPLACE "\n" "\r\n" text "${text}")
     endif()
     file(WRITE "${path}" "${text}")

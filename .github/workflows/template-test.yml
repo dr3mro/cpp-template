@@ -515,7 +515,9 @@ jobs:
             $testsExe = "$env:RUNNER_TEMP\vsapp\build\vs\$platform\$config\vsapp_tests\vsapp_tests.exe"
             if (-not (Test-Path -LiteralPath $testsExe)) { throw "the Visual Studio project built no test program ($config)" }
             # doctest wraps the line in ANSI colour codes.
-            if ($log -notmatch 'Status:.*SUCCESS!') { throw "the unit tests built by Visual Studio did not pass ($config)" }
+            if (($log | Out-String) -notmatch 'Status:.*SUCCESS!') { throw "the unit tests built by Visual Studio did not pass ($config)" }
+            # C4335: a source file with lone CRs, which the generator must never write.
+            if (($log | Out-String) -match 'C4335') { throw "a generated source file has broken line endings (C4335, $config)" }
             Push-Location "$env:RUNNER_TEMP\vsapp"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
@@ -588,7 +590,9 @@ jobs:
             # A library project has tests too, and they ran.
             $testsExe = "$env:RUNNER_TEMP\vslib\build\vs\$platform\$config\vslib_tests\vslib_tests.exe"
             if (-not (Test-Path -LiteralPath $testsExe)) { throw "the library project built no test program ($config)" }
-            if ($log -notmatch 'Status:.*SUCCESS!') { throw "the unit tests of vslib did not pass ($config)" }
+            if (($log | Out-String) -notmatch 'Status:.*SUCCESS!') { throw "the unit tests of vslib did not pass ($config)" }
+            # C4335: a source file with lone CRs, which the generator must never write.
+            if (($log | Out-String) -match 'C4335') { throw "a generated source file has broken line endings (C4335, $config)" }
             Push-Location "$env:RUNNER_TEMP\vslib"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
@@ -636,7 +640,7 @@ jobs:
           if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg_tests\vsnovcpkg_tests.exe")) {
             throw "the project without vcpkg produced no test program"
           }
-          if ($log -notmatch 'Status:.*SUCCESS!') { throw "the tests of the project without vcpkg did not pass" }
+          if (($log | Out-String) -notmatch 'Status:.*SUCCESS!') { throw "the tests of the project without vcpkg did not pass" }
 
       - name: A corrupted doctest header fails the build
         # The header is checked against a pinned SHA-256 on every build, so a
