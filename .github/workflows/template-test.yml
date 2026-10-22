@@ -1116,4 +1116,6 @@ jobs:
           Add-Content -LiteralPath $header -Value "// corrupted by the template test"
           msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
           if ($LASTEXITCODE -eq 0) { throw "the build accepted a doctest header with the wrong hash" }
-          if ($log -notmatch 'not the pinned one') { throw "the build failed without naming the doctest hash" }
+          if (($log | Out-String) -notmatch 'not the pinned one') {
+            throw "the build failed without naming the doctest hash"
+          }
