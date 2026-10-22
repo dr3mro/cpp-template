@@ -354,18 +354,25 @@ function(_rename_path rel out_var)
     set(${out_var} "${rel}" PARENT_SCOPE)
 endfunction()
 
-# file(READ) may turn CRLF into LF. _write_like(<hex of the original> <file>
-# <text>) writes <text> back with CRLF when the original had it (the Visual
-# Studio files), so line endings never change.
+# _write_like(<hex of the original> <file> <text>) writes <text> with the line
+# endings the original had: CRLF (the Visual Studio files, or anything in a
+# Windows checkout) or LF (the shell scripts, which need it everywhere).
+# file(READ) drops the CRs, and on Windows file(WRITE) adds one to every LF,
+# so neither keeps line endings: file(CONFIGURE ... NEWLINE_STYLE) writes
+# exactly the ones asked for. @ and "cmakedefine" are escaped so that
+# configuring changes nothing else.
 function(_write_like hex path text)
     if(hex MATCHES "^([0-9a-f][0-9a-f])*0d0a")
-        # Some CMake builds keep the CR on read (Windows), others drop it
-        # (Linux): drop it first, or a kept one becomes \r\r\n, which MSVC
-        # reports as "Mac file format" (C4335).
-        string(REPLACE "\r\n" "\n" text "${text}")
-        string(REPLACE "\n" "\r\n" text "${text}")
+        set(_style CRLF)
+    else()
+        set(_style UNIX)
     endif()
-    file(WRITE "${path}" "${text}")
+    string(REPLACE "\r\n" "\n" text "${text}")
+    string(REPLACE "@" "@_wl_at@" text "${text}")
+    string(REPLACE "cmakedefine" "@_wl_cmakedefine@" text "${text}")
+    set(_wl_at "@")
+    set(_wl_cmakedefine "cmakedefine")
+    file(CONFIGURE OUTPUT "${path}" CONTENT "${text}" @ONLY NEWLINE_STYLE ${_style})
 endfunction()
 
 foreach(_rel IN LISTS _files)
