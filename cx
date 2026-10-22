@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# cx - build, test, run and check the project.
+#
+#   ./cx <command> [preset] [target...] [options] [-- args]
+#
+# A thin wrapper: the implementation is cmake/cx/cx.cmake, the same one cx.ps1
+# and cx.cmd run, so every platform has the same commands. This script only
+# finds cmake and starts it from the project root. `./cx help` lists the
+# commands; the wiki page "The cx Command" explains them.
+set -euo pipefail
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if ! command -v cmake >/dev/null 2>&1; then
+    echo "error: cmake was not found on PATH. Install CMake 3.25+ first:" >&2
+    echo "  macOS: brew install cmake    Linux: your package manager, or https://cmake.org/download/" >&2
+    exit 1
+fi
+
+cd "$here"
+exec cmake -P "$here/cmake/cx/cx.cmake" -- "$@"
