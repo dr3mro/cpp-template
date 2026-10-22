@@ -4,13 +4,9 @@
     "C++": { "tab_size": 4 },
   },
   "file_scan_exclusions": [
-    "**/.git",
-    "**/.cache",
     "**/build",
     "**/cmake-build-*",
     "**/docs",
-    "**/.vscode",
-    "**/.zed",
     "**/cx",
     "**/cx.cmd",
     "**/cx.ps1",
