@@ -104,7 +104,7 @@ you. To get exactly CI's results locally:
 
 ```bash
 pipx install clang-tidy==21.1.6
-cmake --preset debug-nosan -DMYAPP_CLANG_TIDY="$HOME/.local/bin/clang-tidy"
+cmake --preset debug-nosan -DMYAPP_CLANG_TIDY="$(pipx environment --value PIPX_BIN_DIR)/clang-tidy"
 cmake --build --preset debug-nosan --target tidy
 ```
 

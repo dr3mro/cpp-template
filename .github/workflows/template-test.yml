@@ -221,7 +221,10 @@ jobs:
           # from the project name instead of hard-coding the template's.
           PREFIX="$(echo app20 | tr '[:lower:]' '[:upper:]')"
           pipx install clang-tidy==21.1.6
-          cmake --preset debug-nosan -D"${PREFIX}_TIDY_WERROR=ON" -D"${PREFIX}_CLANG_TIDY=$HOME/.local/bin/clang-tidy"
+          # pipx's bin folder is /opt/pipx_bin on GitHub's runners; ask pipx.
+          clang_tidy="$(pipx environment --value PIPX_BIN_DIR)/clang-tidy"
+          "$clang_tidy" --version
+          cmake --preset debug-nosan -D"${PREFIX}_TIDY_WERROR=ON" -D"${PREFIX}_CLANG_TIDY=$clang_tidy"
           cmake --build --preset debug-nosan --target tidy
 
       - name: Coverage (Linux)

@@ -228,7 +228,11 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install --no-install-recommends -y clang-tidy
           pipx install clang-tidy==21.1.6
-          echo "CLANG_TIDY=$HOME/.local/bin/clang-tidy" >> "$GITHUB_ENV"
+          # pipx installs into its own bin folder (/opt/pipx_bin on GitHub's
+          # runners, ~/.local/bin elsewhere), so ask it where that is.
+          clang_tidy="$(pipx environment --value PIPX_BIN_DIR)/clang-tidy"
+          "$clang_tidy" --version
+          echo "CLANG_TIDY=$clang_tidy" >> "$GITHUB_ENV"
       - name: Configure
         # MYAPP_TIDY_WERROR makes findings fail the build; .clang-tidy keeps
         # warnings-as-errors off so editors still show them as warnings.
