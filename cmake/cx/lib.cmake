@@ -61,8 +61,10 @@ endfunction()
 # Prints the command first ("> cmake --build --preset debug"), then runs it
 # with its output going straight to the terminal, so a long build shows its
 # progress and the user can interrupt it. The exit code is left in
-# CX_RUN_RESULT. A macro on purpose: the result belongs to the caller's scope.
-macro(_cx_run)
+# CX_RUN_RESULT, in the caller's scope. A function, not a macro: a macro
+# re-reads its arguments as CMake code, which breaks Windows paths
+# (C:\Program Files\... has the invalid escape "\P").
+function(_cx_run)
     set(_cx_call ${ARGN})
     set(_cx_display "")
     foreach(_cx_arg IN LISTS _cx_call)
@@ -81,8 +83,9 @@ macro(_cx_run)
         endif()
     endforeach()
     _cx_say("> ${_cx_display}")
-    execute_process(COMMAND ${_cx_call} RESULT_VARIABLE CX_RUN_RESULT)
-endmacro()
+    execute_process(COMMAND ${_cx_call} RESULT_VARIABLE _cx_result)
+    set(CX_RUN_RESULT "${_cx_result}" PARENT_SCOPE)
+endfunction()
 
 # ctest lives next to the cmake that is running this script (also when cmake
 # came from Visual Studio and is not on PATH).
@@ -92,10 +95,12 @@ find_program(CX_CTEST NAMES ctest HINTS "${_cx_cmake_dir}")
 # Appending an argument that contains a semicolon to a CMake list would split
 # it, so the semicolon is escaped on the way in. Arguments after "--" are the
 # user's: they must reach the program exactly as typed.
-macro(_cx_list_append list_var value)
+# A function for the same reason as _cx_run: an argument may be a Windows path.
+function(_cx_list_append list_var value)
     string(REPLACE ";" "\\;" _cx_escaped "${value}")
     list(APPEND ${list_var} "${_cx_escaped}")
-endmacro()
+    set(${list_var} "${${list_var}}" PARENT_SCOPE)
+endfunction()
 
 # ---- presets ------------------------------------------------------------------
 # Reads the configure presets of one file. The arrays stay parallel: index i of

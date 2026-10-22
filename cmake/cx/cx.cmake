@@ -13,6 +13,11 @@
 # adding a dependency, and `new` for absorbing the project generator.
 # =============================================================================
 cmake_minimum_required(VERSION 3.25)
+# CMake 4.1+: macros keep backslashes in their arguments (Windows paths). cx
+# uses functions where it matters, so this only quiets the policy warning.
+if(POLICY CMP0219)
+    cmake_policy(SET CMP0219 NEW)
+endif()
 
 get_filename_component(CX_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 set(CX_COMMANDS_DIR "${CMAKE_CURRENT_LIST_DIR}/commands")

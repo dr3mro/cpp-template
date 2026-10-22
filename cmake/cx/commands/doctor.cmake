@@ -128,12 +128,17 @@ function(_cx_doctor_pad text width out)
     set(${out} "${text}${_spaces}" PARENT_SCOPE)
 endfunction()
 
-# Append one row of the doctor table.
-macro(_cx_doctor_row check status detail)
+# Append one row of the doctor table. A function, not a macro: a macro
+# re-reads its arguments as CMake code, so a Windows path in one
+# (C:\Program Files\...) would turn into escape sequences ("\P" is invalid).
+function(_cx_doctor_row check status detail)
     list(APPEND _checks "${check}")
     list(APPEND _statuses "${status}")
     list(APPEND _details "${detail}")
-endmacro()
+    set(_checks "${_checks}" PARENT_SCOPE)
+    set(_statuses "${_statuses}" PARENT_SCOPE)
+    set(_details "${_details}" PARENT_SCOPE)
+endfunction()
 
 set(_checks "")
 set(_statuses "")
