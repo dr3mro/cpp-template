@@ -94,8 +94,9 @@ The configure summary lists the main settings, and
 
 ### How do I change the version?
 
-Edit `"version"` in `vcpkg.json`; that's the only place it lives. CMake reads
-it, `myapp::kVersion` in `version.hpp` reflects it, and CI checks they match.
+Edit the `VERSION` file; that's the only place the version lives. CMake
+reads it, `myapp::kVersion` in `version.hpp` reflects it, and CI checks they
+match.
 
 ### Why are `docs/` and the diagrams not committed?
 

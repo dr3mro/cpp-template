@@ -159,7 +159,7 @@ variables, a trailing underscore for private members (`salutation_`), and
 
 ## Using the version in code
 
-`myapp/version.hpp` is generated from `vcpkg.json` and git:
+`myapp/version.hpp` is generated from the `VERSION` file and git:
 
 ```cpp
 #include "myapp/version.hpp"

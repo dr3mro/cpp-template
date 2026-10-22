@@ -4,7 +4,7 @@ name: Release build (reusable)
 # release-lib.yml) calls it with mode: app or mode: lib; everything else is
 # shared, so the two kinds of project cannot drift apart.
 #
-#   check-version  the tag (v1.2.0) must equal "version" in vcpkg.json
+#   check-version  the tag (v1.2.0) must equal the version in VERSION
 #   build          one job per platform: build, check the CPU architecture,
 #                  package (.zip on Windows, .tar.gz elsewhere), collect the
 #                  SBOM and, for apps, split off the debug symbols
@@ -40,7 +40,7 @@ env:
 
 jobs:
   check-version:
-    name: tag matches vcpkg.json
+    name: tag matches the VERSION file
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -48,12 +48,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Compare the tag with vcpkg.json
+      - name: Compare the tag with the VERSION file
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          version="$(jq -r .version vcpkg.json)"
+          version="$(head -n1 VERSION | tr -d '[:space:]')"
           if [ "$tag" != "$version" ]; then
-            echo "::error::tag v$tag does not match vcpkg.json version $version; bump vcpkg.json or move the tag"
+            echo "::error::tag v$tag does not match the VERSION file ($version); bump VERSION or move the tag"
             exit 1
           fi
 

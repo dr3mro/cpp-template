@@ -32,7 +32,7 @@ include(${doctest_DIR}/doctest.cmake)
 doctest_discover_tests(${PROJECT_NAME}_tests)
 
 # A smoke test of the program itself (app mode only): it starts, and
-# prints the version from vcpkg.json. The app target is defined in the
+# prints the version from the VERSION file. The app target is defined in the
 # top-level CMakeLists.txt before this directory is added.
 if(NOT MYAPP_LIBRARY_MODE)
     add_test(NAME ${PROJECT_NAME}_version COMMAND ${PROJECT_NAME} --version)

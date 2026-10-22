@@ -19,7 +19,6 @@ if it is not there yet; `doctest` stays under `features.tests`):
 ```json
 {
   "name": "bank-app",
-  "version": "0.1.0",
   "dependencies": ["fmt"],
   ...
 }

@@ -23,8 +23,8 @@
 parse:
   additional_commands:
     # cmake/Helpers.cmake
-    myapp_read_manifest_version:
-      pargs: 2                      # <out-var> <vcpkg.json>
+    myapp_read_version:
+      pargs: 2                      # <out-var> <VERSION file>
     myapp_regex_escape:
       pargs: 2                      # <out-var> <text>
     myapp_find_llvm_program:

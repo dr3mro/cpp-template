@@ -54,8 +54,8 @@ All notable changes to this project are documented here. The format follows
 
 - `--author` (`-Author`) option for the project generators. The name goes
   into `main.cpp`'s header comment; the default is `git config user.name`.
-- Release workflows check that the tag matches the `vcpkg.json` version
-  before building anything.
+- Release workflows check that the tag matches the version in the `VERSION`
+  file before building anything.
 - The library release checks that each installed library is built for the
   architecture in its archive name.
 - Windows app releases ship as `.zip`; CPack also makes a ZIP on Windows.

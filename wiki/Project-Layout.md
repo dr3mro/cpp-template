@@ -33,7 +33,8 @@ myapp/
 ├── CMakePresets.json          the presets (debug, release, ...)
 ├── CMakeUserPresets.json   ✏️ your personal presets (create it; git-ignored)
 ├── CMakeUserPresets.json.example  a starting point for it
-├── vcpkg.json              ✏️ name, version and dependencies
+├── vcpkg.json              ✏️ name and dependencies
+├── VERSION                 ✏️ the project's version (MAJOR.MINOR.PATCH)
 ├── Doxyfile.in                documentation settings
 ├── Doxyfile.classes.in         second Doxygen pass keeping class-graph .dot files
 ├── .clang-format              code style
@@ -73,9 +74,11 @@ New files are picked up automatically on the next build. You don't edit any
 
 ## Build configuration
 
-- **`vcpkg.json`**: the project's name, **version** (the only place it's
-  set) and dependencies. `builtin-baseline` pins the version of every
-  dependency; Dependabot updates it.
+- **`VERSION`**: the project's **version** (the only place it's set), as
+  `MAJOR.MINOR.PATCH`. CMake reads it, `myapp::kVersion` in `version.hpp`
+  reflects it, and CI checks they match.
+- **`vcpkg.json`**: the project's name and dependencies. `builtin-baseline`
+  pins the version of every dependency; Dependabot updates it.
 - **`cmake/Dependencies.cmake`**: one line per third-party package; see
   [Adding dependencies](Adding-Dependencies).
 - **`cmake/Options.cmake`**: every switch you can pass with `-D...`; see the
@@ -119,4 +122,4 @@ Delete them all with `cmake -P cmake/DistClean.cmake`; everything regenerates.
 
 ## Template-only files
 
-scripts/new-project.cmake, new-project.sh, new-project.ps1 are template-repository only and are not in generated projects. .github/workflows/release-app.yml and release-lib.yml become release.yml in a project. .github/workflows/template-test.yml and wiki.yml are template only. .github/actions/setup-vcpkg/action.yml installs vcpkg, Ninja, ccache. .github/ISSUE_TEMPLATE/bug_report.yml, feature_request.yml, config.yml. .vscode/extensions.json, tasks.json, launch.json. .zed/settings.json, tasks.json, debug.json. cmake/HomebrewLLVM.cmake, cmake/WindowsClang.cmake. examples/CMakeLists.txt, examples/example.cpp. fuzz/corpus/<fuzzer>/ holds seed inputs; see Fuzzing.
+scripts/new-project.cmake, new-project.sh, new-project.ps1 are template-repository only and are not in generated projects. .github/workflows/release-app.yml and release-lib.yml become release.yml in a project. .github/workflows/template-test.yml and wiki.yml are template only. .github/actions/setup-vcpkg/action.yml installs vcpkg, Ninja, ccache. .github/ISSUE_TEMPLATE/bug_report.yml, feature_request.yml, config.yml. .vscode/extensions.json, tasks.json, launch.json. .zed/settings.json, tasks.json, debug.json. cmake/HomebrewLLVM.cmake, cmake/WindowsClang.cmake. examples/CMakeLists.txt, examples/example.cpp. `fuzz/corpus/<fuzzer>/` holds seed inputs; see Fuzzing.

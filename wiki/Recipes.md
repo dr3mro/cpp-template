@@ -221,7 +221,7 @@ The summary at the end of the configure output confirms what is on.
 
 ## Make a release
 
-1. Bump `"version"` in `vcpkg.json` (the only place the version lives;
+1. Bump the version in `VERSION` (the only place the version lives;
    CMake reads it from there). Use [semantic versioning](https://semver.org):
    `MAJOR.MINOR.PATCH`, and bump MAJOR for breaking changes. In a library
    project, the SOVERSION and the package's compatibility check follow MAJOR.

@@ -30,7 +30,7 @@ those PRs, so merge them when they're green.
 | `build-and-test` (Windows x64 and ARM64) | builds and tests the `release` preset with MSVC from a developer shell, on `windows-latest` and `windows-11-arm` | the same commands in a developer shell |
 | `msvc-asan` | the `debug` preset (ASan) with MSVC on x64 | `cmake --preset debug` in a developer shell |
 | `vs-generator` | the `vs2026` preset: the Visual Studio generator, no developer shell | `cmake --preset vs2026 && cmake --build --preset vs2026 && ctest --preset vs2026` |
-| `version` | the CMake project version matches `vcpkg.json` | `cmake --preset debug-nosan` and compare `build/debug-nosan/generated/include/myapp/version.hpp` |
+| `version` | the CMake project version matches the `VERSION` file | `cmake --preset debug-nosan` and compare `build/debug-nosan/generated/include/myapp/version.hpp` |
 | `tsan` | the tests under ThreadSanitizer | `cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan` |
 | `coverage` | builds the coverage report and uploads the HTML as an artifact | `cmake --preset coverage && cmake --build --preset coverage --target coverage` |
 | `tidy` | clang-tidy 21 (pinned through pipx), findings are errors: on a pull request only the changed lines, on `main` every file | `cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON && cmake --build --preset debug-nosan --target tidy` |
@@ -54,7 +54,7 @@ those PRs, so merge them when they're green.
      see [Debugging and sanitizers](Debugging-and-Sanitizers).
    - **Windows only**: MSVC-specific warnings, or code relying on GCC/Clang
      extensions.
-   - **version**: you set a version somewhere other than `vcpkg.json`.
+   - **version**: you set a version somewhere other than the `VERSION` file.
    - **fuzz**: the log shows the crashing input; reproduce it as in
      [Fuzzing](Fuzzing) (step 3).
 4. Re-run a flaky job with **Re-run failed jobs**, but treat a TSan or
@@ -138,9 +138,9 @@ gh attestation verify myapp-linux-x64.tar.gz --repo <owner>/<repo>
 Three checks guard a release:
 
 - **The tag must match the version.** The first job, `check-version`,
-  compares the tag without its `v` (`v1.2.0` → `1.2.0`) with `"version"` in
-  `vcpkg.json`, and nothing is built when they differ. Fix it by bumping
-  `vcpkg.json`, then moving the tag (`git tag -f v1.2.0`, then
+  compares the tag without its `v` (`v1.2.0` → `1.2.0`) with the version in
+  the `VERSION` file, and nothing is built when they differ. Fix it by bumping
+  `VERSION`, then moving the tag (`git tag -f v1.2.0`, then
   `git push -f origin v1.2.0`). Manual runs have no tag and skip the check.
 - **Every binary is built for the CPU it is named after.** Each build reads
   the architecture out of the executable or library itself (`objdump` on
@@ -153,7 +153,7 @@ Three checks guard a release:
 ### Publishing a release
 
 ```bash
-# 1. bump "version" in vcpkg.json (it must equal the tag without the v)
+# 1. bump VERSION (it must equal the tag without the v)
 #    and update CHANGELOG.md, commit
 git tag v1.2.0
 git push origin main v1.2.0

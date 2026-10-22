@@ -129,23 +129,24 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "the vs2026 tests failed" }
 
   version:
-    name: version matches vcpkg.json (ubuntu-latest)
+    name: version matches the VERSION file (ubuntu-latest)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-vcpkg
-      - name: Compare the CMake project version with vcpkg.json
-        # vcpkg.json is the single source of truth; the configure-time
+      - name: Compare the CMake project version with the VERSION file
+        # The VERSION file is the single source of truth; the configure-time
         # version.hpp records the version project() actually received, so a
-        # hard-coded VERSION in CMakeLists.txt (or a stale manifest) fails here.
+        # hard-coded version in CMakeLists.txt (or a stale VERSION file) fails
+        # here.
         run: |
           cmake --preset debug-nosan -DMYAPP_BUILD_TESTS=OFF
-          manifest="$(sed -n 's/^[[:space:]]*"version": "\([^"]*\)",*/\1/p' vcpkg.json)"
+          version="$(head -n1 VERSION | tr -d '[:space:]')"
           project="$(grep -o 'kVersion = "[^"]*"' build/debug-nosan/generated/include/myapp/version.hpp | sed 's/.*"\(.*\)"/\1/')"
-          echo "vcpkg.json: '$manifest'  CMake project: '$project'"
-          if [ "$manifest" != "$project" ]; then
-            echo "::error::vcpkg.json version ($manifest) and the CMake project version ($project) disagree"
+          echo "VERSION: '$version'  CMake project: '$project'"
+          if [ "$version" != "$project" ]; then
+            echo "::error::the VERSION file ($version) and the CMake project version ($project) disagree"
             exit 1
           fi
 

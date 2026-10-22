@@ -179,8 +179,8 @@ with the MAJOR version, signalling an ABI break.
 ## The generated version header
 
 `cmake/templates/version.hpp.in` is a template; CMake fills in the version
-(from `vcpkg.json`) and `git describe --tags --always --dirty` of the build
-(`v1.2.0-3-gabc1234`, with `-dirty` for uncommitted changes), writing
+(from the `VERSION` file) and `git describe --tags --always --dirty` of the
+build (`v1.2.0-3-gabc1234`, with `-dirty` for uncommitted changes), writing
 `build/<preset>/generated/include/myapp/version.hpp`. It's written twice:
 
 - **at configure time**, so clangd and clang-tidy find the header straight

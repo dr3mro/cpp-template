@@ -167,7 +167,7 @@ If CMake says `Could not find a package configuration file provided by
 
 Edit `mathlib`, then run `cmake --build --preset release && cmake --install
 build/release` in `mathlib` again, and rebuild `calc`. Bump the version in
-`mathlib/vcpkg.json` when you release a change; `calc_find_dependency(mathlib
+`mathlib/VERSION` when you release a change; `calc_find_dependency(mathlib
 0.2 CONFIG)` would then require at least that version.
 
 ## Alternative: build the library from source inside the app

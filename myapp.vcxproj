@@ -184,6 +184,7 @@
     <None Include=".clang-format" />
     <None Include=".clang-tidy" />
     <None Include="cmake\templates\version.hpp.in" />
+    <None Include="VERSION" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <PropertyGroup>
@@ -203,8 +204,8 @@
     The two headers the CMake build generates are written here, before every
     compile, in plain MSBuild: the solution never runs CMake.
       version.hpp       cmake/templates/version.hpp.in with the version from
-                        vcpkg.json and `git describe` of the build (the same
-                        substitution cmake/WriteVersion.cmake makes)
+                        the VERSION file and `git describe` of the build (the
+                        same substitution cmake/WriteVersion.cmake makes)
       <name>_export.h   the static-build export header
     Both are only rewritten when their content changes, so an unchanged
     header does not rebuild the files that include it.
@@ -215,14 +216,17 @@
     first build, instead of marking them as missing.
   -->
   <Target Name="GenerateGeneratedHeaders" BeforeTargets="ClCompile;GetClCommandLines">
-    <!-- The version lives in vcpkg.json; that is the single source of truth. -->
+    <!-- The version lives in the VERSION file; that is the single source of
+         truth. The file holds the version and nothing else, so it is trimmed
+         and checked. -->
     <PropertyGroup>
-      <VsManifestText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\vcpkg.json'))</VsManifestText>
-      <VsHasVersion>$([System.Text.RegularExpressions.Regex]::IsMatch($(VsManifestText), '"version"\s*:\s*"\d+\.\d+\.\d+'))</VsHasVersion>
+      <VsVersionFile Condition="Exists('$(MSBuildProjectDirectory)\VERSION')">$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\VERSION'))</VsVersionFile>
+      <VsVersionText Condition="'$(VsVersionFile)'!=''">$(VsVersionFile.Trim())</VsVersionText>
+      <VsHasVersion>$([System.Text.RegularExpressions.Regex]::IsMatch('$(VsVersionText)', '^\d+\.\d+\.\d+$'))</VsHasVersion>
     </PropertyGroup>
-    <Error Condition="'$(VsHasVersion)'!='True'" Text="Could not read the version from vcpkg.json. It needs a &quot;version&quot; field such as &quot;0.1.0&quot;." />
+    <Error Condition="'$(VsHasVersion)'!='True'" Text="Could not read the version from VERSION. It needs a version such as &quot;0.1.0&quot;." />
     <PropertyGroup>
-      <VsVersion>$([System.Text.RegularExpressions.Regex]::Replace($(VsManifestText), '(?s)^.*?"version"\s*:\s*"(\d+\.\d+\.\d+[^"]*)".*$', '$1'))</VsVersion>
+      <VsVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersionText)', '(?s)^.*?(\d+\.\d+\.\d+).*$', '$1'))</VsVersion>
       <VsVersionMajor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^(\d+)\..*$', '$1'))</VsVersionMajor>
       <VsVersionMinor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.(\d+).*$', '$1'))</VsVersionMinor>
       <VsVersionPatch>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.\d+\.(\d+).*$', '$1'))</VsVersionPatch>

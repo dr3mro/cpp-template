@@ -397,8 +397,8 @@ function(_edit path)
     endif()
 endfunction()
 
-# vcpkg package names allow hyphens but not underscores. The manifest's
-# "version" stays the single source of truth for the project version.
+# vcpkg package names allow hyphens but not underscores. The manifest carries
+# the name and the dependencies; the version lives in the VERSION file.
 string(REPLACE "_" "-" _vcpkg_name "${NAME}")
 _edit(vcpkg.json "\"name\": \"[^\"]+\"" "\"name\": \"${_vcpkg_name}\"")
 

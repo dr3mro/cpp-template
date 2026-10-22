@@ -7,7 +7,7 @@
 # bottom, it is the order in which the build is set up:
 #
 #   1. Before project()    compiler choice, vcpkg toolchain, test feature
-#   2. Project             name and version (the version comes from vcpkg.json)
+#   2. Project             name and version (the version comes from the VERSION file)
 #   3. Options, defaults   every -DMYAPP_* switch; language and install defaults
 #   4. Build flags         the myapp_options target that every target links
 #   5. Dependencies        third-party packages (edit cmake/Dependencies.cmake)
@@ -32,7 +32,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/Helpers.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/PreProject.cmake)
 
 # ---- 2. Project ---------------------------------------------------------------
-myapp_read_manifest_version(MYAPP_VERSION "${CMAKE_CURRENT_LIST_DIR}/vcpkg.json")
+myapp_read_version(MYAPP_VERSION "${CMAKE_CURRENT_LIST_DIR}/VERSION")
 project(myapp
     VERSION ${MYAPP_VERSION}
     DESCRIPTION "C++ project created from the cpp-template"

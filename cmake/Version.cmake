@@ -1,7 +1,7 @@
 # =============================================================================
 # Version.cmake - the generated <name>/version.hpp header
 #
-# The header carries the project version (from vcpkg.json) and the git
+# The header carries the project version (from the VERSION file) and the git
 # description of the build (git describe --tags --always --dirty).
 # It is written:
 #   - once at configure time, so clangd and clang-tidy find it right away, and

@@ -6,7 +6,7 @@
 #
 # Provides:
 #   MYAPP_LLVM_HINTS               LLVM bin directories to search before PATH
-#   myapp_read_manifest_version()  read "version" from vcpkg.json
+#   myapp_read_version()           read the version from the VERSION file
 #   myapp_find_llvm_program()      find clang-format, llvm-cov, clang++, ...
 #   myapp_find_msvc_cl()           find cl.exe in the Visual Studio tools
 #   myapp_find_dependency()        find_package() + record it for the package config
@@ -21,17 +21,33 @@ include_guard(GLOBAL)
 set(MYAPP_LLVM_HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin
                      "C:/Program Files/LLVM/bin")
 
-# myapp_read_manifest_version(<out-var> <vcpkg.json>)
+# myapp_read_version(<out-var> <VERSION file>)
 #
-# vcpkg.json's "version" field is the project's single source of truth, so the
-# CMake project version and the manifest can never disagree.
-function(myapp_read_manifest_version out_var manifest)
-    file(READ "${manifest}" _json)
-    string(JSON _version ERROR_VARIABLE _error GET "${_json}" version)
-    if(_error)
-        message(FATAL_ERROR "Could not read \"version\" from ${manifest}: ${_error}")
+# VERSION is the project's single source of truth for its version: the first
+# line holds it, and nothing else may follow on that line. The version has to
+# be MAJOR.MINOR.PATCH, because CMake splits it into the three numbers the
+# project() command and the SOVERSION use.
+function(myapp_read_version out_var version_file)
+    if(NOT EXISTS "${version_file}")
+        message(FATAL_ERROR
+            "Could not read the version from ${version_file}: the file does not exist")
+    endif()
+    file(READ "${version_file}" _content)
+    # Only the first line: the file holds the version and nothing else, but a
+    # stray second line should not turn into part of the version.
+    string(REGEX MATCH "^([^\r\n]*)" _first_line "${_content}")
+    string(STRIP "${_first_line}" _version)
+    string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+$" _match "${_version}")
+    if(NOT _match)
+        message(FATAL_ERROR
+            "Could not read the version from ${version_file}: expected a version like 0.1.0")
     endif()
     set(${out_var} "${_version}" PARENT_SCOPE)
+    # The version reaches project(), the version header and the installed
+    # package, so it is read at configure time. Watching the file makes a
+    # changed version re-run the configure step: a plain build would keep the
+    # version of the last configure.
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${version_file}")
 endfunction()
 
 # myapp_find_llvm_program(<var> <name>... [NEXT_TO_COMPILER])
