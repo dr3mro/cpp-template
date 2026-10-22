@@ -10,6 +10,7 @@
 # =============================================================================
 include_guard(DIRECTORY)
 include(CheckCXXSourceCompiles)
+include(CheckCXXSourceRuns)
 
 # _myapp_use_sanitizer(<compile-flag> <link-flag> <what>)
 #
@@ -91,18 +92,22 @@ if(MSVC)
 
     # The ASan runtime is a separate component of Visual Studio ("C++
     # AddressSanitizer"), and it is not part of every install: on ARM64 it
-    # comes with the ARM64 build tools. Compile *and* link a probe program
-    # first, so a missing runtime is reported here with the fix instead of as
-    # a link error in the first target.
+    # comes with the ARM64 build tools. Compile, link *and run* a probe program
+    # first: an x64 ASan binary can link fine yet fail at startup (for example
+    # when run under x64 emulation on Windows on ARM), and that would otherwise
+    # only show up as test discovery failing later. The result variable is
+    # new, so a cache from an earlier configure does not skip this check.
     set(CMAKE_REQUIRED_FLAGS "/fsanitize=address")
     set(CMAKE_REQUIRED_LINK_OPTIONS "/fsanitize=address /INCREMENTAL:NO")
-    check_cxx_source_compiles("int main() { return 0; }" MYAPP_HAS_MSVC_ASAN)
+    check_cxx_source_runs("int main() { return 0; }" MYAPP_MSVC_ASAN_RUNS)
     unset(CMAKE_REQUIRED_FLAGS)
     unset(CMAKE_REQUIRED_LINK_OPTIONS)
-    if(NOT MYAPP_HAS_MSVC_ASAN)
+    if(NOT MYAPP_MSVC_ASAN_RUNS)
         message(FATAL_ERROR
-            "MSVC AddressSanitizer does not work here: the ASan runtime for this "
-            "architecture is missing.\n"
+            "MSVC AddressSanitizer does not run here: the probe program either "
+            "failed to build or failed to start. Common causes: the ASan runtime "
+            "for this architecture is missing, or the host runs this architecture "
+            "under emulation (e.g. x64 on Windows on ARM).\n"
             "Install the \"C++ AddressSanitizer\" component in the Visual Studio "
             "Installer (on ARM64 the ARM64 build tools as well), or build without "
             "the sanitizer with the debug-nosan preset:\n"
