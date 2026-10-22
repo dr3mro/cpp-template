@@ -4,10 +4,14 @@
   "features": {
     "tests": {
       "description": "Unit test framework",
-      "dependencies": [
-        "doctest"
-      ]
+      "dependencies": ["doctest"]
     }
   },
+  "overrides": [
+    {
+      "name": "doctest",
+      "version": "2.5.3"
+    }
+  ],
   "builtin-baseline": "9eec002df1cd109f8f104cd966a763daf9751489"
 }
