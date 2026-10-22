@@ -5,21 +5,21 @@ Every switch the template offers. Pass any of them when configuring, for example
 `MYAPP` is your project's name in capitals). They are all defined in
 `cmake/Options.cmake` and `cmake/PreProject.cmake`.
 
-| Option                     | Default | Meaning                                                              |
-| -------------------------- | ------- | -------------------------------------------------------------------- |
-| `MYAPP_BUILD_TESTS`        | `ON`    | build the unit tests (and let vcpkg fetch doctest)                   |
-| `MYAPP_LIBRARY_MODE`       | `OFF`   | build an installable library instead of an app (`--lib` sets it)     |
-| `MYAPP_BUILD_FUZZERS`      | `OFF`   | build the fuzzers (the `fuzz` preset sets it)                        |
-| `MYAPP_SANITIZER`          | empty   | `address` (with UBSan), `thread` or `memory`                         |
-| `MYAPP_ENABLE_HARDENING`   | `ON`    | security flags in release builds                                     |
-| `MYAPP_ENABLE_LTO`         | `ON`    | link-time optimisation of optimised app builds (never in library mode) |
-| `MYAPP_ENABLE_COVERAGE`    | `OFF`   | coverage instrumentation (the `coverage` preset sets it)             |
-| `MYAPP_USE_LLVM_CLANG`     | `OFF`   | use LLVM clang++ (Homebrew's on macOS)                               |
-| `MYAPP_USE_CCACHE`         | `ON`    | use ccache when it is installed                                      |
-| `MYAPP_TIDY_WERROR`        | `OFF`   | make `tidy` fail on findings                                         |
-| `MYAPP_FUZZ_SECONDS`       | `10`    | how long `fuzz-run` runs each fuzzer                                 |
-| `BUILD_SHARED_LIBS`        | `OFF`   | standard CMake option: build the library as shared instead of static |
-| `CMAKE_COMPILE_WARNING_AS_ERROR` | `OFF` | standard CMake option: fail the build on any warning (the `ci` presets set it; `--compile-no-warning-as-error` overrides it) |
+| Option                           | Default | Meaning                                                                                                                      |
+| -------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `MYAPP_BUILD_TESTS`              | `ON`    | build the unit tests (and let vcpkg fetch doctest)                                                                           |
+| `MYAPP_LIBRARY_MODE`             | `OFF`   | build an installable library instead of an app (`--lib` sets it)                                                             |
+| `MYAPP_BUILD_FUZZERS`            | `OFF`   | build the fuzzers (the `fuzz` preset sets it)                                                                                |
+| `MYAPP_SANITIZER`                | empty   | `address` (with UBSan), `thread` or `memory`                                                                                 |
+| `MYAPP_ENABLE_HARDENING`         | `ON`    | security flags in release builds                                                                                             |
+| `MYAPP_ENABLE_LTO`               | `ON`    | link-time optimisation of optimised app builds (never in library mode)                                                       |
+| `MYAPP_ENABLE_COVERAGE`          | `OFF`   | coverage instrumentation (the `coverage` preset sets it)                                                                     |
+| `MYAPP_USE_LLVM_CLANG`           | `OFF`   | use LLVM clang++ (Homebrew's on macOS)                                                                                       |
+| `MYAPP_USE_CCACHE`               | `ON`    | use ccache when it is installed                                                                                              |
+| `MYAPP_TIDY_WERROR`              | `OFF`   | make `tidy` fail on findings                                                                                                 |
+| `MYAPP_FUZZ_SECONDS`             | `10`    | how long `fuzz-run` runs each fuzzer                                                                                         |
+| `BUILD_SHARED_LIBS`              | `OFF`   | standard CMake option: build the library as shared instead of static                                                         |
+| `CMAKE_COMPILE_WARNING_AS_ERROR` | `OFF`   | standard CMake option: fail the build on any warning (the `ci` presets set it; `--compile-no-warning-as-error` overrides it) |
 
 Local presets of your own go in `CMakeUserPresets.json` (git-ignored);
 `CMakeUserPresets.json.example` is a starting point.

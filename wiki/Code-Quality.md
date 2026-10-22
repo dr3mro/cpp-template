@@ -51,7 +51,7 @@ globs in `cmake/Format.cmake`.
 cmake --build --preset debug --target cmake-lint
 ```
 
-`cmake-lint` (from [cmakelang](https://github.com/cheshirekow/cmakelang),
+`cmake-lint` (from [cmakelang](https://pypi.org/project/cmakelang/),
 `pipx install cmakelang==0.6.13`) checks the CMake files against `.cmake-format.yaml`:
 lines up to **100 columns** (`C0301`), lower-case command names, the naming
 scheme, and complexity limits for functions. The rules are the same ones CI

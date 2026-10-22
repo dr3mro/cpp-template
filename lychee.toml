@@ -9,7 +9,7 @@ exclude_path = ["build", "docs", "vcpkg_installed", "node_modules"]
 
 exclude = [
   # Placeholders the generator fills in, and examples of user-specific URLs.
-  '@GITHUB_USER@',
+  'GITHUB_USER',   # the generator's placeholder (lychee sees it as %40GITHUB_USER@)
   'your-github-user',
   '<user>',
   '<owner>',
