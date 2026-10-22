@@ -458,16 +458,23 @@ jobs:
         shell: pwsh
         run: |
           $project = "$env:RUNNER_TEMP\vsapp"
-          function Get-Normalized([string]$Path) {
+          # Compared line by line: MSBuild and CMake differ in line endings, a
+          # byte-order mark and blank lines, none of which matters to the
+          # compiler.
+          function Get-Lines([string]$Path) {
             if (-not (Test-Path -LiteralPath $Path)) { throw "missing: $Path" }
-            $text = (Get-Content -LiteralPath $Path -Raw) -replace "`r`n", "`n"
-            $text = $text -replace 'kGitHash = "[^"]*"', 'kGitHash = "<git>"'
-            return $text.TrimEnd()
+            $text = [System.IO.File]::ReadAllText($Path).TrimStart([char]0xFEFF)
+            return @($text -split "`r?`n" |
+              ForEach-Object { $_.TrimEnd() } |
+              Where-Object { $_ -ne '' } |
+              ForEach-Object { $_ -replace 'kGitHash = "[^"]*"', 'kGitHash = "<git>"' })
           }
-          $fromCMake = Get-Normalized "$project\build\release\generated\include\vsapp\version.hpp"
-          $fromMSBuild = Get-Normalized "$project\build\vs\generated\vsapp\version.hpp"
-          if ($fromCMake -ne $fromMSBuild) {
-            "--- CMake ---"; $fromCMake; "--- MSBuild ---"; $fromMSBuild
+          $fromCMake = Get-Lines "$project\build\release\generated\include\vsapp\version.hpp"
+          $fromMSBuild = Get-Lines "$project\build\vs\generated\vsapp\version.hpp"
+          $diff = Compare-Object -ReferenceObject $fromCMake -DifferenceObject $fromMSBuild -CaseSensitive -SyncWindow 0
+          if ($diff) {
+            # <= only in the CMake header, => only in the MSBuild one
+            $diff | Format-Table -AutoSize | Out-String -Width 200
             throw "the Visual Studio project and CMake generate different version.hpp files"
           }
 
