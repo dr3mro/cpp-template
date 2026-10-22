@@ -5,7 +5,7 @@
 #   cx run -- Amr
 #   cx run release -- Amr
 #
-# Builds first, then runs build/<os>/<arch>/<preset>/<name> (or
+# Builds first, then runs build/<os>/<preset>/<name> (or
 # build/<os>/<arch>/<preset>/Debug/<name>.exe for the Visual Studio presets). Arguments
 # after "--" go to the program unchanged. A library project has no program:
 # the command says so and points at cx test and examples/.

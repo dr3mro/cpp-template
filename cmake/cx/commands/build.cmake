@@ -4,7 +4,7 @@
 #   cx build [preset] [target...] [--arch <name>] [-- <cmake args>]
 #   cx build release format-check tidy
 #
-# Configures when build/<os>/<arch>/<preset>/ has no cache, when a CMakeLists.txt or
+# Configures when build/<os>/<preset>/ has no cache, when a CMakeLists.txt or
 # CMakePresets.json is newer than it, or when -- gives cmake arguments. Then
 # runs `cmake --build <that folder> [--target <target>...]`.
 #

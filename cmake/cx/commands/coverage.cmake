@@ -5,7 +5,7 @@
 #
 # Runs `cmake --workflow --preset coverage-report` (configure the coverage
 # preset, run the tests under LLVM coverage, then write the HTML report) and
-# prints the path of build/<os>/<arch>/coverage/html/index.html.
+# prints the path of build/<os>/coverage/html/index.html.
 
 _cx_run(${CMAKE_COMMAND} --workflow --preset coverage-report)
 if(NOT CX_RUN_RESULT EQUAL 0)

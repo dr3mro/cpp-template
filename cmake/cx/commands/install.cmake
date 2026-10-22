@@ -5,8 +5,8 @@
 #   cx install release --prefix ~/apps/<name>
 #
 # Configures and builds the preset, then runs `cmake --install
-# build/<os>/<arch>/<preset>`. Without --prefix the preset's install folder is used
-# (build/<os>/<arch>/install/<preset>); the command prints where the files went.
+# build/<os>/<preset>`. Without --prefix the preset's install folder is used
+# (build/<os>/install/<preset>); the command prints where the files went.
 
 _cx_resolve("${CX_WORDS}" _preset _targets _extra)
 if(NOT _targets STREQUAL "")
