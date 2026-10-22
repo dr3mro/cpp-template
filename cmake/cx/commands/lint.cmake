@@ -1,0 +1,29 @@
+# lint - run clang-tidy and cmake-lint
+#
+# Usage:
+#   cx lint
+#
+# Runs the `tidy` target on debug-nosan (the preset it belongs to) and the
+# `cmake-lint` target on release. Both run even when the first one finds
+# something, and the command fails if either does.
+
+set(_failed OFF)
+_cx_ensure_configured(debug-nosan _result)
+if(NOT _result EQUAL 0)
+    _cx_fail("configure failed for preset 'debug-nosan'")
+endif()
+_cx_build(debug-nosan tidy _result)
+if(NOT _result EQUAL 0)
+    set(_failed ON)
+endif()
+_cx_ensure_configured(release _result)
+if(NOT _result EQUAL 0)
+    _cx_fail("configure failed for preset 'release'")
+endif()
+_cx_build(release cmake-lint _result)
+if(NOT _result EQUAL 0)
+    set(_failed ON)
+endif()
+if(_failed)
+    _cx_fail("lint found problems")
+endif()
