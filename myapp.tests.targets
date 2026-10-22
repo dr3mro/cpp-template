@@ -18,7 +18,7 @@
     <!-- The same doctest that cmake/TestFramework.cmake pins. Update both
          together; the SHA-256 is of the exact file at that commit. -->
     <VsDoctestUrl Condition="'$(VsDoctestUrl)' == ''">https://raw.githubusercontent.com/doctest/doctest/2d0a9359a60c51affe2a9bebb1be1dca47868151/doctest/doctest.h</VsDoctestUrl>
-    <VsDoctestSha256 Condition="'$(VsDoctestSha256)' == ''">cfd518a3ef90f67e1f3ba514df23fb3627437de1a2feeba78cf5062a40021421</VsDoctestSha256>
+    <VsDoctestSha256 Condition="'$(VsDoctestSha256)' == ''">B43CBBF7E07A824A5DE9717909AF4CCCF23072F303607243B21821F16D971CE3</VsDoctestSha256>
     <VsDoctestDir>$(BuildRoot)third_party\doctest</VsDoctestDir>
     <VsDoctestHeader>$(VsDoctestDir)\doctest.h</VsDoctestHeader>
   </PropertyGroup>
