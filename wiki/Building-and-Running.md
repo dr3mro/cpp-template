@@ -26,7 +26,7 @@ to pass a CMake or CTest option that `cx` does not wrap.
 cmake --preset debug           # 1. configure: check the compiler, fetch dependencies, write build files
 cmake --build --preset debug   # 2. build: compile and link
 ctest --preset debug           # 3. test: run the unit tests
-./build/debug/myapp            # run the program
+./build/Darwin/arm64/debug/myapp            # run the program
 ```
 
 You only need to **configure** again after changing build settings (options,
@@ -37,8 +37,9 @@ check automatically.
 ## Presets
 
 A **preset** is a named set of build settings in `CMakePresets.json`. Each one
-builds into its own folder, `build/<preset>/`, so switching presets never
-mixes results.
+builds into its own folder, `build/<os>/<arch>/<preset>/`, so switching presets never
+mixes results. `<arch>` is the target architecture: `arm64` for the Ninja presets in
+this template's default configuration.
 
 | Preset | Use it for | Notes |
 | --- | --- | --- |
@@ -70,7 +71,7 @@ doesn't behave as expected.
 The project also ships `<name>.sln`, a solution that opens directly in
 Visual Studio 2019, 2022 and 2026 **without CMake**. It finds the sources
 under `src/`, the headers under `include/` and the `main.cpp` in the project
-root by wildcard, and writes **everything** it builds to `build/vs/`: the
+root by wildcard, and writes **everything** it builds to `build/Windows/<arch>/vs/`: the
 program, the intermediate files, the generated headers and the vcpkg packages.
 It needs the **Desktop development with C++** workload, and nothing else: the
 solution never runs CMake. (The CMake build below does need CMake and Ninja,
@@ -120,16 +121,16 @@ values: `cmake --preset debug --fresh`.
 
 ```bash
 cmake --preset release && cmake --build --preset release
-cmake --install build/release
+cmake --install build/Darwin/arm64/release
 ```
 
-The result goes to `build/install/release/`: the program in `bin/` (app
+The result goes to `build/Darwin/arm64/install/release/`: the program in `bin/` (app
 projects), or the library, headers and CMake package (library projects).
 Choose another folder with `--prefix`:
-`cmake --install build/release --prefix ~/apps/myapp`.
+`cmake --install build/Darwin/arm64/release --prefix ~/apps/myapp`.
 
 `cmake --build --preset release --target package` also wraps the installed
-files into a `.tar.gz` (CPack) in `build/release/`.
+files into a `.tar.gz` (CPack) in `build/Darwin/arm64/release/`.
 
 ## Cleaning
 
@@ -146,8 +147,8 @@ The Zed and VS Code tasks "clean" and "clean all" run `cx clean` and
 ## Running the program with arguments
 
 ```bash
-./build/debug/myapp Amr           # macOS / Linux
-build\debug\myapp.exe Amr         # Windows
+./build/Darwin/arm64/debug/myapp Amr           # macOS / Linux
+build\Windows\arm64\debug\myapp.exe Amr         # Windows
 ```
 
 Sanitizer messages appear on the terminal when the `debug` build finds a

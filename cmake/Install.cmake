@@ -7,7 +7,7 @@
 #                   find_package(<name> CONFIG REQUIRED)
 #                   target_link_libraries(app PRIVATE <name>::<name>)
 #
-# The default prefix is build/install/<preset> (see ProjectDefaults.cmake).
+# The default prefix is build/<os>/<arch>/install/<preset> (see ProjectDefaults.cmake).
 # `cmake --build <dir> --target package` builds a .tar.gz with CPack.
 # =============================================================================
 include_guard(DIRECTORY)

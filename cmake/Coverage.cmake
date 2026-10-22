@@ -8,7 +8,7 @@
 #   myapp_add_coverage_report()  defines the `coverage` target (after tests/)
 #
 # `cmake --build --preset coverage --target coverage` runs the tests, prints a
-# summary and writes an HTML report to build/coverage/html/.
+# summary and writes an HTML report to build/<os>/<arch>/coverage/html/.
 #
 # Reads: MYAPP_ENABLE_COVERAGE (Options.cmake). Needs clang plus matching
 # llvm-profdata and llvm-cov.

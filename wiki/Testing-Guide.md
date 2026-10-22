@@ -7,7 +7,7 @@ covers how to write useful tests and how to run exactly the ones you want.
 ## How the pieces fit
 
 - Every `.cpp` in `tests/` is compiled into **one** test program,
-  `build/<preset>/tests/myapp_tests`, which links the project library. The
+  `build/<os>/<arch>/<preset>/tests/myapp_tests`, which links the project library. The
   Visual Studio solution builds the same program as `<name>_tests.exe`; see
   [Running the tests in Visual Studio](#running-the-tests-in-visual-studio).
 - `tests/test_main.cpp` supplies `main()` for doctest. Leave it as it is.
@@ -132,21 +132,21 @@ CTest runs each `TEST_CASE` as a separate process. For finer control (single
 subcases, suites, extra detail), run the test program directly:
 
 ```bash
-./build/debug/tests/myapp_tests                          # all tests, doctest's own report
-./build/debug/tests/myapp_tests -ltc                     # list test cases
-./build/debug/tests/myapp_tests -tc="Greeter*"           # test cases by name (wildcards)
-./build/debug/tests/myapp_tests -ts=greeter -sc=custom   # one suite, one subcase
-./build/debug/tests/myapp_tests -s                       # also show passing assertions
-./build/debug/tests/myapp_tests -d                       # print each test's duration
+./build/Darwin/arm64/debug/tests/myapp_tests                          # all tests, doctest's own report
+./build/Darwin/arm64/debug/tests/myapp_tests -ltc                     # list test cases
+./build/Darwin/arm64/debug/tests/myapp_tests -tc="Greeter*"           # test cases by name (wildcards)
+./build/Darwin/arm64/debug/tests/myapp_tests -ts=greeter -sc=custom   # one suite, one subcase
+./build/Darwin/arm64/debug/tests/myapp_tests -s                       # also show passing assertions
+./build/Darwin/arm64/debug/tests/myapp_tests -d                       # print each test's duration
 ```
 
-`./build/debug/tests/myapp_tests --help` lists every option.
+`./build/Darwin/arm64/debug/tests/myapp_tests --help` lists every option.
 
 ## Running the tests in Visual Studio
 
 The solution has a second project, `<name>_tests`, next to the app. It builds
 `tests/` together with the library sources into
-`build/vs/<Platform>/<Configuration>/<name>_tests/<name>_tests.exe`, the same
+`build/Windows/<arch>/vs/<Platform>/<Configuration>/<name>_tests/<name>_tests.exe`, the same
 program CMake builds. **F5** runs it under the debugger, so breakpoints in a
 test work like anywhere else.
 
@@ -164,7 +164,7 @@ doctest comes from one of two places:
 - **vcpkg**, when the project has a manifest and `vcpkg integrate install` has
   been run: the tests are the `tests` feature of `vcpkg.json`.
 - **A pinned download**, otherwise (a `--no-vcpkg` project, or vcpkg without
-  the integration): `build/vs/third_party/doctest/doctest.h`, downloaded once
+  the integration): `build/Windows/<arch>/vs/third_party/doctest/doctest.h`, downloaded once
   from the commit in `cmake/TestFramework.cmake` and checked against a pinned
   SHA-256 on every build. A corrupted file fails the build instead of
   compiling.
@@ -176,7 +176,7 @@ debuggers don't mix well:
 
 - **Zed**: press `F4` and pick **Debug tests**.
 - **VS Code**: Run and Debug → **Debug tests**.
-- **Terminal**: `lldb build/debug-nosan/tests/myapp_tests -- -tc="Greeter greets a name"`
+- **Terminal**: `lldb build/Darwin/arm64/debug-nosan/tests/myapp_tests -- -tc="Greeter greets a name"`
 
 Pass `-tc=...` so only the failing test runs; see
 [Debugging and sanitizers](Debugging-and-Sanitizers).
@@ -204,7 +204,7 @@ Pass `-tc=...` so only the failing test runs; see
 ```bash
 cmake --preset coverage
 cmake --build --preset coverage --target coverage
-open build/coverage/html/index.html      # xdg-open on Linux
+open build/Darwin/arm64/coverage/html/index.html      # xdg-open on Linux
 ```
 
 The report shows, line by line, what the tests executed. Red lines are code no

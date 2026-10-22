@@ -70,12 +70,12 @@ Turn hardening off with `-DMYAPP_ENABLE_HARDENING=OFF` (in a generated project,
 On Linux, see which protections a binary actually has:
 
 ```bash
-readelf -d build/release/myapp | grep -E 'BIND_NOW|FLAGS'   # full RELRO: BIND_NOW
-readelf -h build/release/myapp | grep Type                  # DYN (Position-Independent Executable)
+readelf -d build/Darwin/arm64/release/myapp | grep -E 'BIND_NOW|FLAGS'   # full RELRO: BIND_NOW
+readelf -h build/Darwin/arm64/release/myapp | grep Type                  # DYN (Position-Independent Executable)
 ```
 
 or install `checksec` (`pipx install checksec.py`) and run
-`checksec --file build/release/myapp`.
+`checksec --file build/Darwin/arm64/release/myapp`.
 
 ## Verifying a release
 

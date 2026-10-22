@@ -4,9 +4,9 @@
 #   cx build [preset] [target...] [--arch <name>] [-- <cmake args>]
 #   cx build release format-check tidy
 #
-# Configures when build/<preset>/ has no cache, when a CMakeLists.txt or
+# Configures when build/<os>/<arch>/<preset>/ has no cache, when a CMakeLists.txt or
 # CMakePresets.json is newer than it, or when -- gives cmake arguments. Then
-# runs `cmake --build --preset <preset> [--target <target>...]`.
+# runs `cmake --build <that folder> [--target <target>...]`.
 #
 # The preset is the first plain word that names one; every other word is a
 # build target. A target on its own uses the preset it belongs to: tidy uses

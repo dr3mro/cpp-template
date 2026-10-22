@@ -4,7 +4,7 @@
     Directory.Build.props - where MSBuild writes everything.
 
     Visual Studio likes to put some files next to the project file. This file
-    moves all of them under build/vs/, so a build never leaves anything new
+    moves all of them under build/Windows/<arch>/vs/, so a build never leaves anything new
     in the repository root.
 
     MSBuild imports this file before the project body runs, which is what
@@ -15,12 +15,18 @@
     It only applies to the hand-written project, which sets the marker
     property VsBuildRootProject before it imports the C++ targets. The
     CMake-generated solutions (the vs2022 and vs2026 presets) live in
-    build/vs2022 and build/vs2026, and they do not set the marker, so they
+    build/Windows/<arch>/vs2022 and build/Windows/<arch>/vs2026, and they do not set the marker, so they
     keep their own output paths.
   -->
   <PropertyGroup Condition="'$(VsBuildRootProject)' == 'true'">
+    <!-- The architecture folder, the same one cx and CMake use:
+         build/Windows/<arch>/. It follows the MSBuild platform. -->
+    <VsArch Condition="'$(Platform)' == 'ARM64'">arm64</VsArch>
+    <VsArch Condition="'$(Platform)' == 'Win32'">x86</VsArch>
+    <VsArch Condition="'$(VsArch)' == ''">x64</VsArch>
+
     <!-- The root of everything MSBuild writes for this project. -->
-    <BuildRoot Condition="'$(BuildRoot)' == ''">$(MSBuildThisFileDirectory)build\vs\</BuildRoot>
+    <BuildRoot Condition="'$(BuildRoot)' == ''">$(MSBuildThisFileDirectory)build\Windows\$(VsArch)\vs\</BuildRoot>
 
     <!-- NuGet restore and the C++ targets create obj\ next to the project by
          default; both follow these two. One folder per project, because NuGet

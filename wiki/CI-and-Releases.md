@@ -30,7 +30,7 @@ those PRs, so merge them when they're green.
 | `build-and-test` (Windows x64 and ARM64) | builds and tests the `release` preset with MSVC from a developer shell, on `windows-latest` and `windows-11-arm` | the same commands in a developer shell |
 | `msvc-asan` | the `debug` preset (ASan) with MSVC on x64 | `cmake --preset debug` in a developer shell |
 | `vs-generator` | the `vs2026` preset: the Visual Studio generator, no developer shell | `cmake --preset vs2026 && cmake --build --preset vs2026 && ctest --preset vs2026` |
-| `version` | the CMake project version matches the `VERSION` file | `cmake --preset debug-nosan` and compare `build/debug-nosan/generated/include/myapp/version.hpp` |
+| `version` | the CMake project version matches the `VERSION` file | `cmake --preset debug-nosan` and compare `build/<os>/arm64/debug-nosan/generated/include/myapp/version.hpp` |
 | `tsan` | the tests under ThreadSanitizer | `cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan` |
 | `coverage` | builds the coverage report and uploads the HTML as an artifact | `cmake --preset coverage && cmake --build --preset coverage --target coverage` |
 | `tidy` | clang-tidy 21 (pinned through pipx), findings are errors: on a pull request only the changed lines, on `main` every file | `cmake --preset debug-nosan -DMYAPP_TIDY_WERROR=ON && cmake --build --preset debug-nosan --target tidy` |

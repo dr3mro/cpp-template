@@ -40,7 +40,7 @@
     <RootNamespace>myapp</RootNamespace>
     <ProjectName>myapp_tests</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <!-- Same markers as the app project: the output goes to build/vs/, and
+    <!-- Same markers as the app project: the output goes to build/Windows/<arch>/vs/, and
          the wildcards stay warning-free because the IDE never rewrites the
          project. -->
     <VsBuildRootProject>true</VsBuildRootProject>

@@ -47,9 +47,9 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <!-- Marks this as the hand-written project. Directory.Build.props is
          imported by the C++ targets further down, so the marker is set in
-         time: only this project gets its output redirected to build/vs/,
-         never the CMake-generated solutions under build/vs2022 or
-         build/vs2026. -->
+         time: only this project gets its output redirected to build/Windows/<arch>/vs/,
+         never the CMake-generated solutions under build/Windows/<arch>/vs2022 or
+         build/Windows/<arch>/vs2026. -->
     <VsBuildRootProject>true</VsBuildRootProject>
     <!-- The project keeps wildcard items, which the IDE supports only in a
          read-only project. Visual Studio then never rewrites it; new files on
@@ -104,7 +104,7 @@
   <PropertyGroup>
     <!-- The output paths (OutDir, IntDir, the vcpkg folder and the folder for
          the generated headers) live in Directory.Build.props, so that every
-         file MSBuild writes stays under build/vs/. -->
+         file MSBuild writes stays under build/Windows/<arch>/vs/. -->
     <TargetName>myapp</TargetName>
   </PropertyGroup>
   <ItemGroup>

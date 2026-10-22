@@ -12,7 +12,7 @@ which opens in VS 2019, 2022 and 2026 without CMake. It needs the
 ## How clangd finds your build
 
 clangd needs to know how each file is compiled (include paths, defines, C++
-standard). CMake writes that into `build/<preset>/compile_commands.json` on
+standard). CMake writes that into `build/<os>/<arch>/<preset>/compile_commands.json` on
 every configure, and links `build/compile_commands.json` to the **last
 configured** preset. `.clangd` tells clangd to look there.
 

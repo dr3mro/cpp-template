@@ -17,7 +17,7 @@ macOS, and how to read what the tools tell you.
 | Platform | Tool | How |
 | --- | --- | --- |
 | Linux | LeakSanitizer (built into AddressSanitizer) | nothing to do: the `debug` and `ci` presets already check for leaks |
-| macOS | Apple's `leaks` | `leaks --atExit --quiet -- ./build/debug-nosan/myapp` |
+| macOS | Apple's `leaks` | `leaks --atExit --quiet -- ./build/Darwin/arm64/debug-nosan/myapp` |
 | macOS | LeakSanitizer (standalone) | build with `-fsanitize=leak` using Homebrew's LLVM |
 
 **The macOS catch**: Apple's AddressSanitizer does not include
@@ -77,7 +77,7 @@ it exits and reports what was left behind.
 
 ```bash
 cmake --preset debug-nosan && cmake --build --preset debug-nosan
-leaks --atExit --quiet -- ./build/debug-nosan/myapp
+leaks --atExit --quiet -- ./build/Darwin/arm64/debug-nosan/myapp
 ```
 
 The flags:
@@ -136,14 +136,14 @@ The template's `MYAPP_USE_LLVM_CLANG` option already picks Homebrew's
 `clang++` for you:
 
 ```bash
-cmake -S . -B build/leak -G Ninja \
+cmake -S . -B build/Darwin/arm64/leak -G Ninja \
   -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
   -DMYAPP_USE_LLVM_CLANG=ON \
   -DCMAKE_CXX_FLAGS="-fsanitize=leak" \
   -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=leak"
-cmake --build build/leak
-./build/leak/myapp
+cmake --build build/Darwin/arm64/leak
+./build/Darwin/arm64/leak/myapp
 ```
 
 The check runs automatically when the program exits, and the exit code is
@@ -162,7 +162,7 @@ Options come from the `LSAN_OPTIONS` environment variable, as
 | `max_leaks=<n>` | stop reporting after n leaks |
 
 ```bash
-LSAN_OPTIONS=verbosity=1 ./build/leak/myapp
+LSAN_OPTIONS=verbosity=1 ./build/Darwin/arm64/leak/myapp
 ```
 
 A suppressions file lists one pattern per line, for leaks you have decided
@@ -175,7 +175,7 @@ leak:myapp_third_party_init
 ```
 
 ```bash
-LSAN_OPTIONS=suppressions=lsan.supp ./build/leak/myapp
+LSAN_OPTIONS=suppressions=lsan.supp ./build/Darwin/arm64/leak/myapp
 ```
 
 ## In CI
@@ -193,7 +193,7 @@ must run on a macOS runner):
         run: |
           cmake --preset debug-nosan
           cmake --build --preset debug-nosan
-          leaks --atExit --quiet -- ./build/debug-nosan/myapp
+          leaks --atExit --quiet -- ./build/Darwin/arm64/debug-nosan/myapp
 ```
 
 `leaks` exits with 1 when it finds a leak, which fails the step.

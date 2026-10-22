@@ -812,9 +812,9 @@ Done. Next steps:
 ]=])
     if(_lib)
         string(APPEND _text [=[
-  cmake --install build/release
-  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/build/install/release"
-  cmake --build build/examples
+  cmake --install build/Darwin/arm64/release
+  cmake -S examples -B build/Darwin/arm64/examples -DCMAKE_PREFIX_PATH="$PWD/build/Darwin/arm64/install/release"
+  cmake --build build/Darwin/arm64/examples
 ]=])
     endif()
     string(APPEND _text [=[
@@ -836,8 +836,8 @@ Done. Next steps:
         # consumer linked against it would fail without the same flags.
         string(APPEND _text [=[
   cmake --preset release && cmake --build --preset release
-  cmake --install build/release
-  cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH=$PWD/build/install/release && cmake --build build/examples
+  cmake --install build/Darwin/arm64/release
+  cmake -S examples -B build/Darwin/arm64/examples -DCMAKE_PREFIX_PATH=$PWD/build/Darwin/arm64/install/release && cmake --build build/Darwin/arm64/examples
   zed .]=])
     else()
         string(APPEND _text [=[

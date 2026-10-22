@@ -91,7 +91,7 @@ A word that names a target picks the preset that target belongs to:
 | `cx clean [preset]` | removes one preset's compiled files; settings stay |
 | `cx clean --all` | removes `build/`, `docs/` and `vcpkg_installed/` |
 
-The build commands configure again only when `build/<preset>/CMakeCache.txt`
+The build commands configure again only when `build/<os>/<arch>/<preset>/CMakeCache.txt`
 is missing, or when `CMakePresets.json`, `CMakeUserPresets.json` or a source
 `CMakeLists.txt` is newer than the cache. A plain edit-and-build loop is
 therefore enough; there is no separate configure step to remember. Before
@@ -150,7 +150,7 @@ current operating system.
 | `cx help [command]` | list commands, or explain one |
 
 `cx version` reads `VERSION`; it does not need a build folder. `cx install`
-without `--prefix` installs to `build/install/<preset>/`.
+without `--prefix` installs to `build/<os>/<arch>/install/<preset>/`.
 
 ## Options
 

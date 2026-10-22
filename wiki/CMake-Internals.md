@@ -199,7 +199,7 @@ with the MAJOR version, signalling an ABI break.
 `cmake/templates/version.hpp.in` is a template; CMake fills in the version
 (from the `VERSION` file) and `git describe --tags --always --dirty` of the
 build (`v1.2.0-3-gabc1234`, with `-dirty` for uncommitted changes), writing
-`build/<preset>/generated/include/myapp/version.hpp`. It's written twice:
+`build/<os>/<arch>/<preset>/generated/include/myapp/version.hpp`. It's written twice:
 
 - **at configure time**, so clangd and clang-tidy find the header straight
   away;
@@ -226,7 +226,7 @@ It's a **macro**, not a function, so variables set by the package (such as
 
 ## Install and the CMake package (library mode)
 
-`cmake --install build/release` (prefix `build/install/<preset>` by default)
+`cmake --install build/Darwin/arm64/release` (prefix `build/<os>/<arch>/install/<preset>` by default)
 writes:
 
 ```text
@@ -282,8 +282,8 @@ an explanation before CMake runs. A new command is one file under
 ## Presets
 
 `CMakePresets.json` has a hidden `base` preset with the shared parts
-(Ninja generator, `build/${presetName}` output folder,
-`build/install/${presetName}` install folder, vcpkg toolchain from
+(Ninja generator, `build/${hostSystemName}/arm64/${presetName}` output folder,
+`build/${hostSystemName}/arm64/install/${presetName}` install folder, vcpkg toolchain from
 `$env{VCPKG_ROOT}`). The visible presets `inherit` it and only set
 `cacheVariables` such as `CMAKE_BUILD_TYPE` and `MYAPP_SANITIZER`. Presets only
 *choose options*; all the logic (which flags an option means) lives in the

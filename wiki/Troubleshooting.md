@@ -134,7 +134,7 @@ Homebrew's libc++ as well. With `-DMYAPP_USE_LLVM_CLANG=ON` the build adds
 the flags Homebrew's caveats ask for (`-L<prefix>/lib/c++`,
 `-L<prefix>/lib/unwind -lunwind` and an rpath for the libc++). If the build
 still mixes the two standard libraries, check that the compiler really is
-Homebrew's: `cmake -LA build/<preset> | grep CMAKE_CXX_COMPILER`.
+Homebrew's: `cmake -LA build/<os>/<arch>/<preset> | grep CMAKE_CXX_COMPILER`.
 
 **I changed the compiler but CMake keeps the old one**
 The compiler is fixed when a build folder is first configured. Use
@@ -142,7 +142,7 @@ The compiler is fixed when a build folder is first configured. Use
 
 **I moved or copied the project and Ninja keeps re-running CMake**
 Build trees contain absolute source, binary and toolchain paths. Do not reuse a
-`build/<preset>/` folder from another checkout or location: the wrapper checks
+`build/<os>/<arch>/<preset>/` folder from another checkout or location: the wrapper checks
 `CMakeCache.txt` and stops with the recorded and current paths instead of
 letting Ninja loop through stale `CONFIGURE_DEPENDS` state. Configure a fresh
 tree explicitly:
@@ -154,7 +154,7 @@ cmake --build --preset debug
 
 The same recovery works for other presets. `--fresh` is explicit and does not
 delete the old folder unless CMake is instructed to do so; alternatively,
-rename the old `build/<preset>/` folder and configure again.
+rename the old `build/<os>/<arch>/<preset>/` folder and configure again.
 
 ## Building
 
@@ -193,7 +193,7 @@ found by wildcard, so reload the solution after adding a file; see
 
 **Visual Studio left files in the project root**
 The output paths live in `Directory.Build.props`, so everything should land
-under `build/vs/`. If you see `obj\`, `Debug\`, `Release\` or
+under `build/Windows/<arch>/vs/`. If you see `obj\`, `Debug\`, `Release\` or
 `vcpkg_installed\` next to the solution, the props file was not picked up:
 check that `Directory.Build.props` sits in the project root and that the
 project still sets `VsBuildRootProject` (it is in the `Globals` property

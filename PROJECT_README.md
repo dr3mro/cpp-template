@@ -16,7 +16,7 @@ with `VCPKG_ROOT` set ([setup](https://github.com/dr3mro/cpp-template/wiki/Getti
 ```
 
 `cx` is the project command. `./cx build release` builds the optimised
-preset, `./cx install release` installs it into `build/install/release/`, and
+preset, `./cx install release` installs it into `build/Darwin/arm64/install/release/`, and
 `./cx help` lists the rest, including `dev`, `fmt`, `lint`, `docs`,
 `coverage`, `fuzz` and `package`. Presets are plain words: `./cx test nosan`,
 `./cx run release -- Name`. See
@@ -59,7 +59,7 @@ files, the `.vcxproj`, or the optional `myapp.user.props` next to it
 (git-ignored). The solution loads a little slower because a read-only project
 cannot use Visual Studio's project cache.
 
-Everything the build writes stays under `build/vs/`: the program, the
+Everything the build writes stays under `build/Windows/<arch>/vs/`: the program, the
 intermediate files, the generated headers and the vcpkg packages. Only
 `.vs/` (Visual Studio's own folder), an optional `myapp.vcxproj.user` and
 `myapp.user.props` appear in the project root, and all are git-ignored. The IntelliSense cache can be

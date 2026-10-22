@@ -1,7 +1,7 @@
 # =============================================================================
 # CompileCommands.cmake - point clangd at the last configured preset
 #
-# Each preset writes compile_commands.json into its own build/<preset>/ dir.
+# Each preset writes compile_commands.json into its own build/<os>/<arch>/<preset>/ dir.
 # clangd looks in build/ (see .clangd), so this links
 # build/compile_commands.json to whichever preset was configured last.
 #

@@ -220,7 +220,7 @@ cd hello
 cmake --preset debug             # configure (the first run downloads doctest; give it a minute)
 cmake --build --preset debug     # compile
 ctest --preset debug             # run the tests
-./build/debug/hello Amr          # prints: Hello, Amr!
+./build/Darwin/arm64/debug/hello Amr          # prints: Hello, Amr!
 ```
 
 If all four commands succeed, you're set. Next:

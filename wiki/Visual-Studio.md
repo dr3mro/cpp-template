@@ -166,15 +166,16 @@ the two shared files.
 
 ## Where the output goes
 
-**Everything** MSBuild writes stays under `build/vs/`:
+**Everything** MSBuild writes stays under `build/Windows/<arch>/vs/` (`<arch>` is the
+platform being built: `x64`, `arm64` or `x86`):
 
 | | |
 | --- | --- |
-| Program, import library, linker PDB | `build/vs/<Platform>/<Configuration>/<project>/` (for example `build/vs/x64/Release/vsapp/`) |
-| Intermediate files | `build/vs/obj/<Platform>/<Configuration>/<project>/` (objects, `.ilk`, `.iobj`, `.ipdb`, `.tlog`, `.lastbuildstate`, `.recipe`, the compiler PDB, the code-analysis output) |
-| NuGet restore files | `build/vs/obj/<project>/` |
-| Generated headers | `build/vs/generated/<name>/`, and `build/vs/generated-tests/<name>/` for the tests |
-| vcpkg packages (manifest mode) | `build/vs/vcpkg_installed/<Platform>/`, and `.../<Platform>/tests/` for the tests |
+| Program, import library, linker PDB | `build/Windows/<arch>/vs/<Platform>/<Configuration>/<project>/` (for example `build/Windows/x64/vs/x64/Release/vsapp/`) |
+| Intermediate files | `build/Windows/<arch>/vs/obj/<Platform>/<Configuration>/<project>/` (objects, `.ilk`, `.iobj`, `.ipdb`, `.tlog`, `.lastbuildstate`, `.recipe`, the compiler PDB, the code-analysis output) |
+| NuGet restore files | `build/Windows/<arch>/vs/obj/<project>/` |
+| Generated headers | `build/Windows/<arch>/vs/generated/<name>/`, and `build/Windows/<arch>/vs/generated-tests/<name>/` for the tests |
+| vcpkg packages (manifest mode) | `build/Windows/<arch>/vs/vcpkg_installed/<Platform>/`, and `.../<Platform>/tests/` for the tests |
 
 The project name is part of the output path, so that two projects of the same
 solution (the app and the test program) compile and link next to each other
@@ -184,7 +185,7 @@ without writing over each other.
 it before the project itself, which is what lets it redirect the intermediate
 output (NuGet restore and the vcpkg manifest integration need to know their
 paths early). It only applies to this hand-written project; the
-CMake-generated solutions under `build/vs2022` and `build/vs2026` keep their
+CMake-generated solutions under `build/Windows/x64/vs2022` and `build/Windows/x64/vs2026` keep their
 own paths.
 
 Everything under `build/` is git-ignored, so nothing generated is ever
@@ -236,9 +237,9 @@ hold a version like `0.1.0`, the build stops with a message saying so.
 ## CMake and Visual Studio side by side
 
 `cmake --preset vs2026` (or `vs2022`) is still there and generates a *second*,
-CMake-managed solution under `build/vs2026/`. The two approaches don't
-conflict: they build into different folders (`build/vs/` for the checked-in
-solution, `build/vs2026/` for the CMake one), so you can use whichever fits
+CMake-managed solution under `build/Windows/x64/vs2026/`. The two approaches don't
+conflict: they build into different folders (`build/Windows/<arch>/vs/` for the checked-in
+solution, `build/Windows/x64/vs2026/` for the CMake one), so you can use whichever fits
 the moment. The CMake build is the one CI uses, and the one with the
 sanitizers and the coverage report. (The unit tests run in both: the solution
 builds `<name>_tests` too, see [Testing guide](Testing-Guide).)

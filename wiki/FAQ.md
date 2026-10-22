@@ -34,8 +34,8 @@ second project of the solution, so they build and run there too (with
 
 ### Where did my program go?
 
-Each preset builds into its own folder: `build/debug/myapp`,
-`build/release/myapp`, and so on. Tests are in `build/<preset>/tests/`.
+Each preset builds into its own folder: `build/Darwin/arm64/debug/myapp`,
+`build/Darwin/arm64/release/myapp`, and so on. Tests are in `build/<os>/<arch>/<preset>/tests/`.
 
 ### I added a `.cpp` file. Do I need to edit CMake?
 
@@ -99,7 +99,7 @@ Clang and MSVC.
 
 `cmake --build --preset debug -v` prints every compile and link command.
 The configure summary lists the main settings, and
-`build/<preset>/CMakeCache.txt` holds every cached value.
+`build/<os>/<arch>/<preset>/CMakeCache.txt` holds every cached value.
 
 ### How do I change the version?
 

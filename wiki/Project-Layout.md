@@ -26,7 +26,7 @@ myapp/
 ├── myapp.targets             the shared targets (the generated headers)
 ├── myapp.tests.targets       doctest for the tests (vcpkg or the pinned download)
 ├── myapp.user.props           optional local settings (create it; git-ignored)
-├── Directory.Build.props      where MSBuild writes everything (under build/vs/)
+├── Directory.Build.props      where MSBuild writes everything (under build/Windows/<arch>/vs/)
 ├── examples/                  a program using the installed library (library projects)
 ├── cmake/                     build modules, one per feature
 │   ├── cx/                    the cx command (dispatcher, library, commands)
@@ -124,7 +124,7 @@ New files are picked up automatically on the next build. You don't edit any
   read-only project itself cannot be edited by the IDE).
 - **`Directory.Build.props`**: where MSBuild writes everything. It sends the
   binaries, the intermediate files, the NuGet restore files, the vcpkg
-  packages and the generated headers to `build/vs/`, so a Visual Studio build
+  packages and the generated headers to `build/Windows/<arch>/vs/`, so a Visual Studio build
   never leaves anything new in the project root. It applies only to the
   hand-written project, not to the CMake-generated solutions.
 
@@ -132,12 +132,12 @@ New files are picked up automatically on the next build. You don't edit any
 
 | Folder | Made by | Contents |
 | --- | --- | --- |
-| `build/<preset>/` | `cmake --preset <preset>` | build files, the compiled program, tests, `compile_commands.json` |
-| `build/vs/<platform>/<config>/<project>/` | building the Visual Studio solution | the program, the import library and the linker PDB |
-| `build/vs/obj/` | building the Visual Studio solution | the intermediate files (objects, `.tlog`, the compiler PDB) and the NuGet restore files, in a folder per project |
-| `build/vs/generated/` | building the Visual Studio solution | the generated headers (`version.hpp`, `<name>_export.h`) |
-| `build/vs/vcpkg_installed/` | building the Visual Studio solution | the vcpkg packages of the manifest mode |
-| `build/install/<preset>/` | `cmake --install build/<preset>` | the installed result |
+| `build/<os>/<arch>/<preset>/` | `cmake --preset <preset>` | build files, the compiled program, tests, `compile_commands.json` |
+| `build/Windows/<arch>/vs/<platform>/<config>/<project>/` | building the Visual Studio solution | the program, the import library and the linker PDB |
+| `build/Windows/<arch>/vs/obj/` | building the Visual Studio solution | the intermediate files (objects, `.tlog`, the compiler PDB) and the NuGet restore files, in a folder per project |
+| `build/Windows/<arch>/vs/generated/` | building the Visual Studio solution | the generated headers (`version.hpp`, `<name>_export.h`) |
+| `build/Windows/<arch>/vs/vcpkg_installed/` | building the Visual Studio solution | the vcpkg packages of the manifest mode |
+| `build/<os>/<arch>/install/<preset>/` | `cmake --install build/<os>/<arch>/<preset>` | the installed result |
 | `build/compile_commands.json` | configuring | a link to the last preset's compile commands, for clangd |
 | `docs/` | the `docs` target | the documentation website and diagrams |
 

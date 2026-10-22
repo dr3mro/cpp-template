@@ -60,11 +60,11 @@ class shows the class form).
 cmake --preset release
 cmake --build --preset release
 ctest --preset release
-cmake --install build/release
+cmake --install build/Darwin/arm64/release
 ```
 
 `cmake --install` copies the library, its headers and a small CMake "package"
-into `mathlib/build/install/release/`. The package is what lets other projects
+into `mathlib/build/Darwin/arm64/install/release/`. The package is what lets other projects
 find the library with one line.
 
 **Static or shared?** By default you get a **static** library (`libmathlib.a`):
@@ -74,7 +74,7 @@ run time, configure with `-DBUILD_SHARED_LIBS=ON`:
 
 ```bash
 cmake --preset release -DBUILD_SHARED_LIBS=ON
-cmake --build --preset release && cmake --install build/release
+cmake --build --preset release && cmake --install build/Darwin/arm64/release
 ```
 
 The app side below is identical for both.
@@ -121,7 +121,7 @@ Three small edits:
                 "name": "dev",
                 "inherits": "debug",
                 "cacheVariables": {
-                    "CMAKE_PREFIX_PATH": "${sourceDir}/../mathlib/build/install/release"
+                    "CMAKE_PREFIX_PATH": "${sourceDir}/../mathlib/build/Darwin/arm64/install/release"
                 }
             }
         ],
@@ -156,7 +156,7 @@ Build and run with the new preset:
 cmake --preset dev
 cmake --build --preset dev
 ctest --preset dev
-./build/dev/calc            # ... mean: 2.5
+./build/Darwin/arm64/dev/calc            # ... mean: 2.5
 ```
 
 If CMake says `Could not find a package configuration file provided by
@@ -166,7 +166,7 @@ If CMake says `Could not find a package configuration file provided by
 ## Changing the library later
 
 Edit `mathlib`, then run `cmake --build --preset release && cmake --install
-build/release` in `mathlib` again, and rebuild `calc`. Bump the version in
+build/Darwin/arm64/release` in `mathlib` again, and rebuild `calc`. Bump the version in
 `mathlib/VERSION` when you release a change; `calc_find_dependency(mathlib
 0.2 CONFIG)` would then require at least that version.
 

@@ -6,8 +6,8 @@
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "installDir": "${sourceDir}/build/install/${presetName}",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/arm64/${presetName}",
+      "installDir": "${sourceDir}/build/${hostSystemName}/arm64/install/${presetName}",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake"
     },
     {
@@ -96,7 +96,7 @@
       "displayName": "Visual Studio 2022 (Windows only)",
       "generator": "Visual Studio 17 2022",
       "architecture": { "value": "x64", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2022",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/x64/vs2022",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "x64", "VCPKG_TARGET_TRIPLET": "x64-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
@@ -106,7 +106,7 @@
       "displayName": "Visual Studio 2022 ARM64 (Windows only)",
       "generator": "Visual Studio 17 2022",
       "architecture": { "value": "ARM64", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2022-arm64",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/arm64/vs2022",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "arm64", "VCPKG_TARGET_TRIPLET": "arm64-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
@@ -116,7 +116,7 @@
       "displayName": "Visual Studio 2022 x86 (Windows only)",
       "generator": "Visual Studio 17 2022",
       "architecture": { "value": "Win32", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2022-x86",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/x86/vs2022",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "x86", "VCPKG_TARGET_TRIPLET": "x86-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
@@ -127,7 +127,7 @@
       "generator": "Visual Studio 17 2022",
       "architecture": { "value": "x64", "strategy": "set" },
       "toolset": { "value": "host=x86", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2022-x86_x64",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/x64/vs2022-x86_x64",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "x64", "VCPKG_TARGET_TRIPLET": "x64-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
@@ -137,7 +137,7 @@
       "displayName": "Visual Studio 2026 (Windows only, CMake 4.2+)",
       "generator": "Visual Studio 18 2026",
       "architecture": { "value": "x64", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2026",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/x64/vs2026",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "x64", "VCPKG_TARGET_TRIPLET": "x64-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
@@ -147,7 +147,7 @@
       "displayName": "Visual Studio 2026 ARM64 (Windows only, CMake 4.2+)",
       "generator": "Visual Studio 18 2026",
       "architecture": { "value": "ARM64", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2026-arm64",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/arm64/vs2026",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "arm64", "VCPKG_TARGET_TRIPLET": "arm64-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
@@ -157,7 +157,7 @@
       "displayName": "Visual Studio 2026 x86 (Windows only, CMake 4.2+)",
       "generator": "Visual Studio 18 2026",
       "architecture": { "value": "Win32", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2026-x86",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/x86/vs2026",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "x86", "VCPKG_TARGET_TRIPLET": "x86-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
@@ -168,7 +168,7 @@
       "generator": "Visual Studio 18 2026",
       "architecture": { "value": "x64", "strategy": "set" },
       "toolset": { "value": "host=x86", "strategy": "set" },
-      "binaryDir": "${sourceDir}/build/vs2026-x86_x64",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/x64/vs2026-x86_x64",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake",
       "cacheVariables": { "MYAPP_WINDOWS_TARGET_ARCH": "x64", "VCPKG_TARGET_TRIPLET": "x64-windows" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }

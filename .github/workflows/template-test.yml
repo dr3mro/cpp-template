@@ -344,28 +344,32 @@ jobs:
             fi
           done
 
+      - name: Pick the build folder for this OS
+        run: echo "BUILD_OS=${{ runner.os == 'macOS' && 'Darwin' || 'Linux' }}" >> "$GITHUB_ENV"
+
       - name: Library mode install and consume
-        # `cmake --install build/release` uses the preset's installDir
-        # (build/install/release); the consumer example builds into build/examples.
+        # `cmake --install build/$BUILD_OS/arm64/release` uses the preset's installDir
+        # (build/$BUILD_OS/arm64/install/release); the consumer example builds
+        # into build/$BUILD_OS/arm64/examples.
         run: |
           cd /tmp/mylib
           cmake --preset release
           cmake --build --preset release
-          cmake --install build/release
-          cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/build/install/release"
-          cmake --build build/examples
-          ./build/examples/example
+          cmake --install build/$BUILD_OS/arm64/release
+          cmake -S examples -B build/$BUILD_OS/arm64/examples -DCMAKE_PREFIX_PATH="$PWD/build/$BUILD_OS/arm64/install/release"
+          cmake --build build/$BUILD_OS/arm64/examples
+          ./build/$BUILD_OS/arm64/examples/example
 
       - name: Library mode shared build
         # Uses the vcpkg toolchain so doctest is available and the tests link
         # against the shared library (exercising symbol visibility).
         run: |
           cd /tmp/mylib
-          cmake -S . -B build/shared -G Ninja -DBUILD_SHARED_LIBS=ON \
+          cmake -S . -B build/$BUILD_OS/arm64/shared -G Ninja -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-          cmake --build build/shared
-          ctest --test-dir build/shared --output-on-failure
+          cmake --build build/$BUILD_OS/arm64/shared
+          ctest --test-dir build/$BUILD_OS/arm64/shared --output-on-failure
 
       - name: A consumer does not inherit the project's warning flags
         # The library's flags (-Wall, -Wshadow, ...) belong to this project: a
@@ -637,7 +641,7 @@ jobs:
           try {
             cmake --preset release -DVSAPP_BUILD_TESTS=OFF
             if ($LASTEXITCODE -ne 0) { throw "cmake --preset release failed in the developer shell" }
-            $cache = Get-Content build/release/CMakeCache.txt -Raw
+            $cache = Get-Content build/Windows/arm64/release/CMakeCache.txt -Raw
             if ($cache -notmatch 'CMAKE_CXX_COMPILER:FILEPATH=.*cl\.exe') {
               throw "the developer shell did not make CMake pick MSVC"
             }
@@ -809,7 +813,7 @@ jobs:
             }
 
             Invoke-Cx @('build', 'vs') | Out-Null
-            $exe = "$project\build\vs2026\Debug\vsapp.exe"
+            $exe = "$project\build\Windows\x64\vs2026\Debug\vsapp.exe"
             if (-not (Test-Path -LiteralPath $exe)) { throw "cx build vs did not produce $exe" }
             Invoke-Cx @('test', 'vs') | Out-Null
             Assert-Match (Invoke-Cx @('run', 'vs', '--', 'Amr')) 'Hello, Amr!' 'cx run vs'
@@ -1004,6 +1008,7 @@ jobs:
         shell: pwsh
         run: |
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          $arch = if ($platform -eq 'ARM64') { 'arm64' } else { 'x64' }
           foreach ($config in @('Debug', 'Release')) {
             # RunTests=true builds the solution and then runs the test
             # program, so a failing test fails the build.
@@ -1014,7 +1019,7 @@ jobs:
             # The wildcards are supported because the project is read-only.
             if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of vsapp warned about wildcards" }
             # The tests are a project of the solution, and they ran.
-            $testsExe = "$env:RUNNER_TEMP\vsapp\build\vs\$platform\$config\vsapp_tests\vsapp_tests.exe"
+            $testsExe = "$env:RUNNER_TEMP\vsapp\build\Windows\$arch\vs\$platform\$config\vsapp_tests\vsapp_tests.exe"
             if (-not (Test-Path -LiteralPath $testsExe)) { throw "the Visual Studio project built no test program ($config)" }
             # doctest wraps the line in ANSI colour codes.
             if (($log | Out-String) -notmatch 'Status:.*SUCCESS!') { throw "the unit tests built by Visual Studio did not pass ($config)" }
@@ -1023,7 +1028,7 @@ jobs:
             Push-Location "$env:RUNNER_TEMP\vsapp"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
-            if ($extra) { $extra; throw "msbuild wrote files outside build/vs" }
+            if ($extra) { $extra; throw "msbuild wrote files outside build/Windows/$arch/vs" }
           }
 
       - name: MSBuild and CMake write the same version.hpp
@@ -1035,6 +1040,8 @@ jobs:
         shell: pwsh
         run: |
           $project = "$env:RUNNER_TEMP\vsapp"
+          $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          $arch = if ($platform -eq 'ARM64') { 'arm64' } else { 'x64' }
           # Compared line by line: MSBuild and CMake differ in line endings, a
           # byte-order mark and blank lines, none of which matters to the
           # compiler.
@@ -1056,8 +1063,8 @@ jobs:
           } finally {
             Pop-Location
           }
-          $fromCMake = Get-Lines "$project\build\release\generated\include\vsapp\version.hpp"
-          $fromMSBuild = Get-Lines "$project\build\vs\generated\vsapp\version.hpp"
+          $fromCMake = Get-Lines "$project\build\Windows\arm64\release\generated\include\vsapp\version.hpp"
+          $fromMSBuild = Get-Lines "$project\build\Windows\$arch\vs\generated\vsapp\version.hpp"
           $diff = Compare-Object -ReferenceObject $fromCMake -DifferenceObject $fromMSBuild -CaseSensitive -SyncWindow 0
           if ($diff) {
             # <= only in the CMake header, => only in the MSBuild one
@@ -1082,16 +1089,18 @@ jobs:
           }
           '@ | Set-Content -LiteralPath $source -Encoding utf8
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          $arch = if ($platform -eq 'ARM64') { 'arm64' } else { 'x64' }
           msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
           if ($LASTEXITCODE -ne 0) { throw "msbuild failed after adding a source file" }
           if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the rebuild warned about wildcards" }
-          $obj = Get-ChildItem "$env:RUNNER_TEMP\vsapp\build\vs\obj" -Recurse -Filter discovered.obj
+          $obj = Get-ChildItem "$env:RUNNER_TEMP\vsapp\build\Windows\$arch\vs\obj" -Recurse -Filter discovered.obj
           if (-not $obj) { throw "the new source file src/vsapp/core/discovered.cpp was not compiled" }
 
       - name: Build the library project with MSBuild
         shell: pwsh
         run: |
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          $arch = if ($platform -eq 'ARM64') { 'arm64' } else { 'x64' }
           foreach ($config in @('Debug', 'Release')) {
             msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=$platform -m -p:RunTests=true | Tee-Object -Variable log
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vslib ($config)" }
@@ -1100,7 +1109,7 @@ jobs:
             # The wildcards are supported because the project is read-only.
             if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of vslib warned about wildcards" }
             # A library project has tests too, and they ran.
-            $testsExe = "$env:RUNNER_TEMP\vslib\build\vs\$platform\$config\vslib_tests\vslib_tests.exe"
+            $testsExe = "$env:RUNNER_TEMP\vslib\build\Windows\$arch\vs\$platform\$config\vslib_tests\vslib_tests.exe"
             if (-not (Test-Path -LiteralPath $testsExe)) { throw "the library project built no test program ($config)" }
             if (($log | Out-String) -notmatch 'Status:.*SUCCESS!') { throw "the unit tests of vslib did not pass ($config)" }
             # C4335: a source file with lone CRs, which the generator must never write.
@@ -1108,7 +1117,7 @@ jobs:
             Push-Location "$env:RUNNER_TEMP\vslib"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
-            if ($extra) { $extra; throw "msbuild wrote files outside build/vs" }
+            if ($extra) { $extra; throw "msbuild wrote files outside build/Windows/$arch/vs" }
           }
 
       - name: Build the project of the PowerShell script with MSBuild
@@ -1136,20 +1145,21 @@ jobs:
             throw "the project without vcpkg does not turn the vcpkg manifest mode off"
           }
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          $arch = if ($platform -eq 'ARM64') { 'arm64' } else { 'x64' }
           msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m -p:RunTests=true | Tee-Object -Variable log
           if ($LASTEXITCODE -ne 0) { throw "msbuild failed for the project without vcpkg" }
           if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of the project without vcpkg warned about wildcards" }
           # The program lands in a folder of its own, so that the app and the
           # test program of the same solution do not write over each other.
-          if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg\vsnovcpkg.exe")) {
+          if (-not (Test-Path -LiteralPath "$project\build\Windows\$arch\vs\$platform\Release\vsnovcpkg\vsnovcpkg.exe")) {
             throw "the project without vcpkg produced no executable"
           }
           # Without a manifest the tests take doctest from the pinned download,
           # and they ran.
-          if (-not (Test-Path -LiteralPath "$project\build\vs\third_party\doctest\doctest.h")) {
+          if (-not (Test-Path -LiteralPath "$project\build\Windows\$arch\vs\third_party\doctest\doctest.h")) {
             throw "the project without vcpkg did not download doctest"
           }
-          if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg_tests\vsnovcpkg_tests.exe")) {
+          if (-not (Test-Path -LiteralPath "$project\build\Windows\$arch\vs\$platform\Release\vsnovcpkg_tests\vsnovcpkg_tests.exe")) {
             throw "the project without vcpkg produced no test program"
           }
           if (($log | Out-String) -notmatch 'Status:.*SUCCESS!') { throw "the tests of the project without vcpkg did not pass" }
@@ -1161,7 +1171,8 @@ jobs:
         run: |
           $project = "$env:RUNNER_TEMP\vsnovcpkg"
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
-          $header = "$project\build\vs\third_party\doctest\doctest.h"
+          $arch = if ($platform -eq 'ARM64') { 'arm64' } else { 'x64' }
+          $header = "$project\build\Windows\$arch\vs\third_party\doctest\doctest.h"
           Add-Content -LiteralPath $header -Value "// corrupted by the template test"
           msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
           if ($LASTEXITCODE -eq 0) { throw "the build accepted a doctest header with the wrong hash" }

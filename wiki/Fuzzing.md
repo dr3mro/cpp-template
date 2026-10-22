@@ -180,7 +180,7 @@ How to read it:
 - **`'buffer' (line 10)`**: the variable that overflowed.
 - **`SUMMARY: ... parse_age.cpp:13`**: the line that did it.
 - **`Test unit written to ./crash-...`**: the exact input that triggers the bug.
-  With `fuzz-run` it lands in `build/fuzz/fuzz/`.
+  With `fuzz-run` it lands in `build/Darwin/arm64/fuzz/fuzz/`.
 
 ## Step 3: reproduce, fix and keep the bug fixed
 
@@ -188,10 +188,10 @@ How to read it:
 replays that one input:
 
 ```bash
-./build/fuzz/fuzz_parse_age build/fuzz/fuzz/crash-58b60c14...
+./build/Darwin/arm64/fuzz/fuzz_parse_age build/Darwin/arm64/fuzz/fuzz/crash-58b60c14...
 ```
 
-To see what the input was, use `xxd build/fuzz/fuzz/crash-58b60c14...`. Here it is
+To see what the input was, use `xxd build/Darwin/arm64/fuzz/fuzz/crash-58b60c14...`. Here it is
 just 5 or more bytes, more than the 4-byte buffer holds.
 
 You can also debug it: run the same command under `lldb`, or put a breakpoint in
@@ -219,7 +219,7 @@ Rebuild, then replay the crash file again. It should now print
 `fuzz-run` (and CI) retries it first:
 
 ```bash
-cp build/fuzz/fuzz/crash-58b60c14... fuzz/corpus/fuzz_parse_age/regression_overflow
+cp build/Darwin/arm64/fuzz/fuzz/crash-58b60c14... fuzz/corpus/fuzz_parse_age/regression_overflow
 ```
 
 It's also worth adding a normal doctest case for the same input in
@@ -233,7 +233,7 @@ kinds, kept in different places on purpose:
 | Folder | Who writes it | Committed? | What it holds |
 | --- | --- | --- | --- |
 | `fuzz/corpus/fuzz_<name>/` | you | yes | **seeds**: a few hand-picked examples, plus regression inputs for bugs you fixed |
-| `build/fuzz/fuzz-corpus/fuzz_<name>/` | the fuzzer | no | every new input that reached new code during `fuzz-run` |
+| `build/Darwin/arm64/fuzz/fuzz-corpus/fuzz_<name>/` | the fuzzer | no | every new input that reached new code during `fuzz-run` |
 
 `fuzz-run` passes both folders to each fuzzer. It reads the seeds and writes
 new finds only into the build folder, so your committed seeds never change
@@ -287,8 +287,8 @@ only inputs that add coverage:
 
 ```bash
 mkdir -p /tmp/merged
-./build/fuzz/fuzz_<name> -merge=1 /tmp/merged \
-    fuzz/corpus/fuzz_<name> build/fuzz/fuzz-corpus/fuzz_<name>
+./build/Darwin/arm64/fuzz/fuzz_<name> -merge=1 /tmp/merged \
+    fuzz/corpus/fuzz_<name> build/Darwin/arm64/fuzz/fuzz-corpus/fuzz_<name>
 rm -rf fuzz/corpus/fuzz_<name> && mv /tmp/merged fuzz/corpus/fuzz_<name>
 git add fuzz/corpus/fuzz_<name>
 ```
@@ -303,7 +303,7 @@ shows this). Every later `fuzz-run`, locally and in CI, retries it first.
 Before committing a large crash input, shrink it:
 
 ```bash
-./build/fuzz/fuzz_<name> -minimize_crash=1 -runs=10000 \
+./build/Darwin/arm64/fuzz/fuzz_<name> -minimize_crash=1 -runs=10000 \
     -exact_artifact_path=fuzz/corpus/fuzz_<name>/regression_short crash-<hash>
 ```
 
@@ -325,7 +325,7 @@ quote, and a byte written as backslash-x plus two hex digits. That is why the
 line break above is written as two hex bytes.
 
 and pass it when running the fuzzer directly:
-`./build/fuzz/fuzz_<name> -dict=fuzz/fuzz_<name>.dict build/fuzz/fuzz-corpus/fuzz_<name> fuzz/corpus/fuzz_<name>`.
+`./build/Darwin/arm64/fuzz/fuzz_<name> -dict=fuzz/fuzz_<name>.dict build/Darwin/arm64/fuzz/fuzz-corpus/fuzz_<name> fuzz/corpus/fuzz_<name>`.
 
 ## Writing good fuzz targets
 
@@ -351,7 +351,7 @@ and pass it when running the fuzzer directly:
 Pass these when running a fuzz binary directly:
 
 ```bash
-./build/fuzz/fuzz_parse_age build/fuzz/fuzz-corpus/fuzz_parse_age fuzz/corpus/fuzz_parse_age \
+./build/Darwin/arm64/fuzz/fuzz_parse_age build/Darwin/arm64/fuzz/fuzz-corpus/fuzz_parse_age fuzz/corpus/fuzz_parse_age \
     -max_total_time=600 -max_len=256 -jobs=4 -workers=4
 ```
 
@@ -366,7 +366,7 @@ Pass these when running a fuzz binary directly:
 | `-merge=1 out_dir in_dir...` | Combine corpora, keeping only inputs that add coverage |
 
 The first folder you pass is where new interesting inputs are saved;
-`fuzz-run` uses `build/fuzz/fuzz-corpus/<name>/` for this, and only reads from
+`fuzz-run` uses `build/Darwin/arm64/fuzz/fuzz-corpus/<name>/` for this, and only reads from
 `fuzz/corpus/<name>/`, so your committed seeds never change by themselves.
 
 ## How it's wired up
@@ -381,7 +381,7 @@ The first folder you pass is where new interesting inputs are saved;
   library and adds `-fsanitize=fuzzer` (libFuzzer's own `main()`) to those binaries
   only.
 - **`fuzz-run` target**: runs each fuzzer for `MYAPP_FUZZ_SECONDS` (default 10),
-  with `build/fuzz/fuzz-corpus/<name>/` as the writable corpus and
+  with `build/Darwin/arm64/fuzz/fuzz-corpus/<name>/` as the writable corpus and
   `fuzz/corpus/<name>/` as the seeds.
 - **CI**: the `fuzz` job in `.github/workflows/ci.yml` runs every fuzzer on each
   push, so a regression input you commit to the corpus is retried automatically.

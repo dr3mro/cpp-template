@@ -68,7 +68,7 @@ Debug myapp** or **Debug tests**.
 
 ```bash
 cmake --preset debug-nosan && cmake --build --preset debug-nosan
-lldb build/debug-nosan/myapp -- Amr          # arguments after --
+lldb build/Darwin/arm64/debug-nosan/myapp -- Amr          # arguments after --
 ```
 
 The LLDB commands you need most:
@@ -86,7 +86,7 @@ The LLDB commands you need most:
 | `quit` | `q` | exit |
 
 To debug a single failing test, start the test program with doctest's filter:
-`lldb build/debug-nosan/tests/myapp_tests -- -tc="Greeter greets a name"`.
+`lldb build/Darwin/arm64/debug-nosan/tests/myapp_tests -- -tc="Greeter greets a name"`.
 
 To catch a sanitizer report in the debugger, run the *sanitized* binary under
 LLDB and break on the report: `b __sanitizer::Die` (ASan/UBSan), then `bt`
@@ -173,8 +173,8 @@ of code it runs to be instrumented, including the C++ standard library and
 every dependency.
 
 ```bash
-cmake -S . -B build/msan -DMYAPP_SANITIZER=memory -DMYAPP_USE_LLVM_CLANG=ON
-cmake --build build/msan
+cmake -S . -B build/Darwin/arm64/msan -DMYAPP_SANITIZER=memory -DMYAPP_USE_LLVM_CLANG=ON
+cmake --build build/Darwin/arm64/msan
 ```
 
 With a normal (uninstrumented) standard library, MSan reports uninitialized
@@ -208,7 +208,7 @@ variables yourself:
 | `TSAN_OPTIONS` | `second_deadlock_stack=1` | more detail on lock-order problems |
 | any | `log_path=/tmp/san` | write reports to files instead of the terminal |
 
-Example: `ASAN_OPTIONS=detect_leaks=0 ./build/debug/myapp`.
+Example: `ASAN_OPTIONS=detect_leaks=0 ./build/Darwin/arm64/debug/myapp`.
 
 Leak detection works on Linux, where AddressSanitizer includes
 LeakSanitizer. Apple's AddressSanitizer does not, so the sanitized presets

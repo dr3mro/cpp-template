@@ -143,7 +143,7 @@ jobs:
         run: |
           cmake --preset debug-nosan -DMYAPP_BUILD_TESTS=OFF
           version="$(head -n1 VERSION | tr -d '[:space:]')"
-          project="$(grep -o 'kVersion = "[^"]*"' build/debug-nosan/generated/include/myapp/version.hpp | sed 's/.*"\(.*\)"/\1/')"
+          project="$(grep -o 'kVersion = "[^"]*"' build/Linux/arm64/debug-nosan/generated/include/myapp/version.hpp | sed 's/.*"\(.*\)"/\1/')"
           echo "VERSION: '$version'  CMake project: '$project'"
           if [ "$version" != "$project" ]; then
             echo "::error::the VERSION file ($version) and the CMake project version ($project) disagree"
@@ -192,7 +192,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-html-${{ matrix.os }}
-          path: build/coverage/html
+          path: build/${{ contains(matrix.os, 'macos') && 'Darwin' || 'Linux' }}/arm64/coverage/html
           if-no-files-found: ignore
 
   cmake-lint:
@@ -246,7 +246,7 @@ jobs:
         run: |
           cmake --build --preset debug-nosan --target myapp_version
           git diff -U0 "origin/${{ github.base_ref }}...HEAD" -- '*.cpp' '*.hpp' '*.h' \
-            | clang-tidy-diff -p1 -path build/debug-nosan -clang-tidy-binary "$CLANG_TIDY" -quiet -j 0 \
+            | clang-tidy-diff -p1 -path build/Linux/arm64/debug-nosan -clang-tidy-binary "$CLANG_TIDY" -quiet -j 0 \
             | tee tidy.log
           if grep -q ': warning:\|: error:' tidy.log; then
             echo "::error::clang-tidy found problems in the changed lines (see above)"
