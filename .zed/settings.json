@@ -1,7 +1,29 @@
 {
   "format_on_save": "on",
   "languages": {
-    "C++": { "tab_size": 4 }
+    "C++": { "tab_size": 4 },
   },
-  "file_scan_exclusions": ["**/.git", "**/.cache", "**/build", "**/docs"]
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.cache",
+    "**/build",
+    "**/cmake-build-*",
+    "**/docs",
+    "**/.vscode",
+    "**/cx",
+    "**/cx.cmd",
+    "**/cx.ps1",
+    "**/*.sln",
+    "**/*.vcxproj",
+    "**/*.props",
+    "**/*.targets",
+    "**/cliff.toml",
+    "**/lychee.toml",
+    "**/examples",
+    "**/scripts",
+    "**/wiki",
+    "**/vcpkg_installed",
+    "*.md",
+    "Doxyfile*",
+  ],
 }
