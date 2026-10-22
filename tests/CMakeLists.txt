@@ -3,7 +3,8 @@
 #
 # Every .cpp in tests/ is compiled into one test executable that links the
 # library. Each TEST_CASE is registered with CTest individually, so
-# `ctest --preset debug` lists and runs them one by one.
+# `ctest --preset debug` lists and runs them one by one. In app mode, a
+# `<name>_version` test runs the program with --version.
 #
 # Built when MYAPP_BUILD_TESTS is ON; vcpkg then installs doctest (the "tests"
 # feature in vcpkg.json, requested in PreProject.cmake).
@@ -29,3 +30,13 @@ target_link_libraries(${PROJECT_NAME}_tests PRIVATE
 
 include(${doctest_DIR}/doctest.cmake)
 doctest_discover_tests(${PROJECT_NAME}_tests)
+
+# A smoke test of the program itself (app mode only): it starts, and
+# prints the version from vcpkg.json. The app target is defined in the
+# top-level CMakeLists.txt before this directory is added.
+if(NOT MYAPP_LIBRARY_MODE)
+    add_test(NAME ${PROJECT_NAME}_version COMMAND ${PROJECT_NAME} --version)
+    string(REPLACE "." "\\." _myapp_version_regex "${PROJECT_VERSION}")
+    set_tests_properties(${PROJECT_NAME}_version PROPERTIES
+        PASS_REGULAR_EXPRESSION "^${PROJECT_NAME} ${_myapp_version_regex} ")
+endif()

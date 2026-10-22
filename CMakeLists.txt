@@ -80,15 +80,6 @@ endif()
 if(MYAPP_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests) # ${PROJECT_NAME}_tests, registered with CTest
-
-    # A smoke test of the program itself: it starts, and reports the version
-    # from vcpkg.json.
-    if(NOT MYAPP_LIBRARY_MODE)
-        add_test(NAME ${PROJECT_NAME}_version COMMAND ${PROJECT_NAME} --version)
-        string(REPLACE "." "\\." _myapp_version_regex "${PROJECT_VERSION}")
-        set_tests_properties(${PROJECT_NAME}_version PROPERTIES
-            PASS_REGULAR_EXPRESSION "^${PROJECT_NAME} ${_myapp_version_regex} ")
-    endif()
 endif()
 
 if(MYAPP_BUILD_FUZZERS)
