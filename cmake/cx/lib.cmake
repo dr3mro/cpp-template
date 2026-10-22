@@ -874,6 +874,10 @@ function(_cx_configure preset out_result)
         list(APPEND _args --fresh)
     endif()
     list(APPEND _args "-DCX_TARGET_ARCH=${_target}" ${_arch_args})
+    # The preset installDir has no arch segment, so a cross build would share the
+    # native install folder. Keep the install next to the build folder.
+    get_filename_component(_root "${_dir}" DIRECTORY)
+    list(APPEND _args "-DCMAKE_INSTALL_PREFIX=${_root}/install/${preset}")
     if(NOT CX_CONFIGURE_EXTRA STREQUAL "")
         list(APPEND _args ${CX_CONFIGURE_EXTRA})
     endif()

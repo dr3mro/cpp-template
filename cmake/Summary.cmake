@@ -26,8 +26,14 @@ else()
 endif()
 get_target_property(_myapp_lib_type ${PROJECT_NAME}_lib TYPE)
 
-# Reported as the target architecture; the Ninja build folder no longer has it.
-string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _myapp_arch)
+# The target architecture. On Windows CMAKE_SYSTEM_PROCESSOR is the host's, so
+# use the one MYAPP_WINDOWS_TARGET_ARCH selects.
+if(DEFINED MYAPP_WINDOWS_TARGET_ARCH)
+    set(_myapp_proc "${MYAPP_WINDOWS_TARGET_ARCH}")
+else()
+    set(_myapp_proc "${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+string(TOLOWER "${_myapp_proc}" _myapp_arch)
 if(_myapp_arch MATCHES "^(x86_64|amd64)$")
     set(_myapp_arch x64)
 elseif(_myapp_arch MATCHES "^(aarch64|arm64)$")
