@@ -17,7 +17,7 @@ macOS, and how to read what the tools tell you.
 | Platform | Tool | How |
 | --- | --- | --- |
 | Linux | LeakSanitizer (built into AddressSanitizer) | nothing to do: the `debug` and `ci` presets already check for leaks |
-| macOS | Apple's `leaks` | `leaks --atExit --quiet -- ./build/Darwin/debug-nosan/myapp` |
+| macOS | Apple's `leaks` | `cx leaks` |
 | macOS | LeakSanitizer (standalone) | build with `-fsanitize=leak` using Homebrew's LLVM |
 
 **The macOS catch**: Apple's AddressSanitizer does not include
@@ -76,15 +76,25 @@ ASAN_OPTIONS=detect_leaks=0 ctest --preset debug
 it exits and reports what was left behind.
 
 ```bash
+./cx leaks                  # build debug-nosan, then run the program under leaks
+./cx leaks -- Amr           # arguments for the program
+./cx leaks release          # another preset (not one with AddressSanitizer)
+```
+
+`cx leaks` runs `leaks -quiet -atExit -- build/Darwin/debug-nosan/myapp`,
+with the program's path and name read from the build. The raw command is
+the same thing typed by hand:
+
+```bash
 cmake --preset debug-nosan && cmake --build --preset debug-nosan
-leaks --atExit --quiet -- ./build/Darwin/debug-nosan/myapp
+leaks -quiet -atExit -- ./build/Darwin/debug-nosan/myapp
 ```
 
 The flags:
 
 | Flag | Meaning |
 | --- | --- |
-| `--atExit` | run the program and check for leaks when it exits. It must be the **last** option, followed by `--` and the command |
+| `--atExit` | run the program and check for leaks when it exits, followed by `--` and the command |
 | `-q`, `--quiet` | suppress the process header and footer, leaving just the leak report |
 | `--list` | print the leaks as a flat list instead of a tree |
 | `--groupByType` | group leaks of the same kind together |
@@ -191,9 +201,7 @@ must run on a macOS runner):
 ```yaml
       - name: Check for memory leaks
         run: |
-          cmake --preset debug-nosan
-          cmake --build --preset debug-nosan
-          leaks --atExit --quiet -- ./build/Darwin/debug-nosan/myapp
+          ./cx leaks
 ```
 
 `leaks` exits with 1 when it finds a leak, which fails the step.

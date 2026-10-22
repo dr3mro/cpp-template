@@ -18,7 +18,7 @@ with `VCPKG_ROOT` set ([setup](https://github.com/dr3mro/cpp-template/wiki/Getti
 `cx` is the project command. `./cx build release` builds the optimised
 preset, `./cx install release` installs it into `build/Darwin/install/release/`, and
 `./cx help` lists the rest, including `dev`, `fmt`, `lint`, `docs`,
-`coverage`, `fuzz` and `package`. Presets are plain words: `./cx test nosan`,
+`coverage`, `fuzz`, `leaks` (macOS) and `package`. Presets are plain words: `./cx test nosan`,
 `./cx run release -- Name`. See
 [The cx command](https://github.com/dr3mro/cpp-template/wiki/The-cx-Command).
 The `cmake`/`ctest` commands still work directly; all presets and options are

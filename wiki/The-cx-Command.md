@@ -141,6 +141,7 @@ current operating system.
 | `cx docs` | build the Doxygen website in `docs/` |
 | `cx coverage` | run the tests under coverage and write the HTML report |
 | `cx fuzz [--seconds N]` | build the fuzzers and run them (default time from the preset) |
+| `cx leaks [preset] [-- program args]` | macOS only: build `debug-nosan` (or the preset named), then run the program under Apple's `leaks` tool |
 | `cx package` | build release and make the CPack archive |
 | `cx install [preset] [--prefix <dir>]` | build and install the preset |
 | `cx presets` | show presets, aliases and whether each works here |
