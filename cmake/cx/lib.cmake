@@ -558,6 +558,29 @@ function(_cx_ensure_configured preset out_result)
     set(${out_result} "${_result}" PARENT_SCOPE)
 endfunction()
 
+# _cx_refind(<preset> <out-result> <TOOL>...): reconfigure <preset> when its
+# cache recorded any <NAME>_<TOOL> (e.g. CMAKE_LINT) as not found. find_program
+# only searches again on a configure, so a tool installed after the first
+# configure would otherwise stay missing and its target undefined.
+function(_cx_refind preset out_result)
+    set(${out_result} 0 PARENT_SCOPE)
+    set(_cache "${CX_ROOT}/build/${preset}/CMakeCache.txt")
+    if(NOT EXISTS "${_cache}")
+        return()
+    endif()
+    _cx_project_name(_name "${preset}")
+    string(TOUPPER "${_name}" _upper)
+    foreach(_tool IN LISTS ARGN)
+        file(STRINGS "${_cache}" _line REGEX "^${_upper}_${_tool}:[^=]*=.*-NOTFOUND$")
+        # The line ends in -NOTFOUND, which if(_line) reads as false.
+        if(NOT _line STREQUAL "")
+            _cx_configure("${preset}" _result)
+            set(${out_result} "${_result}" PARENT_SCOPE)
+            return()
+        endif()
+    endforeach()
+endfunction()
+
 # Run cmake --build for <preset> and the optional targets.
 function(_cx_build preset targets out_result)
     set(_args --build --preset "${preset}")
