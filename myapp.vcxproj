@@ -185,15 +185,18 @@
     <None Include=".clang-tidy" />
     <None Include="cmake\templates\version.hpp.in" />
     <None Include="VERSION" />
-    <None Include="vcpkg.json" />
+    <!-- A project without vcpkg has no manifest. -->
+    <None Include="vcpkg.json" Condition="Exists('vcpkg.json')" />
   </ItemGroup>
   <PropertyGroup>
     <!-- vcpkg: the manifest is used when vcpkg is around, so dependencies added
          to vcpkg.json later also work here. Without vcpkg the project still
-         builds. -->
+         builds. A project without a manifest has no vcpkg at all, so the
+         manifest mode stays off even where vcpkg is installed. -->
     <VcpkgEnableManifest Condition="'$(VcpkgRoot)'!='' or '$(VCPKG_ROOT)'!=''">true</VcpkgEnableManifest>
     <VcpkgEnabledFeature Condition="'$(VcpkgRoot)'!='' or '$(VCPKG_ROOT)'!=''"></VcpkgEnabledFeature>
     <VcpkgEnableManifest Condition="'$(VcpkgRoot)'=='' and '$(VCPKG_ROOT)'==''">false</VcpkgEnableManifest>
+    <VcpkgEnableManifest Condition="!Exists('$(MSBuildProjectDirectory)\vcpkg.json')">false</VcpkgEnableManifest>
   </PropertyGroup>
   <PropertyGroup>
     <!-- The debugger starts in the project root, so data files next to the

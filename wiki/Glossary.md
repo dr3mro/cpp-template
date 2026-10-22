@@ -58,6 +58,10 @@ exploit. See [Security](Security).
 **Header / source**: a `.hpp` file declares things other code may use; the
 matching `.cpp` file implements them.
 
+**FetchContent**: CMake's way to download the sources of a dependency and
+build it as part of the project, pinned to a commit. The alternative to
+vcpkg; see [Adding dependencies](Adding-Dependencies).
+
 **Install**: copying the built result into a prefix folder (`cmake --install`),
 so it can be used or packaged.
 

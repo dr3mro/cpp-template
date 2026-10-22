@@ -2,18 +2,27 @@
 
 ### Do I have to use vcpkg?
 
-It's the expected way: the presets point CMake at vcpkg's toolchain, and
-vcpkg installs doctest for the tests. Without it, leave `VCPKG_ROOT` unset,
-configure with plain `cmake -S . -B build -G Ninja` (no preset), and have every
-dependency installed on the system (doctest included, or
-`-DMYAPP_BUILD_TESTS=OFF`). CMake then warns that it's configuring without
-vcpkg, and `find_package` reports anything missing. (With `VCPKG_ROOT` set,
-even plain `cmake` picks up vcpkg automatically.)
+No. Two ways to get the dependencies:
+
+- **vcpkg** (the default): the presets point CMake at vcpkg's toolchain, and
+  vcpkg installs doctest for the tests. Without a vcpkg clone, leave
+  `VCPKG_ROOT` unset, configure with plain `cmake -S . -B build -G Ninja` (no
+  preset), and have every dependency installed on the system (doctest
+  included, or `-DMYAPP_BUILD_TESTS=OFF`). CMake then warns that it's
+  configuring without vcpkg, and `find_package` reports anything missing. (With
+  `VCPKG_ROOT` set, even plain `cmake` picks up vcpkg automatically.)
+- **FetchContent**: `-DMYAPP_USE_VCPKG=OFF` builds the dependencies from their
+  source, at a pinned commit. A project made with `--no-vcpkg` starts out
+  that way: it has no `vcpkg.json`, no toolchain file and no vcpkg anywhere,
+  and needs no package manager. See
+  [Adding dependencies](Adding-Dependencies).
 
 ### Why is the first configure so slow?
 
-vcpkg is building the dependencies from source. It caches the results, so
-later configures (and other projects using the same versions) are fast.
+With vcpkg, vcpkg is building the dependencies from source. It caches the
+results, so later configures (and other projects using the same versions) are
+fast. With FetchContent, the sources are downloaded and built once, into the
+build folder.
 
 ### Can I build in Visual Studio without CMake?
 

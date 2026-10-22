@@ -59,12 +59,30 @@ reads, so you can read any one of them on its own.
 | `cmake/Version.cmake`, `WriteVersion.cmake`                                   | the generated `<name>/version.hpp` (version + git hash)                         |
 | `cmake/ExportHeader.cmake`                                                    | shared-library settings and `<name>_export.h`                                   |
 | `cmake/Dependencies.cmake`                                                    | **you edit this**: third-party packages                                         |
+| `cmake/FetchDependencies.cmake`                                               | `<name>_fetch_dependency()`: a package built from its source                    |
+| `cmake/TestFramework.cmake`                                                   | the test framework, from vcpkg or from its source                               |
 | `cmake/CompileCommands.cmake`                                                 | the `build/compile_commands.json` link for clangd                               |
 | `cmake/Format.cmake`, `CMakeLint.cmake`, `Tidy.cmake`                         | the `format`, `format-check`, `cmake-lint` and `tidy` targets                   |
 | `cmake/Docs.cmake`, `ArchitectureDiagram.cmake`, `CollectClassDiagrams.cmake` | the `docs` target and its diagrams                                              |
 | `cmake/Install.cmake`, `Config.cmake.in`                                      | `cmake --install`, the CMake package and CPack                                  |
 | `cmake/DistClean.cmake`                                                       | the full clean                                                                  |
 | `cmake/Summary.cmake`                                                         | the summary printed after configuring                                           |
+
+## Where the dependencies come from
+
+A project gets its dependencies one of two ways, and `MYAPP_USE_VCPKG` decides
+which:
+
+- **vcpkg**: `myapp_find_dependency()` in `cmake/Dependencies.cmake` calls
+  `find_package()`, and vcpkg has installed the package. The toolchain file
+  in the presets is what makes vcpkg do that.
+- **FetchContent**: `myapp_fetch_dependency()` in
+  `cmake/FetchDependencies.cmake` downloads the sources at a pinned commit and
+  builds the package as part of the project.
+
+`cmake/TestFramework.cmake` picks doctest the same way, so
+`tests/CMakeLists.txt` does not have to know which of the two is in use. The
+configure summary names the provider in use.
 
 ## Before `project()`: PreProject.cmake
 

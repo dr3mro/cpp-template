@@ -16,6 +16,7 @@ clangd on macOS; works on Linux and Windows too.
 You need CMake 3.25+, Ninja, a C++17 compiler and
 [vcpkg](https://vcpkg.io) with `VCPKG_ROOT` set
 ([setup per OS](https://github.com/dr3mro/cpp-template/wiki/Getting-Started)).
+A project created with `--no-vcpkg` needs no vcpkg at all.
 
 ```bash
 git clone https://github.com/dr3mro/cpp-template.git ~/Templates/cpp-template
@@ -27,7 +28,9 @@ cmake --workflow --preset test   # configure, build and test (ASan + UBSan)
 
 Add `--lib` for an installable library, `--std 20` (or 23) for a newer
 standard, `--author "Jane Doe"` for the name in `main.cpp` (default: your git
-user name). On Windows, `scripts/new-project.ps1` takes the same options, in
+user name), `--no-vcpkg` for a project that builds its dependencies from their
+source instead of installing them with vcpkg. On Windows,
+`scripts/new-project.ps1` takes the same options, in
 both spellings (`-Std 20` and `--std 20`). Both scripts run the same
 generator, `scripts/new-project.cmake`, so they make the same project. See
 [Creating a project](https://github.com/dr3mro/cpp-template/wiki/Creating-a-Project).
@@ -47,8 +50,8 @@ and [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio).
 - **Visual Studio**: a checked-in `<name>.sln` that finds new sources by itself
 - **App + library layout**: all code in a library that the app, tests and
   fuzzers share; a library mode with an installable CMake package
-- **vcpkg** dependencies, pinned and cached; **doctest**, **libFuzzer**,
-  **llvm-cov**
+- **vcpkg** dependencies, pinned and cached (or, with `--no-vcpkg`, dependencies
+  built from their source); **doctest**, **libFuzzer**, **llvm-cov**
 - **clang-format**, **clang-tidy**, **cmake-lint**, **markdownlint**,
   **pre-commit** and **Doxygen** docs with generated diagrams
 - **GitHub Actions** with SHA-pinned actions: Linux, macOS and Windows builds,

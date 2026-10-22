@@ -26,6 +26,8 @@ myapp/
 ├── examples/                  a program using the installed library (library projects)
 ├── cmake/                     build modules, one per feature
 │   ├── Dependencies.cmake  ✏️ third-party packages
+│   ├── FetchDependencies.cmake  a package built from its source
+│   ├── TestFramework.cmake      the test framework (doctest)
 │   ├── Options.cmake          every build option
 │   ├── templates/version.hpp.in  template for the generated version header
 │   └── ...                    see "CMake internals"
@@ -78,7 +80,8 @@ New files are picked up automatically on the next build. You don't edit any
   `MAJOR.MINOR.PATCH`. CMake reads it, `myapp::kVersion` in `version.hpp`
   reflects it, and CI checks they match.
 - **`vcpkg.json`**: the project's name and dependencies. `builtin-baseline`
-  pins the version of every dependency; Dependabot updates it.
+  pins the version of every dependency; Dependabot updates it. A project made
+  with `--no-vcpkg` has no `vcpkg.json` at all.
 - **`cmake/Dependencies.cmake`**: one line per third-party package; see
   [Adding dependencies](Adding-Dependencies).
 - **`cmake/Options.cmake`**: every switch you can pass with `-D...`; see the

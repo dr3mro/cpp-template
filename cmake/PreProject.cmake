@@ -12,6 +12,7 @@
 # Options defined here (the rest are in Options.cmake):
 #   MYAPP_USE_LLVM_CLANG  use LLVM clang++ (coverage and fuzz presets need it)
 #   MYAPP_BUILD_TESTS     build the unit tests; also asks vcpkg for doctest
+#   MYAPP_USE_VCPKG       install the dependencies with vcpkg
 # =============================================================================
 include_guard(GLOBAL)
 
@@ -122,6 +123,13 @@ if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
 endif()
 
 # ---- vcpkg toolchain -----------------------------------------------------------
+# Whether vcpkg is used at all is a decision for the whole project: a project
+# without a vcpkg.json has no packages for vcpkg to install, and its
+# dependencies are built from their source instead (see
+# cmake/FetchDependencies.cmake). The switch has to exist before project(),
+# because that is when the toolchain file is read.
+option(MYAPP_USE_VCPKG "Install the dependencies with vcpkg" ON)
+
 # The setup steps depend on the host OS. vcpkg.json pins a baseline commit, so
 # the clone has to be complete: a shallow clone does not contain that commit
 # and the first configure fails with "failed to git show versions/baseline.json".
@@ -149,32 +157,46 @@ else()
         "Then open a new terminal (or run 'source ~/.bashrc') and configure again.")
 endif()
 
-# Plain `cmake` (e.g. Zed's built-in "CMake: Configure" task) skips the presets,
-# so fall back to the vcpkg toolchain from $VCPKG_ROOT when none was given.
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE AND DEFINED ENV{VCPKG_ROOT}
-   AND EXISTS "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        CACHE FILEPATH "vcpkg toolchain")
-endif()
+if(MYAPP_USE_VCPKG)
+    # Plain `cmake` (e.g. Zed's built-in "CMake: Configure" task) skips the
+    # presets, so fall back to the vcpkg toolchain from $VCPKG_ROOT when none
+    # was given.
+    if(NOT DEFINED CMAKE_TOOLCHAIN_FILE AND DEFINED ENV{VCPKG_ROOT}
+       AND EXISTS "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            CACHE FILEPATH "vcpkg toolchain")
+    endif()
 
-if(DEFINED CMAKE_TOOLCHAIN_FILE AND NOT EXISTS "${CMAKE_TOOLCHAIN_FILE}")
-    # The presets pass $env{VCPKG_ROOT}/scripts/...; with VCPKG_ROOT unset that
-    # becomes "/scripts/buildsystems/vcpkg.cmake", which CMake would only
-    # report as a missing file.
-    message(FATAL_ERROR
-        "Toolchain file not found: ${CMAKE_TOOLCHAIN_FILE}\n"
-        "VCPKG_ROOT is unset or does not point at a bootstrapped vcpkg clone.\n"
-        ${_myapp_vcpkg_setup_help})
-elseif(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    # Still allowed: every dependency can also come from the system or
-    # CMAKE_PREFIX_PATH. find_package() will say which one is missing.
-    message(WARNING
-        "Configuring without vcpkg: dependencies must already be installed "
-        "on this system.\n" ${_myapp_vcpkg_setup_help})
-endif()
+    if(DEFINED CMAKE_TOOLCHAIN_FILE AND NOT EXISTS "${CMAKE_TOOLCHAIN_FILE}")
+        # The presets pass $env{VCPKG_ROOT}/scripts/...; with VCPKG_ROOT unset
+        # that becomes "/scripts/buildsystems/vcpkg.cmake", which CMake would
+        # only report as a missing file.
+        message(FATAL_ERROR
+            "Toolchain file not found: ${CMAKE_TOOLCHAIN_FILE}\n"
+            "VCPKG_ROOT is unset or does not point at a bootstrapped vcpkg clone.\n"
+            ${_myapp_vcpkg_setup_help})
+    elseif(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+        # Still allowed: every dependency can also come from the system or
+        # CMAKE_PREFIX_PATH. find_package() will say which one is missing.
+        message(WARNING
+            "Configuring without vcpkg: dependencies must already be installed "
+            "on this system.\n" ${_myapp_vcpkg_setup_help})
+    endif()
 
-# doctest is a vcpkg manifest *feature*, so it is only downloaded when the tests
-# are built. vcpkg reads this during project().
-if(MYAPP_BUILD_TESTS)
-    list(APPEND VCPKG_MANIFEST_FEATURES tests)
+    # doctest is a vcpkg manifest *feature*, so it is only downloaded when the
+    # tests are built. vcpkg reads this during project().
+    if(MYAPP_BUILD_TESTS)
+        list(APPEND VCPKG_MANIFEST_FEATURES tests)
+    endif()
+else()
+    # No vcpkg. A toolchain file that points at vcpkg would still install the
+    # manifest, so it must not be there: the presets of a project without
+    # vcpkg have no toolchainFile.
+    if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "vcpkg\\.cmake$")
+        message(FATAL_ERROR
+            "MYAPP_USE_VCPKG is OFF, but the toolchain file is vcpkg's:\n"
+            "  ${CMAKE_TOOLCHAIN_FILE}\n"
+            "Remove the toolchainFile from the preset, or turn vcpkg back on "
+            "with -DMYAPP_USE_VCPKG=ON.")
+    endif()
 endif()

@@ -23,9 +23,15 @@ newcpp bank_lib --lib                   # an installable library instead of an a
 newcpp bank_app --github-user dr3mro    # fill in the GitHub Pages docs link in the README
 newcpp bank_app --author "Jane Doe"     # the name in main.cpp's header comment
 newcpp bank_app --no-git                # don't create a git repository
+newcpp bank_app --no-vcpkg              # no vcpkg: build the dependencies from their source
 ```
 
 Options can be combined: `newcpp bank_lib ~/dev/bank_lib --lib --std 20`.
+
+`--no-vcpkg` makes a project without a package manager: it has no
+`vcpkg.json`, no vcpkg toolchain file in its presets and no vcpkg block in
+Dependabot. Its dependencies are downloaded and built from their source
+instead. See [Adding dependencies](Adding-Dependencies#building-a-dependency-from-its-source-instead).
 
 The PowerShell version takes the same options with their PowerShell names,
 and also understands the bash-style names, so the same command line works
@@ -38,12 +44,13 @@ pwsh -NoProfile -File scripts/new-project.ps1 bank_lib -Lib -NoGit
 pwsh -NoProfile -File scripts/new-project.ps1 bank_app C:\dev\bank --std 20 --github-user dr3mro
 pwsh -NoProfile -File scripts/new-project.ps1 bank_lib --lib --no-git
 pwsh -NoProfile -File scripts/new-project.ps1 bank_app -Author "Jane Doe"
+pwsh -NoProfile -File scripts/new-project.ps1 bank_app -NoVcpkg
 ```
 
 Both wrappers accept both spellings: `--std 20`, `--std=20` and `-Std 20`;
-`--lib` and `-Lib`; `--no-git` and `-NoGit`; `--github-user <user>` and
-`-GitHubUser <user>`; `--author <name>` and `-Author <name>`. `-h` and
-`--help` print the usage.
+`--lib` and `-Lib`; `--no-git` and `-NoGit`; `--no-vcpkg` and `-NoVcpkg`;
+`--github-user <user>` and `-GitHubUser <user>`; `--author <name>` and
+`-Author <name>`. `-h` and `--help` print the usage.
 
 ## Your own defaults
 
@@ -59,6 +66,7 @@ the generator reads first:
 set(AUTHOR "Jane Doe")
 set(GITHUB_USER "janedoe")
 set(STD 20)
+set(NO_VCPKG ON)
 ```
 
 Options on the command line win over the file. The same settings can also be
@@ -148,7 +156,10 @@ instead of `bank`.
    [Maintaining the template](Maintaining-the-Template) for why that helps.
 6. Keeps only the pieces for the mode you picked (see below) and the matching
    release workflow.
-7. Runs `git init` and makes a first commit (unless `--no-git`).
+7. Takes vcpkg out of the project when you asked for it (`--no-vcpkg`): the
+   manifest, the toolchain file in the presets and the vcpkg block in
+   Dependabot are left out, and the switch that turns vcpkg off is set.
+8. Runs `git init` and makes a first commit (unless `--no-git`).
 
 It refuses to overwrite a folder that already exists.
 

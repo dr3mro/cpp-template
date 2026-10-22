@@ -13,14 +13,16 @@
 #   --std 17|20|23          C++ standard (default 17)
 #   --lib                   an installable library package instead of an app
 #   --no-git                do not create a git repository
+#   --no-vcpkg              no vcpkg: the dependencies are built from their
+#                           source with FetchContent instead
 #   --github-user <user>    fill in the README's GitHub Pages docs link
 #   --author <name>         name in main.cpp's header comment
 #                           (default: git config user.name, then "Your Name")
 #   -h, --help              print this text
 #
 # The same settings can be given before -P (cmake -DNAME=bank_app -DSTD=20
-# -DLIB=ON -P ...), and a personal defaults file can set AUTHOR, GITHUB_USER
-# and STD once for every project:
+# -DLIB=ON -DNO_VCPKG=ON -P ...), and a personal defaults file can set AUTHOR,
+# GITHUB_USER, STD and NO_VCPKG once for every project:
 #   Linux, macOS  $XDG_CONFIG_HOME/cpp-template/defaults.cmake
 #                 (or ~/.config/cpp-template/defaults.cmake)
 #   Windows       %APPDATA%\cpp-template\defaults.cmake
@@ -63,13 +65,16 @@ Options:
   --std 17|20|23         C++ standard (default 17)
   --lib                  an installable library package instead of an app
   --no-git               do not create a git repository
+  --no-vcpkg             no vcpkg: the dependencies are built from their
+                         source with FetchContent instead
   --github-user <user>   fill in the README's GitHub Pages docs link
   --author <name>        name in main.cpp's header comment
                          (default: git config user.name, then "Your Name")
   -h, --help             print this text
 
-PowerShell spellings work too: -Std 20, -Lib, -NoGit, -GitHubUser <user>,
--Author <name>. Values may also follow an equals sign: --std=20.
+PowerShell spellings work too: -Std 20, -Lib, -NoGit, -NoVcpkg,
+-GitHubUser <user>, -Author <name>. Values may also follow an equals sign:
+--std=20.
 
 <name> is a lower_snake_case C++ identifier, e.g. bank_app. It becomes the
 CMake project, the executable, the namespace and the include/<name>/ folder.]=])
@@ -86,7 +91,7 @@ function(_fail)
 endfunction()
 
 # ---- settings: defaults file, then -D values, then the command line -----------
-foreach(_var NAME DEST STD LIB NO_GIT GITHUB_USER AUTHOR)
+foreach(_var NAME DEST STD LIB NO_GIT NO_VCPKG GITHUB_USER AUTHOR)
     if(DEFINED ${_var})
         set(_from_d_${_var} "${${_var}}")
         set(_has_d_${_var} ON)
@@ -106,7 +111,7 @@ set(GITHUB_USER "")
 if(_defaults_file AND EXISTS "${_defaults_file}")
     include("${_defaults_file}")
 endif()
-foreach(_var NAME DEST STD LIB NO_GIT GITHUB_USER AUTHOR)
+foreach(_var NAME DEST STD LIB NO_GIT NO_VCPKG GITHUB_USER AUTHOR)
     if(_has_d_${_var})
         set(${_var} "${_from_d_${_var}}")
     endif()
@@ -158,7 +163,7 @@ while(_i LESS CMAKE_ARGC)
             set(_value "${CMAKE_ARGV${_i}}")
             math(EXPR _i "${_i} + 1")
         endif()
-    elseif(_key MATCHES "^(lib|nogit)$")
+    elseif(_key MATCHES "^(lib|nogit|novcpkg)$")
         if(_has_value)
             _fail("${_option} takes no value")
         endif()
@@ -182,6 +187,8 @@ while(_i LESS CMAKE_ARGC)
         set(LIB ON)
     elseif(_key STREQUAL "nogit")
         set(NO_GIT ON)
+    elseif(_key STREQUAL "novcpkg")
+        set(NO_VCPKG ON)
     endif()
 endwhile()
 if(DEFINED _cli_name)
@@ -567,6 +574,64 @@ function(_json_drop path indent regex)
     file(WRITE "${DEST}/${path}" "${_out}")
 endfunction()
 
+# _json_remove_key(<file> <key>): removes <key> from every object in <file>.
+# Line based, like _json_drop, so the layout of the file stays as it is. A key
+# that is the last one of its object leaves a comma behind, which JSON does not
+# allow, so that comma goes too. The result is checked with string(JSON), so a
+# template change that breaks the file fails here instead of producing a
+# broken file.
+function(_json_remove_key path key)
+    if(NOT EXISTS "${DEST}/${path}")
+        return()
+    endif()
+    file(READ "${DEST}/${path}" _rest)
+    set(_out "")
+    while(NOT _rest STREQUAL "")
+        string(FIND "${_rest}" "\n" _at)
+        if(_at EQUAL -1)
+            set(_line "${_rest}")
+            set(_rest "")
+            set(_eol "")
+        else()
+            string(SUBSTRING "${_rest}" 0 ${_at} _line)
+            math(EXPR _at "${_at} + 1")
+            string(SUBSTRING "${_rest}" ${_at} -1 _rest)
+            set(_eol "\n")
+        endif()
+        if(NOT _line MATCHES "\"${key}\"[ \t]*:")
+            string(APPEND _out "${_line}${_eol}")
+        endif()
+    endwhile()
+    # The key was the last one of its object: the comma before the closing
+    # brace goes too.
+    string(REGEX REPLACE ",(\n[ ]*\\})" "\\1" _out "${_out}")
+    string(JSON _type ERROR_VARIABLE _error TYPE "${_out}")
+    if(_error)
+        message(FATAL_ERROR "new-project: editing ${path} broke it: ${_error}")
+    endif()
+    file(WRITE "${DEST}/${path}" "${_out}")
+endfunction()
+
+# _drop_dependabot_ecosystem(<ecosystem>): removes the Dependabot update
+# block for one package ecosystem, and the comment above it. Dependabot has no
+# baseline to advance without a manifest, and it fails on a manifest it cannot
+# find.
+function(_drop_dependabot_ecosystem ecosystem)
+    if(NOT EXISTS "${DEST}/.github/dependabot.yml")
+        return()
+    endif()
+    file(READ "${DEST}/.github/dependabot.yml" _text)
+    # The block: the "- package-ecosystem:" line and the indented lines below
+    # it.
+    set(_block "\n  - package-ecosystem: ${ecosystem}\n(    [^\n]*\n)+")
+    string(REGEX REPLACE "${_block}" "" _text "${_text}")
+    # The comment above the block, which would describe a block that is gone.
+    string(REGEX REPLACE "\n  #[^\n]*${ecosystem}[^\n]*" "" _text "${_text}")
+    # No empty line at the end of the file.
+    string(REGEX REPLACE "\n+$" "\n" _text "${_text}")
+    file(WRITE "${DEST}/.github/dependabot.yml" "${_text}")
+endfunction()
+
 # ---- app or library ------------------------------------------------------------------
 set(_workflows "${DEST}/.github/workflows")
 if(_lib)
@@ -593,6 +658,28 @@ else()
     if(EXISTS "${_workflows}/release-app.yml")
         file(RENAME "${_workflows}/release-app.yml" "${_workflows}/release.yml")
     endif()
+endif()
+
+# ---- without vcpkg -------------------------------------------------------------------
+# A project without vcpkg gets its dependencies from their source, with
+# FetchContent (see cmake/FetchDependencies.cmake). Nothing here needs a
+# package manager, so the manifest, the toolchain file and the Dependabot
+# block for vcpkg go away.
+if(NO_VCPKG)
+    # The manifest is what vcpkg reads. Without it there is nothing to install.
+    file(REMOVE "${DEST}/vcpkg.json")
+
+    # The switch that tells the build not to use vcpkg. The template has it on,
+    # so only the value of the option changes.
+    _edit(cmake/PreProject.cmake
+          "(option\\(${_upper}_USE_VCPKG[ \t\r\n]+\"[^\"]*\"[ \t\r\n]+)ON\\)" "\\1OFF)")
+
+    # The presets must not point at the vcpkg toolchain any more: the toolchain
+    # would install the manifest, and there is no manifest.
+    _json_remove_key(CMakePresets.json toolchainFile)
+
+    # Dependabot has no vcpkg baseline to advance.
+    _drop_dependabot_ecosystem(vcpkg)
 endif()
 
 # ---- git --------------------------------------------------------------------------------
@@ -737,7 +824,14 @@ endif()
 string(CONFIGURE "${_text}" _text @ONLY)
 _say("${_text}")
 
-if(NOT _vcpkg_ready)
+if(NO_VCPKG)
+    set(_text [=[
+
+  This project has no vcpkg: the dependencies are downloaded and built from
+  their source (FetchContent) during the first configure, so that one needs a
+  network connection. See README.md for details.]=])
+    _say("${_text}")
+elseif(NOT _vcpkg_ready)
     set(_text [=[
 
 vcpkg is not set up yet (VCPKG_ROOT missing or invalid), so a CMake build

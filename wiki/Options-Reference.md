@@ -10,6 +10,7 @@ Every switch the template offers. Pass any of them when configuring, for example
 | `MYAPP_BUILD_TESTS`              | `ON`    | build the unit tests (and let vcpkg fetch doctest)                                                                           |
 | `MYAPP_LIBRARY_MODE`             | `OFF`   | build an installable library instead of an app (`--lib` sets it)                                                             |
 | `MYAPP_BUILD_FUZZERS`            | `OFF`   | build the fuzzers (the `fuzz` preset sets it)                                                                                |
+| `MYAPP_USE_VCPKG`                | `ON`    | install the dependencies with vcpkg; off means they are built from their source (`--no-vcpkg` sets it)                       |
 | `MYAPP_SANITIZER`                | empty   | `address` (with UBSan), `thread` or `memory`                                                                                 |
 | `MYAPP_ENABLE_HARDENING`         | `ON`    | security flags in release builds                                                                                             |
 | `MYAPP_ENABLE_LTO`               | `ON`    | link-time optimisation of optimised app builds (never in library mode)                                                       |

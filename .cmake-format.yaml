@@ -33,6 +33,12 @@ parse:
     myapp_find_dependency:
       pargs: "1+"                   # <package> [find_package arguments...]
       flags: [PUBLIC]
+    # cmake/FetchDependencies.cmake
+    myapp_fetch_dependency:
+      pargs: 3                      # <name> <git-url> <commit>
+      flags: [PUBLIC, SYSTEM]
+      kwargs:
+        FIND_PACKAGE_ARGS: "+"      # [find_package arguments...]
     myapp_find_msvc_cl:
       pargs: 1                      # <out-var>
     # cmake/Coverage.cmake

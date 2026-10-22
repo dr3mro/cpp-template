@@ -6,7 +6,8 @@
 # these; none of them declares options of its own.
 #
 # Two more switches live in PreProject.cmake because they must exist before
-# project(): MYAPP_USE_LLVM_CLANG and MYAPP_BUILD_TESTS.
+# project(): MYAPP_USE_LLVM_CLANG and MYAPP_BUILD_TESTS. So does
+# MYAPP_USE_VCPKG: the toolchain file is read during project().
 # =============================================================================
 include_guard(DIRECTORY)
 

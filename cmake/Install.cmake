@@ -65,6 +65,21 @@ else()
         string(APPEND MYAPP_FIND_DEPENDENCY_CALLS "find_dependency(${_dep})\n")
     endforeach()
 
+    # A dependency that is fetched with FetchContent is not installed
+    # anywhere, so the package config cannot find it: a consumer of the
+    # installed library has to provide it itself. Say so, instead of leaving
+    # the consumer with a "target not found" error.
+    get_property(_myapp_fetched_public GLOBAL PROPERTY MYAPP_FETCHED_PUBLIC_DEPENDENCIES)
+    if(_myapp_fetched_public)
+        string(REPLACE ";" ", " _myapp_fetched_public_text "${_myapp_fetched_public}")
+        message(WARNING
+            "These dependencies are fetched with FetchContent and are PUBLIC: "
+            "${_myapp_fetched_public_text}\n"
+            "They are not installed, so the package configuration cannot find "
+            "them: a consumer of the installed library has to provide them "
+            "itself.")
+    endif()
+
     configure_package_config_file(
         "${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"

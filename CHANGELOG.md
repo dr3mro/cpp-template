@@ -25,9 +25,21 @@ All notable changes to this project are documented here. The format follows
   `scripts/edit-json.pl` is gone. Both wrappers accept both option spellings.
 - One release pipeline, `release-build.yml`, shared by app and library
   projects.
+- The `setup-vcpkg` action and the release pipeline work in a project without
+  a manifest: the vcpkg steps are skipped, and no triplet is passed.
 
 ### Added
 
+- `--no-vcpkg` (`-NoVcpkg`) option for the project generators: the project has
+  no vcpkg at all. The manifest, the vcpkg toolchain file and the vcpkg
+  Dependabot block are left out, and the dependencies are built from their
+  source instead.
+- `cmake/FetchDependencies.cmake` with `myapp_fetch_dependency()`: a
+  dependency is downloaded at a pinned commit and built as part of the
+  project. `cmake/TestFramework.cmake` takes doctest from vcpkg or from its
+  sources, so the tests do not have to know which of the two is in use.
+- `MYAPP_USE_VCPKG` (on): the switch that turns vcpkg off for a whole
+  project. The configure summary says which of the two is in use.
 - More warnings (`-Wsign-conversion`, `-Wold-style-cast`, `-Wnull-dereference`
   and others; GCC-only ones; the MSVC `/w14xxx` set and `/sdl`).
 - The standard library's own checks in Debug builds too.

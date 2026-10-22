@@ -51,6 +51,32 @@ jobs:
           ./scripts/new-project.sh app20 /tmp/app20 --std 20 --no-git
           ./scripts/new-project.sh app23 /tmp/app23 --std=23 --no-git
           ./scripts/new-project.sh mylib /tmp/mylib --no-git --lib
+          ./scripts/new-project.sh novcpkg_app /tmp/novcpkg_app --no-git --no-vcpkg
+          ./scripts/new-project.sh novcpkg_lib /tmp/novcpkg_lib --no-git --no-vcpkg --lib
+
+      - name: A project without vcpkg has no vcpkg anywhere
+        # --no-vcpkg takes the manifest, the toolchain file and the Dependabot
+        # block away, and turns the switch off. What is left must not mention
+        # vcpkg as the way to get the dependencies.
+        run: |
+          for project in /tmp/novcpkg_app /tmp/novcpkg_lib; do
+            if [ -e "$project/vcpkg.json" ]; then
+              echo "::error::$project still has a vcpkg.json"
+              exit 1
+            fi
+            if grep -q toolchainFile "$project/CMakePresets.json"; then
+              echo "::error::$project still has a vcpkg toolchain file in its presets"
+              exit 1
+            fi
+            if grep -q 'package-ecosystem: vcpkg' "$project/.github/dependabot.yml"; then
+              echo "::error::$project still has a vcpkg block in dependabot.yml"
+              exit 1
+            fi
+            if ! grep -qE '_USE_VCPKG ".*" OFF' "$project/cmake/PreProject.cmake"; then
+              echo "::error::$project does not turn the vcpkg switch off"
+              exit 1
+            fi
+          done
 
       - name: The generator rejects bad input
         # Each of these must fail, and must not leave a half-made project.
@@ -111,7 +137,9 @@ jobs:
         # Every MYAPP/myapp must have been renamed; a miss means the script
         # (or a new file) still hard-codes the template name.
         run: |
-          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' /tmp/app17 /tmp/app20 /tmp/app23 /tmp/mylib --exclude-dir=.git; then
+          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' \
+             /tmp/app17 /tmp/app20 /tmp/app23 /tmp/mylib \
+             /tmp/novcpkg_app /tmp/novcpkg_lib --exclude-dir=.git; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
@@ -128,6 +156,31 @@ jobs:
             echo "::group::$project format-check"
             (cd "$project" && cmake --build --preset ci --target format-check)
             echo "::endgroup::"
+          done
+
+      - name: Build and test the projects without vcpkg
+        # VCPKG_ROOT is unset on purpose: the projects must build without a
+        # package manager, and the dependencies come from their source.
+        run: |
+          for project in /tmp/novcpkg_app /tmp/novcpkg_lib; do
+            echo "::group::$project ci"
+            (cd "$project" && env -u VCPKG_ROOT cmake --preset ci \
+              && env -u VCPKG_ROOT cmake --build --preset ci \
+              && env -u VCPKG_ROOT ctest --preset ci)
+            echo "::endgroup::"
+          done
+
+      - name: The project without vcpkg says where its dependencies come from
+        # The configure summary names the provider, so a vcpkg path that is
+        # still taken somewhere shows up there.
+        run: |
+          for project in /tmp/novcpkg_app /tmp/novcpkg_lib; do
+            out="$(cd "$project" && env -u VCPKG_ROOT cmake --preset ci 2>&1)"
+            if ! grep -qE 'Dependencies +: FetchContent' <<<"$out"; then
+              echo "$out"
+              echo "::error::$project does not report FetchContent as its dependency provider"
+              exit 1
+            fi
           done
 
       - name: Library mode install and consume
@@ -312,6 +365,7 @@ jobs:
         run: |
           ./scripts/new-project.sh vsapp "$RUNNER_TEMP/vsapp" --no-git
           ./scripts/new-project.sh vslib "$RUNNER_TEMP/vslib" --no-git --lib
+          ./scripts/new-project.sh vsnovcpkg "$RUNNER_TEMP/vsnovcpkg" --no-git --no-vcpkg
 
       - name: Generate the projects with the PowerShell script
         shell: pwsh
@@ -410,7 +464,9 @@ jobs:
       - name: No placeholder names left behind
         shell: bash
         run: |
-          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' "$RUNNER_TEMP/vsapp" "$RUNNER_TEMP/vslib" --exclude-dir=.git --exclude-dir=build; then
+          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' \
+             "$RUNNER_TEMP/vsapp" "$RUNNER_TEMP/vslib" "$RUNNER_TEMP/vsnovcpkg" \
+             --exclude-dir=.git --exclude-dir=build; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
@@ -528,3 +584,24 @@ jobs:
           if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of the PowerShell project ran CMake" }
           # The wildcards are supported because the project is read-only.
           if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of the PowerShell project warned about wildcards" }
+
+      - name: The project without vcpkg builds with MSBuild
+        # A project without vcpkg has no manifest, so the vcpkg integration has
+        # to stay out of the way even though vcpkg is installed on the runner.
+        shell: pwsh
+        run: |
+          $project = "$env:RUNNER_TEMP\vsnovcpkg"
+          if (Test-Path -LiteralPath "$project\vcpkg.json") {
+            throw "the project without vcpkg still has a manifest"
+          }
+          $projectFile = Get-Content -LiteralPath "$project\vsnovcpkg.vcxproj" -Raw
+          if ($projectFile -notmatch 'VcpkgEnableManifest Condition="!Exists\(') {
+            throw "the project without vcpkg does not turn the vcpkg manifest mode off"
+          }
+          $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
+          if ($LASTEXITCODE -ne 0) { throw "msbuild failed for the project without vcpkg" }
+          if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of the project without vcpkg warned about wildcards" }
+          if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg.exe")) {
+            throw "the project without vcpkg produced no executable"
+          }

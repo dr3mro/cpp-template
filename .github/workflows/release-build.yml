@@ -113,7 +113,14 @@ jobs:
       - name: Configure and build
         shell: bash
         run: |
-          args=(-DMYAPP_BUILD_TESTS=OFF "-DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}")
+          args=(-DMYAPP_BUILD_TESTS=OFF)
+          # The triplet names the packages to build: without it vcpkg would use
+          # the host's, and the cross builds would link the wrong libraries. A
+          # project without vcpkg has no packages to build, so it needs no
+          # triplet.
+          if [ -f vcpkg.json ]; then
+            args+=("-DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}")
+          fi
           if [ -n "${{ matrix.compiler }}" ]; then args+=("-DCMAKE_CXX_COMPILER=${{ matrix.compiler }}"); fi
           if [ -n "${{ matrix.osx_arch }}" ]; then args+=("-DCMAKE_OSX_ARCHITECTURES=${{ matrix.osx_arch }}"); fi
           cxxflags="${{ matrix.cxxflags }}"
@@ -199,8 +206,10 @@ jobs:
 
       # vcpkg writes an SPDX document for every port it installs. Collected
       # per platform, they list exactly what went into this binary. A project
-      # without dependencies has none, and gets no SBOM archive.
+      # without dependencies has none, and gets no SBOM archive. A project
+      # without vcpkg has no vcpkg to write them.
       - name: Collect the SBOM
+        if: hashFiles('vcpkg.json') != ''
         shell: bash
         run: |
           mkdir -p "dist/sbom/$ARCHIVE"
@@ -228,7 +237,7 @@ jobs:
           if [ -d dist/debug ] && [ -n "$(ls -A dist/debug)" ]; then
             tar -czf "out/$ARCHIVE-debug.tar.gz" -C dist/debug .
           fi
-          if [ -n "$(ls -A "dist/sbom/$ARCHIVE")" ]; then
+          if [ -d "dist/sbom/$ARCHIVE" ] && [ -n "$(ls -A "dist/sbom/$ARCHIVE")" ]; then
             tar -czf "out/$ARCHIVE-sbom.tar.gz" -C dist/sbom "$ARCHIVE"
           fi
 

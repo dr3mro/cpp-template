@@ -11,7 +11,7 @@ project takes one command.
 | **CMake** 3.25+ | reads the build description (`CMakeLists.txt`) and generates build files | yes |
 | **Ninja** | runs the compile commands, fast and in parallel | yes |
 | **A C++ compiler** | Clang (macOS: comes with Xcode), GCC (Linux) or MSVC (Windows) | yes |
-| **vcpkg** | a package manager that downloads and builds the libraries your project uses | yes |
+| **vcpkg** | a package manager that downloads and builds the libraries your project uses | yes, unless the project was created with `--no-vcpkg` |
 | **LLVM** | clang-format 20+ (formatting), clang-tidy (static analysis), and clang for fuzzing and coverage | recommended |
 | **Doxygen** + **Graphviz** | generate the documentation website and its diagrams | optional |
 
@@ -48,6 +48,10 @@ New to these words? See the [Glossary](Glossary).
    ```
 
 5. Open a **new** terminal so the change takes effect.
+
+A project created with `--no-vcpkg` needs none of this: it has no manifest,
+and its dependencies are downloaded and built from their source during the
+first configure. See [Adding-Dependencies](Adding-Dependencies).
 
 ## Linux (Ubuntu / Debian)
 

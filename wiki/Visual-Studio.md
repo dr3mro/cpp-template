@@ -13,7 +13,11 @@ runs CMake. Git on the `PATH` is optional; it only fills in the commit hash
 in `version.hpp`.
 
 vcpkg is optional: when it is set up, the project uses the manifest in
-`vcpkg.json`, so dependencies you add later also work in the solution.
+`vcpkg.json`, so dependencies you add later also work in the solution. A
+project created with `--no-vcpkg` has no manifest, so the vcpkg integration
+stays out of the way even where vcpkg is installed. Its dependencies are
+built from their source by CMake, which the solution does not run, so only
+the parts that need no dependency are built there.
 
 ## Opening a developer shell
 

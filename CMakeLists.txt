@@ -64,6 +64,7 @@ include(HomebrewLLVM)       # link Homebrew's libc++ with Homebrew's clang++
 include(WindowsClang)       # LLVM's clang against the Visual Studio STL (Windows)
 
 # ---- 5. Dependencies ------------------------------------------------------------
+include(FetchDependencies)   # myapp_fetch_dependency(): dependencies from source
 include(Dependencies)       # find_package() calls for third-party libraries
 
 # ---- 6. Targets -----------------------------------------------------------------

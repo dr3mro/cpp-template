@@ -100,6 +100,11 @@ dependency, a new baseline) rebuilds the packages once.
 vcpkg itself is checked out at exactly the `builtin-baseline` commit from
 `vcpkg.json`, so CI resolves the same dependency versions as your machine.
 
+A project without vcpkg (created with `--no-vcpkg`) has no `vcpkg.json`: the
+`setup-vcpkg` action then skips every vcpkg step, the release pipeline passes
+no triplet, and there is no SBOM, because there are no packages to write
+documents for.
+
 ## Documentation on GitHub Pages
 
 `docs.yml` runs `cmake --workflow --preset docs` and deploys `docs/` with

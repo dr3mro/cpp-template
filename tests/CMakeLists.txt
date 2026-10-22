@@ -6,20 +6,13 @@
 # `ctest --preset debug` lists and runs them one by one. In app mode, a
 # `<name>_version` test runs the program with --version.
 #
-# Built when MYAPP_BUILD_TESTS is ON; vcpkg then installs doctest (the "tests"
-# feature in vcpkg.json, requested in PreProject.cmake).
+# Built when MYAPP_BUILD_TESTS is ON; the test framework is then set up (from
+# vcpkg or with FetchContent, see cmake/TestFramework.cmake).
 # =============================================================================
 
-find_package(doctest CONFIG QUIET)
-if(NOT doctest_FOUND)
-    # Almost always means CMake ran without a preset, so the vcpkg toolchain
-    # (and the doctest it installs) was never loaded.
-    message(FATAL_ERROR
-        "doctest was not found. Configure with a preset so vcpkg installs it:\n"
-        "  cmake --preset debug\n"
-        "or pass -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake, "
-        "or turn tests off with -DMYAPP_BUILD_TESTS=OFF.")
-endif()
+# doctest, from vcpkg or from its sources: the tests get the same target and
+# the same helper either way.
+include(TestFramework)
 
 file(GLOB_RECURSE _myapp_test_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 add_executable(${PROJECT_NAME}_tests ${_myapp_test_sources})
@@ -28,7 +21,6 @@ add_executable(${PROJECT_NAME}_tests ${_myapp_test_sources})
 target_link_libraries(${PROJECT_NAME}_tests PRIVATE
     ${PROJECT_NAME}_lib ${PROJECT_NAME}_options doctest::doctest)
 
-include(${doctest_DIR}/doctest.cmake)
 doctest_discover_tests(${PROJECT_NAME}_tests)
 
 # A smoke test of the program itself (app mode only): it starts, and

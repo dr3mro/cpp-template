@@ -2,7 +2,7 @@
 # Create a new C++ project from this template.
 #
 #   scripts/new-project.sh <name> [destination-dir] [--std 17|20|23] [--lib] [--no-git]
-#                          [--github-user <user>] [--author <name>]
+#                          [--no-vcpkg] [--github-user <user>] [--author <name>]
 #
 # A thin wrapper: the generator itself is new-project.cmake, the same one
 # new-project.ps1 runs, so both produce the same project. `--help` prints all
