@@ -50,7 +50,9 @@ compile_commands.json
 .LSOverride
 ._*
 
-# Temporary files
+# Temporary files (new-project-*.txt: the generator's output, if it was
+# interrupted before it could remove it)
+/new-project-*.txt
 *.tmp
 *.temp
 *~
