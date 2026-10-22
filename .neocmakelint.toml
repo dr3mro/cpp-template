@@ -6,7 +6,7 @@
 # repeated here to keep the editor and the command line in agreement.
 
 # Match format.line_width in .cmake-format.yaml (cmake-lint's C0301).
-line_max_words = 100
+line_max_words = 120
 
 # The project writes commands in lower case (cmake_minimum_required(...),
 # target_link_libraries(...)).

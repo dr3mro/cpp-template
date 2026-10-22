@@ -24,23 +24,23 @@ parse:
   additional_commands:
     # cmake/Helpers.cmake
     myapp_read_version:
-      pargs: 2                      # <out-var> <VERSION file>
+      pargs: 2 # <out-var> <VERSION file>
     myapp_regex_escape:
-      pargs: 2                      # <out-var> <text>
+      pargs: 2 # <out-var> <text>
     myapp_find_llvm_program:
-      pargs: "1+"                   # <var> <name>...
+      pargs: "1+" # <var> <name>...
       flags: [NEXT_TO_COMPILER]
     myapp_find_dependency:
-      pargs: "1+"                   # <package> [find_package arguments...]
+      pargs: "1+" # <package> [find_package arguments...]
       flags: [PUBLIC]
     # cmake/FetchDependencies.cmake
     myapp_fetch_dependency:
-      pargs: 3                      # <name> <git-url> <commit>
+      pargs: 3 # <name> <git-url> <commit>
       flags: [PUBLIC, SYSTEM]
       kwargs:
-        FIND_PACKAGE_ARGS: "+"      # [find_package arguments...]
+        FIND_PACKAGE_ARGS: "+" # [find_package arguments...]
     myapp_find_msvc_cl:
-      pargs: 1                      # <out-var>
+      pargs: 1 # <out-var>
     # cmake/Coverage.cmake
     myapp_add_coverage_report:
       pargs: 0
@@ -57,10 +57,10 @@ parse:
         LINK: "+"
     # cmake/Sanitizers.cmake
     _myapp_use_sanitizer:
-      pargs: 3                      # <compile-flag> <link-flag> <what>
+      pargs: 3 # <compile-flag> <link-flag> <what>
     # cmake/Summary.cmake
     _myapp_summary_line:
-      pargs: "1+"                   # <label> <value>...
+      pargs: "1+" # <label> <value>...
   # Commands whose arguments are left exactly as written (none needed yet).
   override_spec: {}
   # Variables that must keep their case in "variable" positions.
@@ -79,8 +79,8 @@ format:
   # 100 columns: wide enough for a target_* call with a generator expression,
   # narrow enough for a side-by-side diff. Long string literals are not broken
   # by the formatter; split them into several quoted strings instead.
-  line_width: 100
-  tab_size: 4                       # matches .editorconfig for *.cmake
+  line_width: 120
+  tab_size: 4 # matches .editorconfig for *.cmake
   use_tabchars: false
   fractional_tab_policy: use-space
   # Keep short calls on one line; only wrap when a call really does not fit.
@@ -94,14 +94,14 @@ format:
   min_prefix_chars: 4
   max_prefix_chars: 10
   max_lines_hwrap: 2
-  separate_ctrl_name_with_space: false   # if(...) not if (...)
-  separate_fn_name_with_space: false     # foo(...) not foo (...)
-  line_ending: unix                 # .gitattributes normalises to LF anyway
-  command_case: canonical           # lowercase commands, CamelCase for find modules
-  keyword_case: upper               # COMMAND, PUBLIC, INTERFACE, ...
+  separate_ctrl_name_with_space: false # if(...) not if (...)
+  separate_fn_name_with_space: false # foo(...) not foo (...)
+  line_ending: unix # .gitattributes normalises to LF anyway
+  command_case: canonical # lowercase commands, CamelCase for find modules
+  keyword_case: upper # COMMAND, PUBLIC, INTERFACE, ...
   always_wrap: []
-  enable_sort: true                 # sort plain file lists in add_library() & co.
-  autosort: false                   # ... but only where they are already sorted
+  enable_sort: true # sort plain file lists in add_library() & co.
+  autosort: false # ... but only where they are already sorted
   require_valid_layout: false
   layout_passes: {}
 
@@ -118,7 +118,7 @@ markup:
   ruler_pattern: ^\s*[^\w\s]{3}.*[^\w\s]{3}$
   explicit_trailing_pattern: "#<"
   hashruler_min_length: 10
-  canonicalize_hashrulers: false    # keep the "# ---- section ----" rulers as written
+  canonicalize_hashrulers: false # keep the "# ---- section ----" rulers as written
 
 # ---- lint: cmake-lint checks ---------------------------------------------------------
 lint:
