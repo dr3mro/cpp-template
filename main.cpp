@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
         }
 
         const myapp::core::Greeter greeter;
-        std::cout << greeter.Greet(argc > 1 ? argv[1] : "") << '\n';
+        std::cout << greeter.Greet(argc > 1 ? argv[1] : "") << std::endl;
         return 0;
     }
     catch (const std::exception& error)
