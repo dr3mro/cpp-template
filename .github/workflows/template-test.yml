@@ -1119,3 +1119,5 @@ jobs:
           if (($log | Out-String) -notmatch 'not the pinned one') {
             throw "the build failed without naming the doctest hash"
           }
+          Remove-Item -LiteralPath $header -Force
+          $global:LASTEXITCODE = 0
