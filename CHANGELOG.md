@@ -62,6 +62,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A `--std 23` project got `Standard: c++23` in `.clang-format`, which
+  clang-format rejects; it now gets `Standard: Latest`.
+
 - The Linux x64 and arm64 library releases used each other's vcpkg triplet.
 - Generated projects no longer carry the template author's name in
   `main.cpp`.

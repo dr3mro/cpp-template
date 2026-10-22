@@ -401,7 +401,14 @@ _edit(vcpkg.json "\"name\": \"[^\"]+\"" "\"name\": \"${_vcpkg_name}\"")
 
 # ---- C++ standard -----------------------------------------------------------------
 _edit(src/CMakeLists.txt LITERAL "cxx_std_17" "cxx_std_${STD}")
-_edit(.clang-format "(^|\n)Standard: c\\+\\+17" "\\1Standard: c++${STD}")
+# clang-format knows c++17 and c++20 but has no c++23 (Latest is the newest
+# it knows).
+if(STD STREQUAL "23")
+    set(_format_std "Latest")
+else()
+    set(_format_std "c++${STD}")
+endif()
+_edit(.clang-format "(^|\n)Standard: c\\+\\+17" "\\1Standard: ${_format_std}")
 # Visual Studio 2019 and 2022 have no "stdcpp23", so C++23 maps to the latest.
 if(STD STREQUAL "17")
     set(_vs_std stdcpp17)
