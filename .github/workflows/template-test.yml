@@ -348,28 +348,28 @@ jobs:
         run: echo "BUILD_OS=${{ runner.os == 'macOS' && 'Darwin' || 'Linux' }}" >> "$GITHUB_ENV"
 
       - name: Library mode install and consume
-        # `cmake --install build/$BUILD_OS/arm64/release` uses the preset's installDir
-        # (build/$BUILD_OS/arm64/install/release); the consumer example builds
-        # into build/$BUILD_OS/arm64/examples.
+        # `cmake --install build/$BUILD_OS/release` uses the preset's installDir
+        # (build/$BUILD_OS/install/release); the consumer example builds
+        # into build/$BUILD_OS/examples.
         run: |
           cd /tmp/mylib
           cmake --preset release
           cmake --build --preset release
-          cmake --install build/$BUILD_OS/arm64/release
-          cmake -S examples -B build/$BUILD_OS/arm64/examples -DCMAKE_PREFIX_PATH="$PWD/build/$BUILD_OS/arm64/install/release"
-          cmake --build build/$BUILD_OS/arm64/examples
-          ./build/$BUILD_OS/arm64/examples/example
+          cmake --install build/$BUILD_OS/release
+          cmake -S examples -B build/$BUILD_OS/examples -DCMAKE_PREFIX_PATH="$PWD/build/$BUILD_OS/install/release"
+          cmake --build build/$BUILD_OS/examples
+          ./build/$BUILD_OS/examples/example
 
       - name: Library mode shared build
         # Uses the vcpkg toolchain so doctest is available and the tests link
         # against the shared library (exercising symbol visibility).
         run: |
           cd /tmp/mylib
-          cmake -S . -B build/$BUILD_OS/arm64/shared -G Ninja -DBUILD_SHARED_LIBS=ON \
+          cmake -S . -B build/$BUILD_OS/shared -G Ninja -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-          cmake --build build/$BUILD_OS/arm64/shared
-          ctest --test-dir build/$BUILD_OS/arm64/shared --output-on-failure
+          cmake --build build/$BUILD_OS/shared
+          ctest --test-dir build/$BUILD_OS/shared --output-on-failure
 
       - name: A consumer does not inherit the project's warning flags
         # The library's flags (-Wall, -Wshadow, ...) belong to this project: a
@@ -641,7 +641,7 @@ jobs:
           try {
             cmake --preset release -DVSAPP_BUILD_TESTS=OFF
             if ($LASTEXITCODE -ne 0) { throw "cmake --preset release failed in the developer shell" }
-            $cache = Get-Content build/Windows/arm64/release/CMakeCache.txt -Raw
+            $cache = Get-Content build/Windows/release/CMakeCache.txt -Raw
             if ($cache -notmatch 'CMAKE_CXX_COMPILER:FILEPATH=.*cl\.exe') {
               throw "the developer shell did not make CMake pick MSVC"
             }
@@ -1063,7 +1063,7 @@ jobs:
           } finally {
             Pop-Location
           }
-          $fromCMake = Get-Lines "$project\build\Windows\arm64\release\generated\include\vsapp\version.hpp"
+          $fromCMake = Get-Lines "$project\build\Windows\release\generated\include\vsapp\version.hpp"
           $fromMSBuild = Get-Lines "$project\build\Windows\$arch\vs\generated\vsapp\version.hpp"
           $diff = Compare-Object -ReferenceObject $fromCMake -DifferenceObject $fromMSBuild -CaseSensitive -SyncWindow 0
           if ($diff) {

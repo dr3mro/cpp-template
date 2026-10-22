@@ -3,7 +3,7 @@
     "label": "Debug myapp",
     "adapter": "CodeLLDB",
     "request": "launch",
-    "program": "$ZED_WORKTREE_ROOT/build/Darwin/arm64/debug-nosan/myapp",
+    "program": "$ZED_WORKTREE_ROOT/build/Darwin/debug-nosan/myapp",
     "cwd": "$ZED_WORKTREE_ROOT",
     "build": { "command": "cmake --preset debug-nosan && cmake --build --preset debug-nosan", "cwd": "$ZED_WORKTREE_ROOT" }
   },
@@ -11,7 +11,7 @@
     "label": "Debug tests",
     "adapter": "CodeLLDB",
     "request": "launch",
-    "program": "$ZED_WORKTREE_ROOT/build/Darwin/arm64/debug-nosan/tests/myapp_tests",
+    "program": "$ZED_WORKTREE_ROOT/build/Darwin/debug-nosan/tests/myapp_tests",
     "cwd": "$ZED_WORKTREE_ROOT",
     "build": { "command": "cmake --preset debug-nosan && cmake --build --preset debug-nosan", "cwd": "$ZED_WORKTREE_ROOT" }
   }

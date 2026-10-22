@@ -105,9 +105,9 @@ grep -rIl 'myapp\|MYAPP' t17 t20 tlib            # must print nothing
 for d in t17 t20 tlib; do (cd $d && cmake --preset ci && cmake --build --preset ci && ctest --preset ci); done
 
 # 3. library mode: install and consume
-cd tlib && cmake --preset release && cmake --build --preset release && cmake --install build/Darwin/arm64/release
-cmake -S examples -B build/Darwin/arm64/examples -DCMAKE_PREFIX_PATH=$PWD/build/Darwin/arm64/install/release
-cmake --build build/Darwin/arm64/examples && ./build/Darwin/arm64/examples/example
+cd tlib && cmake --preset release && cmake --build --preset release && cmake --install build/Darwin/release
+cmake -S examples -B build/Darwin/examples -DCMAKE_PREFIX_PATH=$PWD/build/Darwin/install/release
+cmake --build build/Darwin/examples && ./build/Darwin/examples/example
 ```
 
 If you changed flags or tools, also run the `coverage`, `fuzz` and `docs`

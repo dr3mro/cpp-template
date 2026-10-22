@@ -26,7 +26,7 @@ to pass a CMake or CTest option that `cx` does not wrap.
 cmake --preset debug           # 1. configure: check the compiler, fetch dependencies, write build files
 cmake --build --preset debug   # 2. build: compile and link
 ctest --preset debug           # 3. test: run the unit tests
-./build/Darwin/arm64/debug/myapp            # run the program
+./build/Darwin/debug/myapp            # run the program
 ```
 
 You only need to **configure** again after changing build settings (options,
@@ -37,9 +37,9 @@ check automatically.
 ## Presets
 
 A **preset** is a named set of build settings in `CMakePresets.json`. Each one
-builds into its own folder, `build/<os>/<arch>/<preset>/`, so switching presets never
-mixes results. `<arch>` is the target architecture: `arm64` for the Ninja presets in
-this template's default configuration.
+builds into its own folder, `build/<os>/<preset>/`, so switching presets never
+mixes results. The Ninja presets don't put the processor in the path, since a preset
+can't detect it. The Visual Studio presets do: `build/Windows/<arch>/vs2022/`.
 
 | Preset | Use it for | Notes |
 | --- | --- | --- |
@@ -121,16 +121,16 @@ values: `cmake --preset debug --fresh`.
 
 ```bash
 cmake --preset release && cmake --build --preset release
-cmake --install build/Darwin/arm64/release
+cmake --install build/Darwin/release
 ```
 
-The result goes to `build/Darwin/arm64/install/release/`: the program in `bin/` (app
+The result goes to `build/Darwin/install/release/`: the program in `bin/` (app
 projects), or the library, headers and CMake package (library projects).
 Choose another folder with `--prefix`:
-`cmake --install build/Darwin/arm64/release --prefix ~/apps/myapp`.
+`cmake --install build/Darwin/release --prefix ~/apps/myapp`.
 
 `cmake --build --preset release --target package` also wraps the installed
-files into a `.tar.gz` (CPack) in `build/Darwin/arm64/release/`.
+files into a `.tar.gz` (CPack) in `build/Darwin/release/`.
 
 ## Cleaning
 
@@ -147,8 +147,8 @@ The Zed and VS Code tasks "clean" and "clean all" run `cx clean` and
 ## Running the program with arguments
 
 ```bash
-./build/Darwin/arm64/debug/myapp Amr           # macOS / Linux
-build\Windows\arm64\debug\myapp.exe Amr         # Windows
+./build/Darwin/debug/myapp Amr           # macOS / Linux
+build\Windows\debug\myapp.exe Amr         # Windows
 ```
 
 Sanitizer messages appear on the terminal when the `debug` build finds a

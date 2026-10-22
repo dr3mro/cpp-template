@@ -26,7 +26,7 @@ else()
 endif()
 get_target_property(_myapp_lib_type ${PROJECT_NAME}_lib TYPE)
 
-# Named the way the build folder is: build/<os>/<arch>/<preset>.
+# Reported as the target architecture; the Ninja build folder no longer has it.
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _myapp_arch)
 if(_myapp_arch MATCHES "^(x86_64|amd64)$")
     set(_myapp_arch x64)

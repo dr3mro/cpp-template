@@ -132,12 +132,12 @@ New files are picked up automatically on the next build. You don't edit any
 
 | Folder | Made by | Contents |
 | --- | --- | --- |
-| `build/<os>/<arch>/<preset>/` | `cmake --preset <preset>` | build files, the compiled program, tests, `compile_commands.json` |
+| `build/<os>/<preset>/` | `cmake --preset <preset>` | build files, the compiled program, tests, `compile_commands.json` |
 | `build/Windows/<arch>/vs/<platform>/<config>/<project>/` | building the Visual Studio solution | the program, the import library and the linker PDB |
 | `build/Windows/<arch>/vs/obj/` | building the Visual Studio solution | the intermediate files (objects, `.tlog`, the compiler PDB) and the NuGet restore files, in a folder per project |
 | `build/Windows/<arch>/vs/generated/` | building the Visual Studio solution | the generated headers (`version.hpp`, `<name>_export.h`) |
 | `build/Windows/<arch>/vs/vcpkg_installed/` | building the Visual Studio solution | the vcpkg packages of the manifest mode |
-| `build/<os>/<arch>/install/<preset>/` | `cmake --install build/<os>/<arch>/<preset>` | the installed result |
+| `build/<os>/install/<preset>/` | `cmake --install build/<os>/<preset>` | the installed result |
 | `build/compile_commands.json` | configuring | a link to the last preset's compile commands, for clangd |
 | `docs/` | the `docs` target | the documentation website and diagrams |
 

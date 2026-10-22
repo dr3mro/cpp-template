@@ -364,13 +364,20 @@ function(_cx_project_name out preset)
 endfunction()
 
 # _cx_build_dir(<preset> <out>): the folder a preset builds into,
-# build/<host OS>/<target arch>/<preset>. The OS is CMake's hostSystemName, the
-# same value the presets expand; the arch is the one the build targets, so a
-# cross --arch build gets its own folder.
+# build/<host OS>/<preset>, the same folder the presets' binaryDir names. The OS
+# is CMake's hostSystemName, the value the presets expand. A preset cannot see
+# the processor, so the arch is not in that folder. It is added only where the
+# preset or --arch names one: the Visual Studio presets, and a cross --arch
+# build, which gets a folder of its own.
 function(_cx_build_dir preset out)
     _cx_host_arch(_host)
     _cx_target_arch("${preset}" "${_host}" _target)
-    set(${out} "${CX_ROOT}/build/${CMAKE_HOST_SYSTEM_NAME}/${_target}/${preset}" PARENT_SCOPE)
+    _cx_preset_architecture("${preset}" _platform)
+    set(_dir "${CX_ROOT}/build/${CMAKE_HOST_SYSTEM_NAME}")
+    if(NOT _platform STREQUAL "" OR NOT _target STREQUAL _host)
+        string(APPEND _dir "/${_target}")
+    endif()
+    set(${out} "${_dir}/${preset}" PARENT_SCOPE)
 endfunction()
 
 # _cx_normalize_path(<input> <out>)

@@ -137,7 +137,7 @@ Disable a check for the whole project by adding `-<check-name>` to the
 ```bash
 cmake --preset coverage
 cmake --build --preset coverage --target coverage
-open build/Darwin/arm64/coverage/html/index.html       # Linux: xdg-open
+open build/Darwin/coverage/html/index.html       # Linux: xdg-open
 ```
 
 The report shows every line of `src/` and whether a test ran it. It needs

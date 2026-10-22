@@ -26,7 +26,7 @@ if(PROJECT_IS_TOP_LEVEL)
     endif()
 
     # Keep `cmake --install` out of /usr/local and out of the source tree.
-    # Presets set installDir (build/<os>/<arch>/install/<preset>); this covers plain cmake.
+    # Presets set installDir (build/<os>/install/<preset>); this covers plain cmake.
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         set(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install"
             CACHE PATH "Install prefix" FORCE)

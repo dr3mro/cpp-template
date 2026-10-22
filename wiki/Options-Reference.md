@@ -50,5 +50,5 @@ Example: `cmake --preset debug -DMYAPP_CLANG_FORMAT=/opt/homebrew/opt/llvm/bin/c
 | `CMAKE_BUILD_TYPE` | `Debug`, `Release`, `RelWithDebInfo` or `MinSizeRel` (set by the presets) |
 | `CMAKE_CXX_COMPILER` | the compiler; only on the first configure of a folder (or with `--fresh`) |
 | `CMAKE_PREFIX_PATH` | extra folders to search for packages, e.g. your own installed libraries |
-| `CMAKE_INSTALL_PREFIX` | where `cmake --install` puts files (default `build/<os>/<arch>/install/<preset>`) |
+| `CMAKE_INSTALL_PREFIX` | where `cmake --install` puts files (default `build/<os>/install/<preset>`) |
 | `BUILD_SHARED_LIBS` | `ON` builds the library as shared |

@@ -75,7 +75,7 @@ same library.
    - installing: add `install(TARGETS shout RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})`
      to `cmake/Install.cmake`.
 
-Build as usual; the binary is `build/<os>/<arch>/<preset>/shout`.
+Build as usual; the binary is `build/<os>/<preset>/shout`.
 
 > **Rule of thumb:** keep `main()` files tiny. Real logic belongs in `src/`, so
 > it can be unit-tested and fuzzed.

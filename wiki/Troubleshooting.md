@@ -134,7 +134,7 @@ Homebrew's libc++ as well. With `-DMYAPP_USE_LLVM_CLANG=ON` the build adds
 the flags Homebrew's caveats ask for (`-L<prefix>/lib/c++`,
 `-L<prefix>/lib/unwind -lunwind` and an rpath for the libc++). If the build
 still mixes the two standard libraries, check that the compiler really is
-Homebrew's: `cmake -LA build/<os>/<arch>/<preset> | grep CMAKE_CXX_COMPILER`.
+Homebrew's: `cmake -LA build/<os>/<preset> | grep CMAKE_CXX_COMPILER`.
 
 **I changed the compiler but CMake keeps the old one**
 The compiler is fixed when a build folder is first configured. Use
@@ -142,7 +142,7 @@ The compiler is fixed when a build folder is first configured. Use
 
 **I moved or copied the project and Ninja keeps re-running CMake**
 Build trees contain absolute source, binary and toolchain paths. Do not reuse a
-`build/<os>/<arch>/<preset>/` folder from another checkout or location: the wrapper checks
+`build/<os>/<preset>/` folder from another checkout or location: the wrapper checks
 `CMakeCache.txt` and stops with the recorded and current paths instead of
 letting Ninja loop through stale `CONFIGURE_DEPENDS` state. Configure a fresh
 tree explicitly:
@@ -154,7 +154,7 @@ cmake --build --preset debug
 
 The same recovery works for other presets. `--fresh` is explicit and does not
 delete the old folder unless CMake is instructed to do so; alternatively,
-rename the old `build/<os>/<arch>/<preset>/` folder and configure again.
+rename the old `build/<os>/<preset>/` folder and configure again.
 
 ## Building
 

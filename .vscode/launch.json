@@ -5,7 +5,8 @@
       "name": "Debug myapp",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/Darwin/arm64/debug-nosan/myapp",
+      "program": "${workspaceFolder}/build/Linux/debug-nosan/myapp",
+      "osx": { "program": "${workspaceFolder}/build/Darwin/debug-nosan/myapp" },
       "args": [],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "build debug-nosan"
@@ -14,7 +15,8 @@
       "name": "Debug tests",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/Darwin/arm64/debug-nosan/tests/myapp_tests",
+      "program": "${workspaceFolder}/build/Linux/debug-nosan/tests/myapp_tests",
+      "osx": { "program": "${workspaceFolder}/build/Darwin/debug-nosan/tests/myapp_tests" },
       "args": [],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "build debug-nosan"

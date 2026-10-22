@@ -6,8 +6,8 @@
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${hostSystemName}/arm64/${presetName}",
-      "installDir": "${sourceDir}/build/${hostSystemName}/arm64/install/${presetName}",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/${presetName}",
+      "installDir": "${sourceDir}/build/${hostSystemName}/install/${presetName}",
       "toolchainFile": "${sourceDir}/cmake/VcpkgToolchain.cmake"
     },
     {

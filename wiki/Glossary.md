@@ -3,7 +3,7 @@
 Short explanations of the words used throughout this wiki.
 
 **Build folder**: where CMake writes everything it generates for one preset,
-`build/<os>/<arch>/<preset>/`. Deleting it is always safe.
+`build/<os>/<preset>/`. Deleting it is always safe.
 
 **Build type**: `Debug`, `Release`, `RelWithDebInfo` or `MinSizeRel`; decides
 optimisation and debug info. See [Building and running](Building-and-Running#build-types).

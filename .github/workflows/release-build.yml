@@ -144,14 +144,14 @@ jobs:
         run: |
           exe="myapp"; [ "${{ matrix.os }}" = windows ] && exe="myapp.exe"
           mkdir -p "dist/$ARCHIVE" dist/debug
-          cp "build/${{ matrix.sys }}/arm64/release/$exe" "dist/$ARCHIVE/"
+          cp "build/${{ matrix.sys }}/release/$exe" "dist/$ARCHIVE/"
           echo "BINARY=dist/$ARCHIVE/$exe" >> "$GITHUB_ENV"
 
       - name: Stage the library
         if: inputs.mode == 'lib'
         shell: bash
         run: |
-          cmake --install build/${{ matrix.sys }}/arm64/release --prefix "dist/$ARCHIVE"
+          cmake --install build/${{ matrix.sys }}/release --prefix "dist/$ARCHIVE"
           lib="$(find "dist/$ARCHIVE" -type f \( -name '*.a' -o -name '*.so*' -o -name '*.dylib' -o -name '*.lib' -o -name '*.dll' \) | head -1)"
           if [ -z "$lib" ]; then
             echo "::error::no installed library found under dist/$ARCHIVE"
@@ -201,7 +201,7 @@ jobs:
               dsymutil "$BINARY" -o "dist/debug/myapp.dSYM"
               strip -S "$BINARY" ;;
             windows)
-              cp build/${{ matrix.sys }}/arm64/release/myapp.pdb dist/debug/ ;;
+              cp build/${{ matrix.sys }}/release/myapp.pdb dist/debug/ ;;
           esac
 
       # vcpkg writes an SPDX document for every port it installs. Collected
@@ -213,7 +213,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p "dist/sbom/$ARCHIVE"
-          find build/${{ matrix.sys }}/arm64/release/vcpkg_installed -name vcpkg.spdx.json 2>/dev/null | while read -r doc; do
+          find build/${{ matrix.sys }}/release/vcpkg_installed -name vcpkg.spdx.json 2>/dev/null | while read -r doc; do
             port="$(basename "$(dirname "$doc")")"
             cp "$doc" "dist/sbom/$ARCHIVE/$port.spdx.json"
           done
