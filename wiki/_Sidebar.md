@@ -10,6 +10,7 @@
 
 **Everyday work**
 - [Writing code](Writing-Code)
+- [The cx command](The-cx-Command)
 - [Adding dependencies](Adding-Dependencies)
 - [Library + app tutorial](Library-and-App-Tutorial)
 - [Testing guide](Testing-Guide)

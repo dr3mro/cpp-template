@@ -264,6 +264,21 @@ folders, reads their type, sources and `LINK_LIBRARIES`, and writes a Graphviz
 `docs/diagrams/architecture.png`. Because it reads the real targets, the
 picture can't go stale.
 
+## The `cx` command
+
+`cx` is not part of the build. The wrappers in the project root (`cx`,
+`cx.ps1`, `cx.cmd`) find CMake and run
+`cmake -P cmake/cx/cx.cmake -- <args>`. The dispatcher parses the command and
+the words after the first `--`, then includes one file from
+`cmake/cx/commands/`. Shared helpers (reading the presets, evaluating their
+conditions, resolving aliases and targets, running CMake and CTest) are in
+`cmake/cx/lib.cmake`.
+
+The command deliberately reads `CMakePresets.json` itself instead of asking
+CMake, so plain words keep working in script mode and a disabled preset gets
+an explanation before CMake runs. A new command is one file under
+`cmake/cx/commands/`; its header comment is what `cx help` prints.
+
 ## Presets
 
 `CMakePresets.json` has a hidden `base` preset with the shared parts

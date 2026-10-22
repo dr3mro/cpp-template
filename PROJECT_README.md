@@ -10,15 +10,19 @@ Requires CMake 3.25+, Ninja, a C++17 compiler and [vcpkg](https://vcpkg.io)
 with `VCPKG_ROOT` set ([setup](https://github.com/dr3mro/cpp-template/wiki/Getting-Started)).
 
 ```bash
-cmake --preset debug             # configure (first run downloads dependencies)
-cmake --build --preset debug     # build
-ctest --preset debug             # test
-./build/debug/myapp              # run
+./cx build                       # configure (first run downloads dependencies), then build
+./cx test                        # build and run the tests
+./cx run -- YourName             # build and run the program
 ```
 
-Use `--preset release` for an optimised build, and
-`cmake --install build/release` to install it into `build/install/release/`.
-All presets and options: [Building and running](https://github.com/dr3mro/cpp-template/wiki/Building-and-Running).
+`cx` is the project command. `./cx build release` builds the optimised
+preset, `./cx install release` installs it into `build/install/release/`, and
+`./cx help` lists the rest, including `dev`, `fmt`, `lint`, `docs`,
+`coverage`, `fuzz` and `package`. Presets are plain words: `./cx test nosan`,
+`./cx run release -- Name`. See
+[The cx command](https://github.com/dr3mro/cpp-template/wiki/The-cx-Command).
+The `cmake`/`ctest` commands still work directly; all presets and options are
+in [Building and running](https://github.com/dr3mro/cpp-template/wiki/Building-and-Running).
 
 ### On Windows
 
@@ -27,8 +31,8 @@ The presets need a **Developer PowerShell for VS** (`-Arch amd64` on x64,
 `myapp.sln` and skip CMake. Add `-SkipAutomaticLocation` to the
 `Launch-VsDevShell.ps1 -SkipAutomaticLocation` command, or the shell moves
 you out of the project folder. On ARM64 the `debug` preset (ASan) needs the **C++ AddressSanitizer**
-component of the Visual Studio Installer; use `cmake --preset debug-nosan`
-without it. To create another project from the template,
+component of the Visual Studio Installer; use `./cx build nosan` (or
+`cmake --preset debug-nosan`) without it. To create another project from the template,
 allow the downloaded script once with
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (or use
 `powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 ...`),

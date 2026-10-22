@@ -36,6 +36,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `cx`, a project command in three thin wrappers (`cx`, `cx.ps1`, `cx.cmd`)
+  around one CMake script. `cx build`, `cx test`, `cx run` and `cx dev` cover
+  everyday work, and `fmt`, `lint`, `docs`, `coverage`, `fuzz`, `package`,
+  `install`, `presets`, `targets`, `doctor` and `version` cover the rest.
+  Presets, aliases (`nosan`, `asan`, `msan`, `gcc`, `clang`, `vs`) and build
+  targets are plain words, and `cx help` comes from the command files
+  themselves. The editor tasks use it, and the template CI runs every command
+  and both `cx dev` paths.
 - The Visual Studio solution builds and runs the unit tests: `myapp_tests`
   is a second project in `myapp.sln`, and `msbuild ... -p:RunTests=true`
   runs the tests as part of the build. doctest comes from the manifest's

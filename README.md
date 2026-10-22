@@ -22,9 +22,15 @@ A project created with `--no-vcpkg` needs no vcpkg at all.
 git clone https://github.com/dr3mro/cpp-template.git ~/Templates/cpp-template
 ~/Templates/cpp-template/scripts/new-project.sh hello   # create ./hello
 cd hello
-cmake --workflow --preset test   # configure, build and test (ASan + UBSan)
-./build/debug/hello Amr          # Hello, Amr!
+./cx test                        # configure, build and test (ASan + UBSan)
+./cx run -- Amr                  # Hello, Amr!
 ```
+
+`cx` is the project command: `./cx build`, `./cx test`, `./cx run`,
+`./cx dev` and the tooling commands (`fmt`, `lint`, `docs`, `coverage`,
+`fuzz`, `package`, `install`). `./cx help` lists them, and
+[The cx command](https://github.com/dr3mro/cpp-template/wiki/The-cx-Command)
+explains the presets and aliases. The CMake commands still work directly.
 
 Add `--lib` for an installable library, `--std 20` (or 23) for a newer
 standard, `--author "Jane Doe"` for the name in `main.cpp` (default: your git
@@ -46,7 +52,8 @@ and [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio).
 
 - **Presets** for debug (ASan + UBSan), release (hardened, LTO),
   ThreadSanitizer, CI (warnings as errors, GCC and Clang), coverage, fuzzing
-  and docs, plus one-command workflows (`cmake --workflow --preset test`)
+  and docs, plus the `cx` command and one-command workflows
+  (`cx test`, `cmake --workflow --preset test`)
 - **Visual Studio**: a checked-in `<name>.sln` that finds new sources by itself
   and builds and runs the unit tests without CMake
 - **App + library layout**: all code in a library that the app, tests and
@@ -63,7 +70,7 @@ and [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio).
 
 | | |
 | --- | --- |
-| New here | [Getting started](https://github.com/dr3mro/cpp-template/wiki/Getting-Started) · [Project layout](https://github.com/dr3mro/cpp-template/wiki/Project-Layout) · [Building and running](https://github.com/dr3mro/cpp-template/wiki/Building-and-Running) · [Editor setup](https://github.com/dr3mro/cpp-template/wiki/Editor-Setup) · [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio) |
+| New here | [Getting started](https://github.com/dr3mro/cpp-template/wiki/Getting-Started) · [Project layout](https://github.com/dr3mro/cpp-template/wiki/Project-Layout) · [Building and running](https://github.com/dr3mro/cpp-template/wiki/Building-and-Running) · [The cx command](https://github.com/dr3mro/cpp-template/wiki/The-cx-Command) · [Editor setup](https://github.com/dr3mro/cpp-template/wiki/Editor-Setup) · [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio) |
 | Writing code | [Writing code](https://github.com/dr3mro/cpp-template/wiki/Writing-Code) · [Adding dependencies](https://github.com/dr3mro/cpp-template/wiki/Adding-Dependencies) · [Library + app tutorial](https://github.com/dr3mro/cpp-template/wiki/Library-and-App-Tutorial) · [Recipes](https://github.com/dr3mro/cpp-template/wiki/Recipes) |
 | Checking code | [Testing](https://github.com/dr3mro/cpp-template/wiki/Testing-Guide) · [Debugging and sanitizers](https://github.com/dr3mro/cpp-template/wiki/Debugging-and-Sanitizers) · [Memory leaks](https://github.com/dr3mro/cpp-template/wiki/Memory-Leaks) · [Fuzzing](https://github.com/dr3mro/cpp-template/wiki/Fuzzing) · [Code quality](https://github.com/dr3mro/cpp-template/wiki/Code-Quality) |
 | Reference | [Options](https://github.com/dr3mro/cpp-template/wiki/Options-Reference) · [Security](https://github.com/dr3mro/cpp-template/wiki/Security) · [CI and releases](https://github.com/dr3mro/cpp-template/wiki/CI-and-Releases) · [CMake internals](https://github.com/dr3mro/cpp-template/wiki/CMake-Internals) · [Troubleshooting](https://github.com/dr3mro/cpp-template/wiki/Troubleshooting) · [FAQ](https://github.com/dr3mro/cpp-template/wiki/FAQ) |
