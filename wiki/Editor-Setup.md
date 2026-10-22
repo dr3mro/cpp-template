@@ -16,8 +16,9 @@ standard). CMake writes that into `build/<preset>/compile_commands.json` on
 every configure, and links `build/compile_commands.json` to the **last
 configured** preset. `.clangd` tells clangd to look there.
 
-So: **configure once** (`cmake --preset debug`) before opening the project,
-and configure again whenever clangd seems confused. `.vscode/settings.json`
+So: **configure once** (`./cx configure`) before opening the project, and
+configure again whenever clangd seems confused. `./cx build` also configures when
+the cache is missing. `.vscode/settings.json`
 also runs clang-tidy inside clangd, so tidy warnings show up as you type.
 
 ## Zed
@@ -29,16 +30,19 @@ Open the project folder (`zed .`). Zed picks up `.zed/`:
 
   | Task | Does |
   | --- | --- |
-  | `build debug` / `build release` | configure and build |
+  | `build` / `build release` | configure and build the default or release preset |
   | `build debug-nosan` | configure and build without sanitizers (what the debugger uses) |
   | `run` / `run debug` | build and run the app |
-  | `test` | configure, build and run the tests (`cmake --workflow --preset test`) |
-  | `build tsan`, `build ci`, `test ci` | the other presets |
+  | `test` / `test ci` | build and run the tests |
+  | `dev` / `dev run` | rebuild and retest, or restart the app, on every change |
   | `coverage report` | coverage HTML report |
-  | `build fuzz` / `fuzz run` | fuzzing |
-  | `format`, `tidy` | code style and static analysis |
+  | `fuzz run` | fuzzing |
+  | `format`, `format check`, `cmake-lint`, `tidy` | code style and static analysis |
   | `docs` | the documentation website |
   | `clean` / `clean all` | remove one preset's build / everything generated |
+
+  Every task runs `cx` ([The cx command](The-cx-Command)), so it also works
+  outside Zed and accepts the same preset words.
 
   **task: rerun** repeats the last one.
 - **Debugging**: `F4` (or **debugger: start**) → **Debug myapp** or **Debug
@@ -75,12 +79,13 @@ Then:
   configure preset and a build preset in the status bar and use its Build and
   Test buttons; every preset is there without a task of its own.
 - **Tasks**: **Terminal → Run Task...** lists what CMake Tools does not offer:
-  `build release`, `build debug-nosan` (the unsanitized build the debugger
-  uses), `run`, `test`, `test ci`, `coverage report`, `fuzz run`, `format`,
-  `cmake-lint`, `tidy`, `docs` and `clean all`. Each is one command, most a
-  CMake workflow preset (`cmake --workflow --preset test`), so they also run
-  in Windows PowerShell 5.1, which cannot chain commands with `&&`.
-  `Cmd/Ctrl+Shift+B` runs the default build (`build release`).
+  `build`, `build release`, `build debug-nosan` (the unsanitized build the
+  debugger uses), `run`, `run debug`, `test`, `test ci`, `dev`, `dev run`,
+  `coverage report`, `fuzz run`, `format`, `format check`, `cmake-lint`,
+  `tidy`, `docs`, `clean` and `clean all`. Each task runs `cx`
+  ([The cx command](The-cx-Command)); the Windows variants use `cx.cmd`, so
+  they also work in Windows PowerShell 5.1, which cannot chain commands with
+  `&&`. `Cmd/Ctrl+Shift+B` runs the default build.
 - **Debugging**: Run and Debug (`Cmd/Ctrl+Shift+D`) → **Debug myapp** or
   **Debug tests**, then `F5`. Each builds `debug-nosan` first.
 

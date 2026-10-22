@@ -1,5 +1,25 @@
 # Building and running
 
+## The short version: cx
+
+Every generated project has `cx`, a small command that runs the right CMake
+commands for you:
+
+```bash
+./cx build             # configure if needed, then build
+./cx test              # build, then run the unit tests
+./cx run -- Amr        # build, then run the program
+./cx dev               # rebuild and retest on every change
+```
+
+On Windows use `.\cx.ps1` or `.\cx.cmd`. Presets are plain words:
+`./cx build release`, `./cx test nosan`, `./cx run release -- Amr`. Run
+`./cx help` for all commands, or read [The cx command](The-cx-Command) for
+the presets, aliases and tooling commands.
+
+The commands below are what `cx` runs; they are still useful when you want
+to pass a CMake or CTest option that `cx` does not wrap.
+
 ## The three commands
 
 ```bash
@@ -11,7 +31,8 @@ ctest --preset debug           # 3. test: run the unit tests
 
 You only need to **configure** again after changing build settings (options,
 `vcpkg.json`, CMake files); a plain **build** is enough after editing code,
-and it reruns the configure step itself when needed.
+and it reruns the configure step itself when needed. `cx build` does the same
+check automatically.
 
 ## Presets
 
@@ -117,8 +138,10 @@ files into a `.tar.gz` (CPack) in `build/release/`.
 | `cmake --build --preset debug --target clean` | the compiled files of one preset (settings are kept) |
 | `cmake --preset debug --fresh` | the settings of one preset; it configures from scratch |
 | `cmake -P cmake/DistClean.cmake` | everything generated: `build/`, `docs/`, `vcpkg_installed/` |
+| `cx clean` / `cx clean --all` | the first two, from the short command |
 
-The Zed and VS Code tasks "clean" and "clean all" run the first and the last.
+The Zed and VS Code tasks "clean" and "clean all" run `cx clean` and
+`cx clean --all`.
 
 ## Running the program with arguments
 

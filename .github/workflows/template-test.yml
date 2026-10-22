@@ -40,10 +40,27 @@ jobs:
           # Pinned to match the pre-commit hook rev, so CI and the local hook
           # agree on formatting. Keep both in step.
           pipx install clang-format==21.1.5
+          pipx install cmakelang==0.6.13
 
       - name: Install extra tools (macOS)
         if: runner.os == 'macOS'
         run: brew install llvm doxygen graphviz
+
+      - name: Install watchexec (Linux)
+        # The cx dev test below exercises both paths: the polling fallback
+        # (this directory is not on PATH) and watchexec (it is, for one step).
+        # The release and its SHA-256 are pinned, like the actions.
+        if: runner.os == 'Linux'
+        run: |
+          version=2.8.0
+          sha256=21839e9840ef592b4d571885ccbd692f54ae5bd4231f3caf29fcf31fa7723afe
+          archive="$RUNNER_TEMP/watchexec-$version.tar.xz"
+          curl -fsSL -o "$archive" \
+            "https://github.com/watchexec/watchexec/releases/download/v$version/watchexec-$version-x86_64-unknown-linux-gnu.tar.xz"
+          echo "$sha256  $archive" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/watchexec"
+          tar -xJf "$archive" -C "$RUNNER_TEMP/watchexec" --strip-components=1
+          "$RUNNER_TEMP/watchexec/watchexec" --version
 
       - name: Generate projects from the template
         run: |
@@ -169,6 +186,142 @@ jobs:
               && env -u VCPKG_ROOT ctest --preset ci)
             echo "::endgroup::"
           done
+
+      - name: The cx command works in a generated project
+        # One step for all of it: the commands, every plain-word preset and
+        # alias form, the tooling commands, the failure cases, and cx dev in
+        # both modes. app17 is not used by a later step.
+        run: |
+          cd /tmp/app17
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            # cmake-lint is configured by find_program; pipx's folder is not
+            # on PATH by default on GitHub's runners.
+            pipx_bin="$(pipx environment --value PIPX_BIN_DIR)"
+            export PATH="$pipx_bin:$PATH"
+          fi
+
+          # ---- discovery and the simple commands -------------------------------
+          ./cx help > /dev/null
+          ./cx help build | grep -q 'cx build'
+          ./cx version | grep -q '^app17 0\.1\.0$'
+          ./cx presets | grep -q '^debug '
+          ./cx targets | grep -q '^app17 '
+          ./cx doctor
+
+          # ---- configure, build, test, run -------------------------------------
+          ./cx configure
+          ./cx configure --fresh
+          ./cx build
+          ./cx test
+          ./cx run -- CI | grep -q 'Hello, CI!'
+          ./cx build release
+          ./cx test release
+          ./cx run release -- CI | grep -q 'Hello, CI!'
+          ./cx test release -- -R 'Greeter*'
+
+          # ---- preset words and aliases ----------------------------------------
+          ./cx build nosan
+          ./cx build asan
+          ./cx build tidy
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            ./cx build gcc
+            ./cx build clang
+            ./cx build ci
+            ./cx lint
+            ./cx coverage
+            ./cx fuzz --seconds 1
+          else
+            if out="$(./cx build gcc 2>&1)"; then
+              echo "::error::cx build gcc succeeded on macOS"
+              exit 1
+            fi
+            grep -q 'not available' <<<"$out"
+          fi
+
+          # ---- tooling ---------------------------------------------------------
+          ./cx build release format-check
+          ./cx fmt --check
+          ./cx docs
+          ./cx package
+          ./cx install --prefix /tmp/app17/cx-install
+
+          # ---- failures --------------------------------------------------------
+          if out="$(./cx build relase 2>&1)"; then
+            echo "::error::cx build relase succeeded"
+            exit 1
+          fi
+          grep -q 'Did you mean' <<<"$out"
+          if ./cx test fuzz > /dev/null 2>&1; then
+            echo "::error::cx test fuzz succeeded without a test preset"
+            exit 1
+          fi
+          if ./cx frobnicate > /dev/null 2>&1; then
+            echo "::error::cx frobnicate succeeded"
+            exit 1
+          fi
+          if ./cx build debug release > /dev/null 2>&1; then
+            echo "::error::cx accepted two presets"
+            exit 1
+          fi
+
+          # ---- cx dev, without watchexec (polling) -----------------------------
+          ./cx dev > /tmp/cx-dev-poll.log 2>&1 &
+          dev_pid=$!
+          cleanup() {
+            kill "$dev_pid" 2>/dev/null || true
+            wait "$dev_pid" 2>/dev/null || true
+            pkill -f "watchexec -w ${PWD}" 2>/dev/null || true
+            pkill -f "${PWD}/cmake/cx/cx.cmake" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          for _ in $(seq 1 90); do
+            grep -q '\[cx dev\] ok' /tmp/cx-dev-poll.log && break
+            sleep 1
+          done
+          grep -q '\[cx dev\] ok' /tmp/cx-dev-poll.log
+          sleep 1
+          touch src/app17/core/greeter.cpp
+          for _ in $(seq 1 90); do
+            [ "$(grep -c '\[cx dev\] ok' /tmp/cx-dev-poll.log)" -ge 2 ] && break
+            sleep 1
+          done
+          [ "$(grep -c '\[cx dev\] ok' /tmp/cx-dev-poll.log)" -ge 2 ]
+          cleanup
+          trap - EXIT
+
+          # ---- cx dev with watchexec (Linux) -----------------------------------
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            PATH="$RUNNER_TEMP/watchexec:$PATH" ./cx dev > /tmp/cx-dev-watch.log 2>&1 &
+            dev_pid=$!
+            cleanup() {
+              kill "$dev_pid" 2>/dev/null || true
+              wait "$dev_pid" 2>/dev/null || true
+              pkill -f "watchexec -w ${PWD}" 2>/dev/null || true
+              pkill -f "${PWD}/cmake/cx/cx.cmake" 2>/dev/null || true
+            }
+            trap cleanup EXIT
+            for _ in $(seq 1 90); do
+              grep -q '\[Command was successful\]' /tmp/cx-dev-watch.log && break
+              sleep 1
+            done
+            grep -q '\[Command was successful\]' /tmp/cx-dev-watch.log
+            sleep 1
+            touch src/app17/core/greeter.cpp
+            for _ in $(seq 1 90); do
+              [ "$(grep -c '\[Command was successful\]' /tmp/cx-dev-watch.log)" -ge 2 ] && break
+              sleep 1
+            done
+            [ "$(grep -c '\[Command was successful\]' /tmp/cx-dev-watch.log)" -ge 2 ]
+            cleanup
+            trap - EXIT
+          fi
+
+          # ---- clean, then MemorySanitizer in a fresh cache --------------------
+          ./cx clean
+          ./cx clean --all
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            CC=clang CXX=clang++ ./cx build msan
+          fi
 
       - name: The project without vcpkg says where its dependencies come from
         # The configure summary names the provider, so a vcpkg path that is
@@ -467,6 +620,56 @@ jobs:
             if ($cache -notmatch 'CMAKE_CXX_COMPILER:FILEPATH=.*cl\.exe') {
               throw "the developer shell did not make CMake pick MSVC"
             }
+          } finally {
+            Pop-Location
+          }
+
+      - name: The cx wrappers build, test and run the project
+        shell: pwsh
+        run: |
+          $project = "$env:RUNNER_TEMP\vsapp"
+          Push-Location $project
+          try {
+            # The same wrapper in Windows PowerShell 5.1 and PowerShell 7:
+            # cx.ps1 puts the "--" in an array, which 5.1 needs.
+            foreach ($shell in @('powershell', 'pwsh')) {
+              & $shell -NoProfile -ExecutionPolicy Bypass -File "$project\cx.ps1" version
+              if ($LASTEXITCODE -ne 0) { throw "cx.ps1 version failed under $shell" }
+            }
+
+            & .\cx.cmd help | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd help failed" }
+            & .\cx.cmd version | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd version failed" }
+            & .\cx.cmd presets | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd presets failed" }
+            & .\cx.cmd targets | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd targets failed" }
+
+            & .\cx.cmd build nosan
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd build nosan failed" }
+            & .\cx.cmd test nosan
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd test nosan failed" }
+            $out = & .\cx.cmd run nosan 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd run nosan failed" }
+            if ($out -notmatch 'Hello, World!') { $out; throw "cx.cmd run printed no greeting" }
+            & .\cx.cmd test nosan -- -R Greeter
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd test with ctest arguments failed" }
+
+            & .\cx.cmd build release
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd build release failed" }
+            & .\cx.cmd test release
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd test release failed" }
+            & .\cx.cmd install release --prefix "$env:RUNNER_TEMP\cx-install"
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd install failed" }
+
+            # These presets exist but their conditions exclude Windows.
+            $out = & .\cx.cmd build gcc 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0) { throw "cx.cmd build gcc succeeded on Windows" }
+            if ($out -notmatch 'not available') { $out; throw "the disabled-preset message is missing" }
+
+            & .\cx.cmd clean
+            if ($LASTEXITCODE -ne 0) { throw "cx.cmd clean failed" }
           } finally {
             Pop-Location
           }

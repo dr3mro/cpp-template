@@ -2,219 +2,168 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "configure release",
+      "label": "build",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "release"
-      ],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
+      "command": "./cx",
+      "args": ["build"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" },
+      "group": { "kind": "build", "isDefault": true }
     },
     {
       "label": "build release",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--workflow",
-        "--preset",
-        "release"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "group": "build"
+      "command": "./cx",
+      "args": ["build", "release"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "build debug-nosan",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--workflow",
-        "--preset",
-        "debug-nosan"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      }
+      "command": "./cx",
+      "args": ["build", "nosan"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "run",
       "type": "shell",
-      "command": "./build/release/myapp",
-      "args": [],
+      "command": "./cx",
+      "args": ["run"],
+      "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": true
-      },
-      "dependsOn": [
-        "build release"
-      ]
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+    },
+    {
+      "label": "run debug",
+      "type": "shell",
+      "command": "./cx",
+      "args": ["run", "debug"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
     },
     {
       "label": "test",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--workflow",
-        "--preset",
-        "test"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      }
+      "command": "./cx",
+      "args": ["test"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" },
+      "group": { "kind": "test", "isDefault": true }
     },
     {
       "label": "test ci",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--workflow",
-        "--preset",
-        "ci"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      }
+      "command": "./cx",
+      "args": ["test", "ci"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "dev",
+      "type": "shell",
+      "command": "./cx",
+      "args": ["dev"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+    },
+    {
+      "label": "dev run",
+      "type": "shell",
+      "command": "./cx",
+      "args": ["dev", "--run"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
     },
     {
       "label": "coverage report",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--workflow",
-        "--preset",
-        "coverage-report"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      }
+      "command": "./cx",
+      "args": ["coverage"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "fuzz run",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--workflow",
-        "--preset",
-        "fuzz-run"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      }
+      "command": "./cx",
+      "args": ["fuzz"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "format",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "release",
-        "--target",
-        "format"
-      ],
+      "command": "./cx",
+      "args": ["fmt"],
+      "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure release"
-      ]
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "format check",
+      "type": "shell",
+      "command": "./cx",
+      "args": ["fmt", "--check"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "cmake-lint",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "release",
-        "--target",
-        "cmake-lint"
-      ],
+      "command": "./cx",
+      "args": ["lint"],
+      "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure release"
-      ]
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "tidy",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "--preset",
-        "release",
-        "--target",
-        "tidy"
-      ],
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always"
-      },
-      "dependsOn": [
-        "configure release"
-      ]
+      "command": "./cx",
+      "args": ["build", "tidy"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "docs",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--workflow",
-        "--preset",
-        "docs"
-      ],
+      "command": "./cx",
+      "args": ["docs"],
+      "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "./cx",
+      "args": ["clean"],
+      "windows": { "command": ".\\cx.cmd" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always" }
     },
     {
       "label": "clean all",
       "type": "shell",
-      "command": "cmake",
-      "args": [
-        "-P",
-        "cmake/DistClean.cmake"
-      ],
+      "command": "./cx",
+      "args": ["clean", "--all"],
+      "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
+      "presentation": { "reveal": "always" }
     }
   ]
 }

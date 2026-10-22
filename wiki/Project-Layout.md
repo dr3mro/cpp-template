@@ -29,12 +29,14 @@ myapp/
 ├── Directory.Build.props      where MSBuild writes everything (under build/vs/)
 ├── examples/                  a program using the installed library (library projects)
 ├── cmake/                     build modules, one per feature
+│   ├── cx/                    the cx command (dispatcher, library, commands)
 │   ├── Dependencies.cmake  ✏️ third-party packages
 │   ├── FetchDependencies.cmake  a package built from its source
 │   ├── TestFramework.cmake      the test framework (doctest)
 │   ├── Options.cmake          every build option
 │   ├── templates/version.hpp.in  template for the generated version header
 │   └── ...                    see "CMake internals"
+├── cx, cx.ps1, cx.cmd         the project command (bash, PowerShell, cmd)
 ├── CMakeLists.txt             the build's table of contents
 ├── CMakePresets.json          the presets (debug, release, ...)
 ├── CMakeUserPresets.json   ✏️ your personal presets (create it; git-ignored)
@@ -86,6 +88,12 @@ New files are picked up automatically on the next build. You don't edit any
 - **`vcpkg.json`**: the project's name and dependencies. `builtin-baseline`
   pins the version of every dependency; Dependabot updates it. A project made
   with `--no-vcpkg` has no `vcpkg.json` at all.
+- **`cx`**, **`cx.ps1`**, **`cx.cmd`**: the project command. `cx build`,
+  `cx test`, `cx run` and `cx dev` cover everyday work; `cx help` lists the
+  tooling commands. See [The cx command](The-cx-Command).
+- **`cmake/cx/`**: the implementation of `cx`. The wrappers contain no
+  project logic; adding a command means adding one file under
+  `cmake/cx/commands/`.
 - **`cmake/Dependencies.cmake`**: one line per third-party package; see
   [Adding dependencies](Adding-Dependencies).
 - **`cmake/Options.cmake`**: every switch you can pass with `-D...`; see the

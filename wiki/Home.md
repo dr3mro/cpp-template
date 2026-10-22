@@ -18,6 +18,7 @@ publishing a release. New to it? Read the **Start here** pages in order.
 ## Everyday work
 
 - [Writing code](Writing-Code): adding components, code style, good habits
+- [The cx command](The-cx-Command): one command for build, test, run, dev and tooling
 - [Adding dependencies](Adding-Dependencies): third-party libraries with vcpkg, the right way
 - [Tutorial: a library and an app](Library-and-App-Tutorial): make a library and use it from another project
 - [Testing guide](Testing-Guide): doctest, running and filtering tests
@@ -46,3 +47,4 @@ publishing a release. New to it? Read the **Start here** pages in order.
 - Commands run from the project's root folder (the one with `CMakePresets.json`).
 - **Configure** means `cmake --preset <name>`, **build** means
   `cmake --build --preset <name>`, and **test** means `ctest --preset <name>`.
+- `cx` runs those commands for you; see [The cx command](The-cx-Command).
