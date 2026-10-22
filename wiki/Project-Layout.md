@@ -35,6 +35,7 @@ myapp/
 ├── CMakeUserPresets.json.example  a starting point for it
 ├── vcpkg.json              ✏️ name, version and dependencies
 ├── Doxyfile.in                documentation settings
+├── Doxyfile.classes.in         second Doxygen pass keeping class-graph .dot files
 ├── .clang-format              code style
 ├── .clang-tidy                static-analysis checks
 ├── .cmake-format.yaml         CMake lint rules (formatting is off)
@@ -42,6 +43,7 @@ myapp/
 ├── .clangd                    tells clangd where the build is
 ├── .editorconfig              whitespace rules for every editor
 ├── .pre-commit-config.yaml    checks run before each commit
+├── .gitattributes              line endings: CRLF for VS/Windows scripts, LF for shell
 ├── .zed/  .vscode/            editor tasks and debugger configs
 ├── .github/                   CI workflows, Dependabot
 ├── CHANGELOG.md            ✏️ what changed in each version
@@ -114,3 +116,7 @@ New files are picked up automatically on the next build. You don't edit any
 | `docs/` | the `docs` target | the documentation website and diagrams |
 
 Delete them all with `cmake -P cmake/DistClean.cmake`; everything regenerates.
+
+## Template-only files
+
+scripts/new-project.cmake, new-project.sh, new-project.ps1 are template-repository only and are not in generated projects. .github/workflows/release-app.yml and release-lib.yml become release.yml in a project. .github/workflows/template-test.yml and wiki.yml are template only. .github/actions/setup-vcpkg/action.yml installs vcpkg, Ninja, ccache. .github/ISSUE_TEMPLATE/bug_report.yml, feature_request.yml, config.yml. .vscode/extensions.json, tasks.json, launch.json. .zed/settings.json, tasks.json, debug.json. cmake/HomebrewLLVM.cmake, cmake/WindowsClang.cmake. examples/CMakeLists.txt, examples/example.cpp. fuzz/corpus/<fuzzer>/ holds seed inputs; see Fuzzing.
