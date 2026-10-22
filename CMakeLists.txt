@@ -35,6 +35,13 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/Helpers.cmake)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     myapp_validate_build_tree("${CMAKE_CURRENT_LIST_DIR}")
 endif()
+# The cx command passes its target architecture so it can tell when a build
+# folder must be reconfigured. Declaring it here keeps CMake from reporting it
+# as an unused -D variable.
+if(DEFINED CX_TARGET_ARCH)
+    set(CX_TARGET_ARCH "${CX_TARGET_ARCH}" CACHE STRING
+        "Target architecture recorded by the cx command")
+endif()
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/PreProject.cmake)
 
 # ---- 2. Project ---------------------------------------------------------------
