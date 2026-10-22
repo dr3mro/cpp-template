@@ -4,6 +4,8 @@
 # Shell and Perl scripts: they need LF line endings, also on Windows
 *.sh text eol=lf
 *.pl text eol=lf
+# cx is a bash script without an extension
+cx text eol=lf
 
 # Windows scripts: cmd.exe misparses LF-only batch files
 *.cmd text eol=crlf
