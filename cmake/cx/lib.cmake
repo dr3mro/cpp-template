@@ -351,6 +351,68 @@ function(_cx_project_name out preset)
     set(${out} "${_name}" PARENT_SCOPE)
 endfunction()
 
+function(_cx_normalize_path input out)
+    file(TO_CMAKE_PATH "${input}" _path)
+    string(REGEX REPLACE "/+$" "" _path "${_path}")
+    if(CMAKE_HOST_WIN32)
+        string(TOLOWER "${_path}" _path)
+    endif()
+    set(${out} "${_path}" PARENT_SCOPE)
+endfunction()
+
+function(_cx_cache_value cache key out)
+    file(STRINGS "${cache}" _line REGEX "^${key}:[^=]*=")
+    if(_line)
+        string(REGEX REPLACE "^[^=]*=" "" _value "${_line}")
+        set(${out} "${_value}" PARENT_SCOPE)
+    else()
+        set(${out} "" PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(_cx_validate_build_tree preset out)
+    set(_cache "${CX_ROOT}/build/${preset}/CMakeCache.txt")
+    if(NOT EXISTS "${_cache}")
+        set(${out} ON PARENT_SCOPE)
+        return()
+    endif()
+    _cx_normalize_path("${CX_ROOT}" _source)
+    _cx_normalize_path("${CX_ROOT}/build/${preset}" _binary)
+    _cx_cache_value("${_cache}" CMAKE_HOME_DIRECTORY _recorded_source)
+    _cx_cache_value("${_cache}" CMAKE_CACHEFILE_DIR _recorded_binary)
+    _cx_cache_value("${_cache}" CMAKE_TOOLCHAIN_FILE _toolchain)
+    _cx_normalize_path("${_recorded_source}" _recorded_source)
+    _cx_normalize_path("${_recorded_binary}" _recorded_binary)
+    if(NOT _recorded_source STREQUAL _source OR NOT _recorded_binary STREQUAL _binary)
+        _cx_fail(
+            "build/${preset} belongs to another checkout or path.\n"
+            "  current source: ${CX_ROOT}\n"
+            "  recorded source: ${_recorded_source}\n"
+            "Use a new build directory, or explicitly reconfigure with:\n"
+            "  cmake --preset ${preset} --fresh")
+    endif()
+    if(_toolchain)
+        _cx_normalize_path("${_toolchain}" _toolchain)
+        if(NOT EXISTS "${_toolchain}")
+            _cx_fail(
+                "build/${preset} records a missing toolchain:\n"
+                "  ${_toolchain}\n"
+                "Use a new build directory, or explicitly reconfigure with:\n"
+                "  cmake --preset ${preset} --fresh")
+        endif()
+        _cx_normalize_path("${CX_ROOT}/cmake/VcpkgToolchain.cmake" _expected_toolchain)
+        if(_toolchain MATCHES "/vcpkgtoolchain\\.cmake$"
+           AND NOT _toolchain STREQUAL _expected_toolchain)
+            _cx_fail(
+                "build/${preset} records a toolchain from another checkout:\n"
+                "  ${_toolchain}\n"
+                "Use a new build directory, or explicitly reconfigure with:\n"
+                "  cmake --preset ${preset} --fresh")
+        endif()
+    endif()
+    set(${out} OFF PARENT_SCOPE)
+endfunction()
+
 # The targets the template defines, plus the three that carry the project's
 # own name. Kept in one place so `targets`, `help` and resolution agree.
 function(_cx_target_names out)
@@ -503,6 +565,7 @@ endfunction()
 
 # ---- configure and build ------------------------------------------------------
 function(_cx_needs_configure preset out)
+    _cx_validate_build_tree("${preset}" _valid)
     set(_cache "${CX_ROOT}/build/${preset}/CMakeCache.txt")
     if(NOT EXISTS "${_cache}")
         set(${out} ON PARENT_SCOPE)

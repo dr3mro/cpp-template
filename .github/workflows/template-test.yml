@@ -645,6 +645,51 @@ jobs:
             Pop-Location
           }
 
+      - name: Moved build trees are rejected before Ninja
+        shell: pwsh
+        run: |
+          $project = "$env:RUNNER_TEMP\vsnovcpkg"
+          Push-Location $project
+          try {
+            cmake --preset release
+            if ($LASTEXITCODE -ne 0) { throw "fresh Windows configure failed" }
+            cmake --build --preset release
+            if ($LASTEXITCODE -ne 0) { throw "fresh Windows build failed" }
+            $second = cmake --build --preset release 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "valid existing build failed" }
+            if ($second -match 'Re-running CMake|regenerate-during-build') {
+              throw "a valid incremental build reconfigured unexpectedly: $second"
+            }
+
+            $moved = Join-Path $env:RUNNER_TEMP 'moved project with spaces'
+            if (Test-Path -LiteralPath $moved) {
+              Remove-Item -LiteralPath $moved -Recurse -Force
+            }
+            New-Item -ItemType Directory -Path $moved | Out-Null
+            robocopy $project $moved /E /XD build .git | Out-Null
+            if ($LASTEXITCODE -gt 7) { throw "copying the project failed" }
+            Copy-Item -LiteralPath "$project\build" -Destination $moved -Recurse
+
+            Push-Location $moved
+            try {
+              $stale = cmake -P cmake\cx\cx.cmake -- build release 2>&1 | Out-String
+              if ($LASTEXITCODE -eq 0) {
+                throw "a build tree from another checkout was reused"
+              }
+              if ($stale -notmatch 'belongs to another checkout or path') {
+                $stale
+                throw "stale-build error did not explain the moved checkout"
+              }
+              if ($stale -notmatch '--fresh') {
+                throw "stale-build error did not explain recovery"
+              }
+            } finally {
+              Pop-Location
+            }
+          } finally {
+            Pop-Location
+          }
+
       - name: The cx commands work for the app
         shell: pwsh
         run: |

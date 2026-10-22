@@ -94,7 +94,10 @@ A word that names a target picks the preset that target belongs to:
 The build commands configure again only when `build/<preset>/CMakeCache.txt`
 is missing, or when `CMakePresets.json`, `CMakeUserPresets.json` or a source
 `CMakeLists.txt` is newer than the cache. A plain edit-and-build loop is
-therefore enough; there is no separate configure step to remember.
+therefore enough; there is no separate configure step to remember. Before
+reusing a cache, `cx` also verifies that its recorded source, binary and
+toolchain paths still belong to this checkout. If the project was moved, use
+`cmake --preset <preset> --fresh` once rather than reusing the old tree.
 
 Arguments after `--` go to the program or to `ctest` unchanged:
 

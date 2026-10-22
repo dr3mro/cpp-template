@@ -29,6 +29,9 @@ endif()
 # ---- 1. Before project() ------------------------------------------------------
 # These must run before project() enables C++, so they are included by path.
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Helpers.cmake)
+if(DEFINED CMAKE_HOME_DIRECTORY)
+    myapp_validate_build_tree("${CMAKE_CURRENT_LIST_DIR}")
+endif()
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/PreProject.cmake)
 
 # ---- 2. Project ---------------------------------------------------------------

@@ -57,7 +57,7 @@ configure_file("${PROJECT_SOURCE_DIR}/Doxyfile.classes.in"
 set(_myapp_render_commands
     COMMAND "${MYAPP_DOT_EXECUTABLE}" -Tpng "${MYAPP_ARCHITECTURE_DOT}"
             -o "${MYAPP_DIAGRAMS_DIR}/architecture.png")
-file(GLOB _myapp_handwritten_dots CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/diagrams/*.dot")
+file(GLOB _myapp_handwritten_dots "${PROJECT_SOURCE_DIR}/diagrams/*.dot")
 foreach(_dot IN LISTS _myapp_handwritten_dots)
     get_filename_component(_name "${_dot}" NAME_WE)
     list(APPEND _myapp_render_commands

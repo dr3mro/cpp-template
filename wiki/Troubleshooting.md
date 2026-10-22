@@ -139,6 +139,22 @@ Homebrew's: `cmake -LA build/<preset> | grep CMAKE_CXX_COMPILER`.
 The compiler is fixed when a build folder is first configured. Use
 `cmake --preset <name> --fresh -DCMAKE_CXX_COMPILER=...`.
 
+**I moved or copied the project and Ninja keeps re-running CMake**
+Build trees contain absolute source, binary and toolchain paths. Do not reuse a
+`build/<preset>/` folder from another checkout or location: the wrapper checks
+`CMakeCache.txt` and stops with the recorded and current paths instead of
+letting Ninja loop through stale `CONFIGURE_DEPENDS` state. Configure a fresh
+tree explicitly:
+
+```powershell
+cmake --preset debug --fresh
+cmake --build --preset debug
+```
+
+The same recovery works for other presets. `--fresh` is explicit and does not
+delete the old folder unless CMake is instructed to do so; alternatively,
+rename the old `build/<preset>/` folder and configure again.
+
 ## Building
 
 **I ran CMake in the template folder by mistake**

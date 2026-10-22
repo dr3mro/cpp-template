@@ -43,11 +43,11 @@ endif()
 
 # Every C++ file that belongs to the project. main.cpp only exists in app mode
 # and examples/ only in library mode; globs simply match nothing otherwise.
-file(GLOB_RECURSE _myapp_format_files CONFIGURE_DEPENDS
+file(GLOB_RECURSE _myapp_format_files
     "${PROJECT_SOURCE_DIR}/include/*.hpp"
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/tests/*.cpp")
-file(GLOB _myapp_format_extra CONFIGURE_DEPENDS
+file(GLOB _myapp_format_extra
     "${PROJECT_SOURCE_DIR}/main.cpp"
     "${PROJECT_SOURCE_DIR}/fuzz/*.cpp"
     "${PROJECT_SOURCE_DIR}/examples/*.cpp")

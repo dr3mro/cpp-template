@@ -5,9 +5,7 @@
 # description of the build (git describe --tags --always --dirty).
 # It is written:
 #   - once at configure time, so clangd and clang-tidy find it right away, and
-#   - again before every build by the ${PROJECT_NAME}_version target, so the
-#     hash never goes stale between commits (src/CMakeLists.txt makes the
-#     library depend on that target).
+#   - by the ${PROJECT_NAME}_version target when its inputs change.
 # Both paths use the same function in WriteVersion.cmake.
 #
 # Provides: target ${PROJECT_NAME}_version, MYAPP_VERSION_HEADER, and the
@@ -26,8 +24,9 @@ myapp_write_version_header(
     OUTPUT "${MYAPP_VERSION_HEADER}"
     SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
-# Build time: the same function, run as a script with the values it needs.
-add_custom_target(${PROJECT_NAME}_version
+# Build time: the same function, run as a script when its inputs change.
+add_custom_command(
+    OUTPUT ${MYAPP_VERSION_HEADER}
     COMMAND ${CMAKE_COMMAND}
             -DTEMPLATE=${_myapp_version_template}
             -DOUTPUT=${MYAPP_VERSION_HEADER}
@@ -38,9 +37,10 @@ add_custom_target(${PROJECT_NAME}_version
             -DPROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
             -DPROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
             -P ${PROJECT_SOURCE_DIR}/cmake/WriteVersion.cmake
-    BYPRODUCTS ${MYAPP_VERSION_HEADER}
+    DEPENDS ${_myapp_version_template} ${PROJECT_SOURCE_DIR}/cmake/WriteVersion.cmake
     COMMENT "Writing ${PROJECT_NAME}/version.hpp"
     VERBATIM)
+add_custom_target(${PROJECT_NAME}_version DEPENDS ${MYAPP_VERSION_HEADER})
 
 # The generated headers (version.hpp here, the export header from
 # ExportHeader.cmake) are public headers of the library: src/CMakeLists.txt

@@ -68,20 +68,43 @@ endif()
 # it looks for a compiler on the PATH just like the single-config ones, so it
 # has to go through this check.
 if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
+    set(_myapp_host_arch "x64")
+    if("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "x86")
+        set(_myapp_host_arch "x86")
+    endif()
+    if("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "ARM64"
+       OR "$ENV{PROCESSOR_ARCHITEW6432}" STREQUAL "ARM64")
+        set(_myapp_host_arch "arm64")
+    endif()
+    if(NOT DEFINED MYAPP_WINDOWS_TARGET_ARCH)
+        set(MYAPP_WINDOWS_TARGET_ARCH "${_myapp_host_arch}" CACHE STRING
+            "Windows target architecture (x86, x64, or arm64)")
+    endif()
+    set(_myapp_arch "${MYAPP_WINDOWS_TARGET_ARCH}")
+    if(NOT MYAPP_WINDOWS_TARGET_ARCH MATCHES "^(x86|x64|arm64)$")
+        message(FATAL_ERROR
+            "Unsupported MYAPP_WINDOWS_TARGET_ARCH: "
+            "${MYAPP_WINDOWS_TARGET_ARCH}")
+    endif()
+    set(_myapp_target_triplet "${MYAPP_WINDOWS_TARGET_ARCH}-windows")
+    if(NOT DEFINED VCPKG_TARGET_TRIPLET
+       OR NOT "${VCPKG_TARGET_TRIPLET}" STREQUAL "${_myapp_target_triplet}")
+        set(VCPKG_TARGET_TRIPLET "${_myapp_target_triplet}" CACHE STRING
+            "vcpkg target triplet" FORCE)
+    endif()
+    set(_myapp_host_triplet "${_myapp_host_arch}-windows")
+    if(NOT DEFINED VCPKG_HOST_TRIPLET
+       OR NOT "${VCPKG_HOST_TRIPLET}" STREQUAL "${_myapp_host_triplet}")
+        set(VCPKG_HOST_TRIPLET "${_myapp_host_triplet}" CACHE STRING
+            "vcpkg host triplet" FORCE)
+    endif()
     if(NOT CMAKE_GENERATOR MATCHES "^Visual Studio"
        AND NOT DEFINED CMAKE_CXX_COMPILER
        AND NOT DEFINED ENV{CXX})
-        # The architecture of this machine, in the spelling the Visual Studio
-        # developer shell uses.
-        set(_myapp_arch "amd64")
-        if("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "ARM64"
-           OR "$ENV{PROCESSOR_ARCHITEW6432}" STREQUAL "ARM64")
-            set(_myapp_arch "arm64")
-        endif()
         if(DEFINED ENV{VSCMD_VER} OR DEFINED ENV{VCToolsInstallDir})
             # Inside a developer shell: use its cl, not the clang++ or g++ that
             # happens to come first on the PATH.
-            myapp_find_msvc_cl(_myapp_cl)
+            myapp_find_msvc_cl(_myapp_cl "${_myapp_host_arch}" "${_myapp_arch}")
             if(_myapp_cl)
                 set(CMAKE_CXX_COMPILER "${_myapp_cl}" CACHE FILEPATH "C++ compiler")
             endif()

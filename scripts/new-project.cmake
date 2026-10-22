@@ -509,8 +509,11 @@ if(_use_git)
         set(_template_version "unreleased (${_described})")
     endif()
 endif()
-file(WRITE "${DEST}/.template-version"
-     "cpp-template ${_template_version}\nhttps://github.com/dr3mro/cpp-template\n")
+file(CONFIGURE
+    OUTPUT "${DEST}/.template-version"
+    CONTENT "cpp-template ${_template_version}\nhttps://github.com/dr3mro/cpp-template\n"
+    @ONLY
+    NEWLINE_STYLE UNIX)
 
 # _drop_lines(<file> <regex>): removes the lines that match <regex> (Zed's
 # tasks.json keeps one task per line). Walks the text with string(FIND), like
@@ -688,6 +691,7 @@ endif()
 if(NO_VCPKG)
     # The manifest is what vcpkg reads. Without it there is nothing to install.
     file(REMOVE "${DEST}/vcpkg.json")
+    file(REMOVE "${DEST}/cmake/VcpkgToolchain.cmake")
 
     # The switch that tells the build not to use vcpkg. The template has it on,
     # so only the value of the option changes.

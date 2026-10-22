@@ -50,6 +50,56 @@ function(myapp_read_version out_var version_file)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${version_file}")
 endfunction()
 
+function(myapp_validate_build_tree source_dir)
+    if(NOT DEFINED CMAKE_HOME_DIRECTORY)
+        return()
+    endif()
+    file(TO_CMAKE_PATH "${CMAKE_HOME_DIRECTORY}" _recorded_source)
+    file(TO_CMAKE_PATH "${source_dir}" _source)
+    file(TO_CMAKE_PATH "${CMAKE_CACHEFILE_DIR}" _recorded_binary)
+    file(TO_CMAKE_PATH "${CMAKE_BINARY_DIR}" _binary)
+    string(REGEX REPLACE "/+$" "" _recorded_source "${_recorded_source}")
+    string(REGEX REPLACE "/+$" "" _source "${_source}")
+    string(REGEX REPLACE "/+$" "" _recorded_binary "${_recorded_binary}")
+    string(REGEX REPLACE "/+$" "" _binary "${_binary}")
+    if(CMAKE_HOST_WIN32)
+        string(TOLOWER "${_recorded_source}" _recorded_source)
+        string(TOLOWER "${_source}" _source)
+        string(TOLOWER "${_recorded_binary}" _recorded_binary)
+        string(TOLOWER "${_binary}" _binary)
+    endif()
+    if(NOT _recorded_source STREQUAL _source
+       OR (NOT _recorded_binary STREQUAL "" AND NOT _recorded_binary STREQUAL _binary))
+        message(FATAL_ERROR
+            "This build directory belongs to another checkout or path.\n"
+            "  current source: ${_source}\n"
+            "  recorded source: ${_recorded_source}\n"
+            "  current build:  ${_binary}\n"
+            "  recorded build: ${_recorded_binary}\n"
+            "Use a new build directory, or explicitly reconfigure with:\n"
+            "  cmake --preset <preset> --fresh")
+    endif()
+    if(DEFINED CMAKE_TOOLCHAIN_FILE AND NOT EXISTS "${CMAKE_TOOLCHAIN_FILE}")
+        message(FATAL_ERROR
+            "This build directory records a missing toolchain:\n"
+            "  ${CMAKE_TOOLCHAIN_FILE}\n"
+            "Use a new build directory, or explicitly reconfigure with:\n"
+            "  cmake --preset <preset> --fresh")
+    endif()
+    if(DEFINED CMAKE_TOOLCHAIN_FILE)
+        get_filename_component(_toolchain_name "${CMAKE_TOOLCHAIN_FILE}" NAME)
+        if(_toolchain_name STREQUAL "VcpkgToolchain.cmake"
+           AND NOT CMAKE_TOOLCHAIN_FILE STREQUAL
+               "${source_dir}/cmake/VcpkgToolchain.cmake")
+            message(FATAL_ERROR
+                "This build directory records a toolchain from another checkout:\n"
+                "  ${CMAKE_TOOLCHAIN_FILE}\n"
+                "Use a new build directory, or explicitly reconfigure with:\n"
+                "  cmake --preset <preset> --fresh")
+        endif()
+    endif()
+endfunction()
+
 # myapp_find_llvm_program(<var> <name>... [NEXT_TO_COMPILER])
 #
 # find_program() for an LLVM tool, searching Homebrew's LLVM before PATH. With
@@ -66,20 +116,23 @@ function(myapp_find_llvm_program var)
     find_program(${var} NAMES ${ARG_UNPARSED_ARGUMENTS} HINTS ${_hints} ${MYAPP_LLVM_HINTS})
 endfunction()
 
-# myapp_find_msvc_cl(<out-var>)
+# myapp_find_msvc_cl(<out-var> <host-arch> <target-arch>)
 #
 # Finds cl.exe in the Visual Studio tools of the current developer shell. The
-# tools live in bin/Host<host arch>/<target arch>/, and the developer shell
-# (VsDevCmd.bat or Launch-VsDevShell.ps1) sets VCToolsInstallDir and
-# VSCMD_ARG_TGT_ARCH. The result is empty outside a developer shell.
-function(myapp_find_msvc_cl out_var)
+# tools live in bin/Host<host arch>/<target arch>/. The result is empty
+# outside a developer shell.
+function(myapp_find_msvc_cl out_var host_arch target_arch)
     set(_hints "")
-    if(DEFINED ENV{VCToolsInstallDir} AND DEFINED ENV{VSCMD_ARG_TGT_ARCH})
-        set(_target "$ENV{VSCMD_ARG_TGT_ARCH}")
+    if(DEFINED ENV{VCToolsInstallDir})
+        if(target_arch STREQUAL "x64")
+            set(_msvc_target "amd64")
+        else()
+            set(_msvc_target "${target_arch}")
+        endif()
         list(APPEND _hints
-            "$ENV{VCToolsInstallDir}/bin/Host$ENV{VSCMD_ARG_HOST_ARCH}/${_target}"
-            "$ENV{VCToolsInstallDir}/bin/Hostx64/${_target}"
-            "$ENV{VCToolsInstallDir}/bin/${_target}")
+            "$ENV{VCToolsInstallDir}/bin/Host${host_arch}/${_msvc_target}"
+            "$ENV{VCToolsInstallDir}/bin/Hostx64/${_msvc_target}"
+            "$ENV{VCToolsInstallDir}/bin/${_msvc_target}")
     endif()
     find_program(_cl NAMES cl HINTS ${_hints})
     # find_program() caches its result; this lookup must not leave an entry

@@ -8,6 +8,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Windows presets select the host MSVC architecture and matching vcpkg triplet
+  for x64, ARM64, x86, and x86-host/x64-target builds across all configurations;
+  the default target follows the host unless explicitly selected, stale
+  architecture selections are repaired without repeatedly rewriting the cache,
+  and vcpkg selects that architecture before manifest installation. Optional
+  source globs no longer trigger   reconfiguration loops.
+- `cx` rejects build trees copied from another checkout or path before invoking
+  CMake or Ninja and documents the explicit `--fresh` recovery.
 - The Visual Studio solution is made of more files: the compiler and linker
   settings live in `<name>.props` and the shared targets in `<name>.targets`,
   so every project of a solution imports them and builds the same way. The
