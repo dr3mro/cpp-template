@@ -58,9 +58,11 @@ those PRs, so merge them when they're green.
 ## The template test
 
 The **Template test** workflow only runs in the template repository. It
-generates projects with `new-project.sh` (an app, an app with C++20 and a
-library), checks that no `myapp` placeholder is left, and builds and tests
-every one of them.
+generates projects with `new-project.sh` (apps with C++17, 20 and 23 and a
+library), checks that bad names and options are refused, that `--author`
+comes out exactly as typed and that no `myapp` placeholder is left, and builds
+and tests every one of them. A project made through `new-project.ps1` must be
+identical to the one `new-project.sh` made, apart from the random GUID.
 
 On Windows it does more: it builds the checked-in Visual Studio solution with
 MSBuild, for an app project and for a library project, on both
@@ -71,9 +73,10 @@ msbuild vsapp.sln /p:Configuration=Release /p:Platform=x64     # x64
 msbuild vsapp.sln /p:Configuration=Release /p:Platform=ARM64   # ARM64
 ```
 
-The Windows job also generates a project with `new-project.ps1` using the
-bash-style options (`--std 20 --lib --no-git`) and diffs it against the
-`-Std 20 -Lib -NoGit` result, and it checks the compiler guard: in a plain
+The Windows job also generates projects with `new-project.ps1` under Windows
+PowerShell 5.1 and PowerShell 7 and diffs them against the `new-project.sh`
+ones (this catches line-ending or argument-passing problems on Windows), and
+it checks the compiler guard: in a plain
 PowerShell window `cmake --preset release` must stop with the developer-shell
 message (not `STL1000`), while inside the developer shell CMake must choose
 MSVC.

@@ -32,9 +32,12 @@ current by Dependabot.
 
 ## Bringing template improvements into an existing project
 
-`new-project.sh` copies the template and renames `myapp` everywhere, so a
-project can't simply `git merge` the template later. The reliable way is to
-generate a fresh project with the **same name** and compare:
+The generator copies the template and renames `myapp` everywhere, so a
+project can't simply `git merge` the template later. Every project records
+where it came from in `.template-version` (the template release, or the
+commit for an untagged template), so `git log <that version>..` in the
+template lists what changed since. The reliable way to take those changes is
+to generate a fresh project with the **same name** and compare:
 
 ```bash
 # a throw-away project from the current template, named like yours
@@ -60,17 +63,18 @@ comparison isn't cluttered with mode differences.
 
 ### Placeholder rules
 
-`new-project.sh` replaces every `myapp` with the project name and every
-`MYAPP` with the capitalised name, in every text file. So:
+The generator (`scripts/new-project.cmake`; `new-project.sh` and
+`new-project.ps1` only run it) replaces every `myapp` with the project name
+and every `MYAPP` with the capitalised name, in every text file. So:
 
 - use `myapp`/`MYAPP` (or `${PROJECT_NAME}` in CMake) wherever a name should
   follow the project: target names, option names, namespaces, include folders;
 - avoid the letters `myapp` anywhere else; they'd be renamed too;
 - files that only make sense in the template (like `template-test.yml`,
-  `wiki/` and `wiki.yml`) must be removed by `new-project.sh`; see the `rm`
-  lines near the top of the script;
+  `wiki/`, `wiki.yml` and `NOTES.md`) must be left out by the generator; see
+  the `list(FILTER _files EXCLUDE ...)` lines in `new-project.cmake`;
 - `myapp.sln` and `myapp.vcxproj` carry a placeholder project GUID
-  (`3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69`); `new-project.sh` replaces it with a
+  (`3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69`); the generator replaces it with a
   fresh GUID in both files, so don't hard-code it anywhere else.
 - Keep `ReadOnlyProject` in the `.vcxproj`: it is what lets the wildcards work
   without the IDE warning. When adding a project item, give each glob or file

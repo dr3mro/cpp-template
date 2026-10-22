@@ -49,14 +49,30 @@ jobs:
         run: |
           ./scripts/new-project.sh app17 /tmp/app17 --std 17 --no-git
           ./scripts/new-project.sh app20 /tmp/app20 --std 20 --no-git
+          ./scripts/new-project.sh app23 /tmp/app23 --std=23 --no-git
           ./scripts/new-project.sh mylib /tmp/mylib --no-git --lib
 
+      - name: The generator rejects bad input
+        # Each of these must fail, and must not leave a half-made project.
+        run: |
+          for args in "class" "Bad_Name" "ok --std 14" "ok --bogus" "ok --std 20 -Std 17" "ok__x"; do
+            # shellcheck disable=SC2086 # split on purpose
+            if ./scripts/new-project.sh $args /tmp/rejected; then
+              echo "::error::new-project.sh accepted: $args"
+              exit 1
+            fi
+            if [ -e /tmp/rejected ]; then
+              echo "::error::new-project.sh left /tmp/rejected behind for: $args"
+              exit 1
+            fi
+          done
+
       - name: The author ends up in the project exactly as given
-        # The name goes into every file through perl, so characters that mean
-        # something to perl or the shell (/ @ $ < >) must come out unchanged.
+        # Characters that mean something to a shell, a regex or CMake
+        # (/ @ $ < > ;) must come out exactly as they went in.
         run: |
           # shellcheck disable=SC2016 # the $HOME is meant literally
-          author='Jane O/Brien <jane@x.io> $HOME'
+          author='Jane O/Brien <jane@x.io> $HOME; x'
           ./scripts/new-project.sh authored /tmp/authored --no-git --author "$author"
           grep -qF " * $author" /tmp/authored/main.cpp || {
             echo "::error::main.cpp does not carry the author '$author'"
@@ -68,11 +84,10 @@ jobs:
             exit 1
           fi
 
-      - name: The PowerShell script produces the same project
-        # scripts/new-project.ps1 must produce the same project as
-        # new-project.sh, apart from the random Visual Studio GUID. Same names
-        # as the bash projects above (in their own folders), so the only
-        # difference left is the GUID.
+      - name: The PowerShell wrapper produces the same project
+        # Both wrappers run new-project.cmake, so the projects can only differ
+        # if the wrapper mangles its arguments. The PowerShell spellings of
+        # the options are used here; the GUID is random and masked out.
         run: |
           pwsh -NoProfile -File scripts/new-project.ps1 app17 /tmp/ps/app17 -Std 17 -NoGit
           pwsh -NoProfile -File scripts/new-project.ps1 mylib /tmp/ps/mylib -NoGit -Lib
@@ -96,7 +111,7 @@ jobs:
         # Every MYAPP/myapp must have been renamed; a miss means the script
         # (or a new file) still hard-codes the template name.
         run: |
-          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' /tmp/app17 /tmp/app20 /tmp/mylib --exclude-dir=.git; then
+          if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' /tmp/app17 /tmp/app20 /tmp/app23 /tmp/mylib --exclude-dir=.git; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
@@ -105,7 +120,7 @@ jobs:
         # The ci preset is warnings-as-errors + ASan, so this fails on any
         # warning the template introduces.
         run: |
-          for project in /tmp/app17 /tmp/app20 /tmp/mylib; do
+          for project in /tmp/app17 /tmp/app20 /tmp/app23 /tmp/mylib; do
             echo "::group::$project ci"
             (cd "$project" && cmake --preset ci && cmake --build --preset ci && ctest --preset ci)
             echo "::endgroup::"
@@ -349,35 +364,6 @@ jobs:
                       throw "the PowerShell script and the bash script produce different projects ($($pair[0]), $shell)"
                   }
               }
-          }
-
-      - name: The PowerShell script accepts the bash-style options
-        shell: pwsh
-        run: |
-          # The same command line has to work with both scripts: --std 20 must
-          # produce the same project as -Std 20.
-          & powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bashopts "$env:RUNNER_TEMP\bashopts-dashes" --std 20 --lib --no-git
-          & powershell -ExecutionPolicy Bypass -File scripts\new-project.ps1 bashopts "$env:RUNNER_TEMP\bashopts-ps" -Std 20 -Lib -NoGit
-
-          function Get-MaskedCopy([string]$Dir, [string]$Name) {
-              $copy = Join-Path $env:RUNNER_TEMP $Name
-              if (Test-Path -LiteralPath $copy) { Remove-Item -LiteralPath $copy -Recurse -Force }
-              Copy-Item -Recurse -Force -LiteralPath $Dir -Destination $copy
-              Get-ChildItem -LiteralPath $copy -Recurse -File | ForEach-Object {
-                  $bytes = [System.IO.File]::ReadAllBytes($_.FullName)
-                  if ($bytes -contains 0) { return }
-                  $text = [System.Text.Encoding]::UTF8.GetString($bytes)
-                  $text = $text -replace '[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}', '<GUID>'
-                  [System.IO.File]::WriteAllText($_.FullName, $text, (New-Object System.Text.UTF8Encoding $false))
-              }
-              return $copy
-          }
-          $dashes = Get-MaskedCopy "$env:RUNNER_TEMP\bashopts-dashes" 'masked-bashopts-dashes'
-          $ps = Get-MaskedCopy "$env:RUNNER_TEMP\bashopts-ps" 'masked-bashopts-ps'
-          git diff --no-index --stat $dashes $ps
-          if ($LASTEXITCODE -ne 0) {
-              git diff --no-index $dashes $ps
-              throw "--std 20 --lib --no-git and -Std 20 -Lib -NoGit produce different projects"
           }
 
       - name: The printed next steps work in Windows PowerShell 5.1

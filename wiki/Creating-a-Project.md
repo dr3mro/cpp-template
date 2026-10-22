@@ -4,6 +4,17 @@ Every project starts with `scripts/new-project.sh` (or the `newcpp` alias from
 [Getting started](Getting-Started)). On Windows, or anywhere without bash,
 `scripts/new-project.ps1` does the same thing.
 
+Both are small wrappers around one generator, `scripts/new-project.cmake`,
+which runs in CMake's script mode. So the two produce exactly the same
+project, and creating one needs nothing but CMake 3.25+ (and git, for the
+first commit). On Windows, the PowerShell wrapper also finds the CMake that
+comes with Visual Studio when `cmake` is not on PATH. The generator can be run
+directly as well:
+
+```bash
+cmake -P scripts/new-project.cmake -- bank_app --std 20
+```
+
 ```bash
 newcpp bank_app                         # creates ./bank_app
 newcpp bank_app ~/dev/bank              # choose the folder
@@ -29,9 +40,30 @@ pwsh -NoProfile -File scripts/new-project.ps1 bank_lib --lib --no-git
 pwsh -NoProfile -File scripts/new-project.ps1 bank_app -Author "Jane Doe"
 ```
 
-`--std 20`, `--std=20`, `--lib`, `--no-git`, `--github-user <user>`,
-`--github-user=<user>`, `--author <name>` and `--author=<name>` are all
-accepted. `-h` and `--help` print the usage.
+Both wrappers accept both spellings: `--std 20`, `--std=20` and `-Std 20`;
+`--lib` and `-Lib`; `--no-git` and `-NoGit`; `--github-user <user>` and
+`-GitHubUser <user>`; `--author <name>` and `-Author <name>`. `-h` and
+`--help` print the usage.
+
+### Your own defaults
+
+Settings you would type for every project can live in a defaults file, which
+the generator reads first:
+
+| System | File |
+| --- | --- |
+| Linux, macOS | `~/.config/cpp-template/defaults.cmake` (or `$XDG_CONFIG_HOME/cpp-template/defaults.cmake`) |
+| Windows | `%APPDATA%\cpp-template\defaults.cmake` |
+
+```cmake
+set(AUTHOR "Jane Doe")
+set(GITHUB_USER "janedoe")
+set(STD 20)
+```
+
+Options on the command line win over the file. The same settings can also be
+given to CMake directly, before `-P`:
+`cmake -DAUTHOR="Jane Doe" -DSTD=20 -P scripts/new-project.cmake -- bank_app`.
 
 Without `--author` (`-Author`), the author is your `git config user.name`,
 or `Your Name` when git has none. The name is copied exactly as you type it,
@@ -86,7 +118,9 @@ instead of `bank`.
 ## What the script does
 
 1. Copies the template, but only files that git tracks. Your template's
-   `build/` and other generated folders never travel along.
+   `build/` and other generated folders never travel along. (A template
+   downloaded as a zip, without git, is copied without its generated folders.)
+   The generator, the template's own tests and the wiki are left out.
 2. Renames the placeholder `myapp` everywhere, so in a project called
    `bank_app` you get:
 
@@ -109,7 +143,9 @@ instead of `bank`.
 4. Sets the C++ standard you chose, in CMake and in the Visual Studio project
    (`stdcpp17`, `stdcpp20`, `stdcpp23`).
 5. Replaces the README with a project README (with your docs link when you pass
-   `--github-user`).
+   `--github-user`), and writes `.template-version`: the template release
+   (`template-v1.2.0`) or commit the project was made from. See
+   [Maintaining the template](Maintaining-the-Template) for why that helps.
 6. Keeps only the pieces for the mode you picked (see below) and the matching
    release workflow.
 7. Runs `git init` and makes a first commit (unless `--no-git`).

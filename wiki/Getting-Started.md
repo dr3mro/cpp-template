@@ -167,7 +167,9 @@ Visual Studio; see [Visual Studio](Visual-Studio).
 
 No Git Bash needed: `scripts/new-project.ps1` does the same as the bash
 script, in Windows PowerShell 5.1 and in PowerShell 7. It accepts both
-`-Std 20 -Lib -NoGit` and `--std 20 --lib --no-git`.
+`-Std 20 -Lib -NoGit` and `--std 20 --lib --no-git`. It needs CMake: the one
+on PATH, or else the one that comes with Visual Studio (the **C++ CMake tools
+for Windows** component, part of the Desktop development with C++ workload).
 
 ```powershell
 pwsh -File scripts\new-project.ps1 bank_app

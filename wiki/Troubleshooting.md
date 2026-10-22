@@ -23,7 +23,14 @@ the internet" mark; run `Unblock-File .\scripts\new-project.ps1` once.
 **`A positional parameter cannot be found that accepts argument '--std'`**
 An older copy of `new-project.ps1` only knew the PowerShell names. The script
 now accepts both `--std 20` and `-Std 20` (likewise `--lib`, `--no-git`,
-`--github-user`), so update the template or use `-Std 20` for that copy.
+`--github-user`, `--author`), so update the template or use `-Std 20` for
+that copy.
+
+**`error: cmake was not found`** (from `new-project.sh` or `new-project.ps1`)
+The generator runs in CMake, so CMake 3.25+ has to be installed: `brew install
+cmake` on macOS, your package manager on Linux, `winget install Kitware.CMake`
+on Windows. On Windows the Visual Studio component **C++ CMake tools for
+Windows** works too; `new-project.ps1` finds it without PATH changes.
 
 **`No Visual Studio compiler: the Visual Studio tools ... are only set up
 inside a developer shell`**
