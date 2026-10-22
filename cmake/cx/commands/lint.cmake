@@ -10,7 +10,8 @@
 find_program(_cmake_lint NAMES cmake-lint)
 if(NOT _cmake_lint)
     _cx_fail("cmake-lint was not found; install it with "
-             "'pipx install cmakelang==0.6.13' and add its bin folder to PATH")
+             "'pipx install cmakelang==0.6.13 && pipx inject cmakelang pyyaml' "
+             "and add its bin folder to PATH")
 endif()
 
 set(_failed OFF)

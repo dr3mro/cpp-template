@@ -41,6 +41,8 @@ jobs:
           # agree on formatting. Keep both in step.
           pipx install clang-format==21.1.5
           pipx install cmakelang==0.6.13
+          # cmake-lint reads the YAML configuration through PyYAML.
+          pipx inject cmakelang pyyaml
 
       - name: Install extra tools (macOS)
         if: runner.os == 'macOS'

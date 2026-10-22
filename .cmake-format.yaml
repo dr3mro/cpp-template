@@ -1,7 +1,7 @@
 # =============================================================================
 # .cmake-format.yaml - formatting and lint rules for the CMake files
 #
-# Read by cmakelang (pip install cmakelang):
+# Read by cmakelang and PyYAML (pip install cmakelang pyyaml):
 #   cmake-lint <files>                             # style and naming checks
 #   cmake-format -i <files>                        # a no-op while format.disable
 #                                                  # is true (see below)

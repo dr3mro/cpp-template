@@ -248,8 +248,10 @@ reconfigure. Or name the binary: `-DMYAPP_CLANG_FORMAT=/path/to/clang-format`.
 `cmake-lint`)**
 The tool wasn't found when CMake configured, so the target wasn't defined.
 The configure output says why. Install the tool and configure again. For
-`cmake-lint` that means `pipx install cmakelang==0.6.13`; for the others it is
-the program in the message (clang-format 21+, clang-tidy, dot, ...).
+`cmake-lint`, install both cmakelang and its YAML dependency:
+`pipx install cmakelang==0.6.13 && pipx inject cmakelang pyyaml`. For the
+others it is the program in the message (clang-format 21+, clang-tidy, dot,
+...).
 
 **clangd shows errors the compiler doesn't, or can't find headers**
 Configure the preset you're working with (that refreshes

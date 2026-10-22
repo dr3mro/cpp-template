@@ -51,8 +51,14 @@ globs in `cmake/Format.cmake`.
 cmake --build --preset debug --target cmake-lint
 ```
 
-`cmake-lint` (from [cmakelang](https://pypi.org/project/cmakelang/),
-`pipx install cmakelang==0.6.13`) checks the CMake files against `.cmake-format.yaml`:
+`cmake-lint` (from [cmakelang](https://pypi.org/project/cmakelang/)) checks the
+CMake files against `.cmake-format.yaml`. Install it with its YAML dependency:
+
+```bash
+pipx install cmakelang==0.6.13
+pipx inject cmakelang pyyaml
+```
+
 lines up to **100 columns** (`C0301`), lower-case command names, the naming
 scheme, and complexity limits for functions. The rules are the same ones CI
 and the pre-commit hook use.
@@ -146,9 +152,14 @@ whitespace, final newline, YAML/JSON syntax, merge-conflict markers, large
 files, clang-format and cmake-lint.
 
 The cmake-lint hook needs nothing on your PATH: pre-commit builds its own
-environment for it and installs `cmakelang==0.6.13` there. Installing
-cmakelang yourself (`pipx install cmakelang==0.6.13`) is still useful for the
-`cmake-lint` CMake target above.
+environment for it and installs `cmakelang==0.6.13` and `pyyaml` there.
+Installing cmakelang yourself is still useful for the `cmake-lint` CMake
+target above:
+
+```bash
+pipx install cmakelang==0.6.13
+pipx inject cmakelang pyyaml
+```
 
 ```bash
 pipx install pre-commit      # or: brew install pre-commit

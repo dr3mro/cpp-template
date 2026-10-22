@@ -14,7 +14,8 @@ include_guard(DIRECTORY)
 find_program(MYAPP_CMAKE_LINT cmake-lint)
 if(NOT MYAPP_CMAKE_LINT)
     message(STATUS
-        "cmake-lint not found; install it with 'pipx install cmakelang==0.6.13' "
+        "cmake-lint not found; install it with "
+        "'pipx install cmakelang==0.6.13 && pipx inject cmakelang pyyaml' "
         "to enable the cmake-lint target")
     return()
 endif()
