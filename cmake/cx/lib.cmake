@@ -599,7 +599,7 @@ endfunction()
 # the program sits one folder deeper than with Ninja.
 function(_cx_program_path preset out_path out_is_app)
     _cx_project_name(_name "${preset}")
-    _cx_is_library("${preset}" _library)
+    _cx_is_library(_library "${preset}")
     if(_library)
         set(${out_is_app} OFF PARENT_SCOPE)
         set(${out_path} "" PARENT_SCOPE)
@@ -617,8 +617,12 @@ function(_cx_program_path preset out_path out_is_app)
     set(${out_is_app} ON PARENT_SCOPE)
 endfunction()
 
-# True for a library project, from the cache or the absence of main.cpp.
-function(_cx_is_library preset out)
+# _cx_is_library(<out-var> <preset>)
+# True for a library project. The configured cache wins; before the first
+# configure the default in cmake/Options.cmake is read (the generator flips
+# that default to ON for a library). The absence of main.cpp is the last
+# resort, for projects that do not have Options.cmake.
+function(_cx_is_library out preset)
     _cx_project_name(_name "")
     string(TOUPPER "${_name}" _upper)
     set(_cache "${CX_ROOT}/build/${preset}/CMakeCache.txt")
@@ -631,6 +635,19 @@ function(_cx_is_library preset out)
         file(STRINGS "${_cache}" _line REGEX "^${_upper}_LIBRARY_MODE:BOOL=OFF")
         if(_line)
             set(${out} OFF PARENT_SCOPE)
+            return()
+        endif()
+    endif()
+    set(_options "${CX_ROOT}/cmake/Options.cmake")
+    if(EXISTS "${_options}")
+        file(READ "${_options}" _text)
+        if(_text MATCHES
+           "option\\(${_upper}_LIBRARY_MODE[ \t\r\n]+\"[^\"]*\"[ \t\r\n]+(ON|OFF)\\)")
+            if(CMAKE_MATCH_1 STREQUAL "ON")
+                set(${out} ON PARENT_SCOPE)
+            else()
+                set(${out} OFF PARENT_SCOPE)
+            endif()
             return()
         endif()
     endif()

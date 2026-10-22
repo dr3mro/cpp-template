@@ -12,6 +12,14 @@
 
 _cx_resolve("${CX_WORDS}" _preset _targets _extra)
 set(CX_CONFIGURE_EXTRA "${_extra}")
+if(CX_DEV_RUN)
+    _cx_is_library(_library "${_preset}")
+    if(_library)
+        _cx_fail("this is a library project: there is no program to run.\n"
+                 "Run the tests with `cx test`, or build the example consumer in "
+                 "examples/ (see the README).")
+    endif()
+endif()
 _cx_test_preset_exists("${_preset}" _has_test)
 if(NOT _has_test AND NOT CX_DEV_RUN)
     _cx_fail("preset '${_preset}' has no test preset; cx dev has nothing to run.\n"
