@@ -62,7 +62,8 @@ Turn hardening off with `-DMYAPP_ENABLE_HARDENING=OFF` (in a generated project,
 - `cmake --preset debug` runs every test under AddressSanitizer and
   UndefinedBehaviorSanitizer; `cmake --preset tsan` checks for data races.
 - `fuzz/` holds libFuzzer targets; see [Fuzzing](Fuzzing).
-- CI runs clang-tidy and CodeQL static analysis on every push.
+- CI runs clang-tidy and CodeQL static analysis on every push, and OpenSSF
+  Scorecard rates the repository's own security practices every week.
 
 ## Checking a binary
 
@@ -75,6 +76,20 @@ readelf -h build/release/myapp | grep Type                  # DYN (Position-Inde
 
 or install `checksec` (`pipx install checksec.py`) and run
 `checksec --file build/release/myapp`.
+
+## Verifying a release
+
+Every GitHub Release carries what a user needs to trust a download (see
+[CI and releases](CI-and-Releases#releases)):
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing                         # the file is intact
+gh attestation verify myapp-linux-x64.tar.gz --repo <owner>/<repo>  # it was built by this repository's workflow
+```
+
+The `-sbom` archive next to each binary lists the dependencies in it (the
+SPDX documents vcpkg writes), and the supply chain behind the build is
+pinned: every GitHub Action to a commit SHA, vcpkg to a baseline commit.
 
 ## Good habits
 
