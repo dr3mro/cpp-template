@@ -87,12 +87,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # the linker (lld-link), which the GNU style reaches with -Wl,.
     set(CMAKE_REQUIRED_FLAGS "-Werror")
     check_cxx_compiler_flag("-mguard=cf" MYAPP_HAS_GUARD_CF)
-    check_linker_flag("-Wl,/DYNAMICBASE" MYAPP_HAS_DYNAMICBASE)
-    check_linker_flag("-Wl,/NXCOMPAT" MYAPP_HAS_NXCOMPAT)
-    check_linker_flag("-Wl,/HIGHENTROPYVA" MYAPP_HAS_HIGHENTROPYVA)
+    check_linker_flag(CXX "-Wl,/DYNAMICBASE" MYAPP_HAS_DYNAMICBASE)
+    check_linker_flag(CXX "-Wl,/NXCOMPAT" MYAPP_HAS_NXCOMPAT)
+    check_linker_flag(CXX "-Wl,/HIGHENTROPYVA" MYAPP_HAS_HIGHENTROPYVA)
     # /CETCOMPAT only exists on x64 (not ARM64).
     if(_myapp_arch_x64)
-        check_linker_flag("-Wl,/CETCOMPAT" MYAPP_HAS_CETCOMPAT)
+        check_linker_flag(CXX "-Wl,/CETCOMPAT" MYAPP_HAS_CETCOMPAT)
     endif()
     # ARM64: branch protection (BTI) needs -mbranch-protection=standard.
     if(_myapp_arch_arm64)

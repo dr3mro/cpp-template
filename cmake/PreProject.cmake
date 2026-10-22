@@ -76,8 +76,15 @@ if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
        OR "$ENV{PROCESSOR_ARCHITEW6432}" STREQUAL "ARM64")
         set(_myapp_host_arch "arm64")
     endif()
+    # A developer shell reports the architecture its libraries target (vcvarsall
+    # sets VSCMD_ARG_TGT_ARCH). Follow that rather than the host, so an x64
+    # shell on an ARM64 machine builds x64 without extra options.
+    set(_myapp_default_arch "${_myapp_host_arch}")
+    if(NOT "$ENV{VSCMD_ARG_TGT_ARCH}" STREQUAL "")
+        set(_myapp_default_arch "$ENV{VSCMD_ARG_TGT_ARCH}")
+    endif()
     if(NOT DEFINED MYAPP_WINDOWS_TARGET_ARCH)
-        set(MYAPP_WINDOWS_TARGET_ARCH "${_myapp_host_arch}" CACHE STRING
+        set(MYAPP_WINDOWS_TARGET_ARCH "${_myapp_default_arch}" CACHE STRING
             "Windows target architecture (x86, x64, or arm64)")
     endif()
     set(_myapp_arch "${MYAPP_WINDOWS_TARGET_ARCH}")
@@ -85,6 +92,18 @@ if(CMAKE_HOST_WIN32 OR "$ENV{OS}" STREQUAL "Windows_NT")
         message(FATAL_ERROR
             "Unsupported MYAPP_WINDOWS_TARGET_ARCH: "
             "${MYAPP_WINDOWS_TARGET_ARCH}")
+    endif()
+    # LLVM clang targets the host by default, but the Visual Studio libraries
+    # follow MYAPP_WINDOWS_TARGET_ARCH. If they disagree, the link fails with
+    # "machine type arm64 conflicts with x64", so clang gets the matching target.
+    if(MYAPP_USE_LLVM_CLANG)
+        if(_myapp_arch STREQUAL "arm64")
+            set(CMAKE_CXX_COMPILER_TARGET "aarch64-pc-windows-msvc")
+        elseif(_myapp_arch STREQUAL "x86")
+            set(CMAKE_CXX_COMPILER_TARGET "i686-pc-windows-msvc")
+        else()
+            set(CMAKE_CXX_COMPILER_TARGET "x86_64-pc-windows-msvc")
+        endif()
     endif()
     set(_myapp_target_triplet "${MYAPP_WINDOWS_TARGET_ARCH}-windows")
     if(NOT DEFINED VCPKG_TARGET_TRIPLET
