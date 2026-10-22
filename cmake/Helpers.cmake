@@ -174,7 +174,8 @@ macro(myapp_find_dependency _myapp_dep_package)
     cmake_parse_arguments(_myapp_dep "PUBLIC" "" "" ${ARGN})
     find_package(${_myapp_dep_package} ${_myapp_dep_UNPARSED_ARGUMENTS} REQUIRED)
     if(_myapp_dep_PUBLIC)
-        string(JOIN " " _myapp_dep_call ${_myapp_dep_package} ${_myapp_dep_UNPARSED_ARGUMENTS})
+        string(JOIN " " _myapp_dep_call
+            ${_myapp_dep_package} ${_myapp_dep_UNPARSED_ARGUMENTS})
         # A global property, so Install.cmake can read it from any directory.
         set_property(GLOBAL APPEND PROPERTY MYAPP_PACKAGE_DEPENDENCIES "${_myapp_dep_call}")
     endif()

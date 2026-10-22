@@ -106,8 +106,10 @@ function(myapp_add_coverage_report)
         COMMAND ${CMAKE_COMMAND} -E env "LLVM_PROFILE_FILE=${_out}/default.profraw" ${_tests}
         COMMAND ${MYAPP_LLVM_PROFDATA} merge -sparse ${_out}/default.profraw
                 -o ${_out}/merged.profdata
-        COMMAND ${MYAPP_LLVM_COV} report ${_tests} -instr-profile=${_out}/merged.profdata ${_ignore}
-        COMMAND ${MYAPP_LLVM_COV} show ${_tests} -instr-profile=${_out}/merged.profdata ${_ignore}
+        COMMAND ${MYAPP_LLVM_COV} report ${_tests} -instr-profile=${_out}/merged.profdata
+                ${_ignore}
+        COMMAND ${MYAPP_LLVM_COV} show ${_tests} -instr-profile=${_out}/merged.profdata
+                ${_ignore}
                 -format=html -output-dir=${_out}/html
         DEPENDS ${PROJECT_NAME}_tests
         COMMENT "Running tests and generating coverage report (output: ${_out}/html/)"

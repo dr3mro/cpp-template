@@ -23,6 +23,18 @@ if(NOT MYAPP_CLANG_TIDY)
     return()
 endif()
 
+# The LLVM script is Python, often without a .py extension (a shebang line
+# only), and Windows cannot run it directly, so it is started through Python.
+if(CMAKE_HOST_WIN32)
+    find_package(Python3 COMPONENTS Interpreter)
+    if(NOT Python3_EXECUTABLE)
+        return()
+    endif()
+    set(_myapp_tidy_runner "${Python3_EXECUTABLE}" "${MYAPP_RUN_CLANG_TIDY}")
+else()
+    set(_myapp_tidy_runner "${MYAPP_RUN_CLANG_TIDY}")
+endif()
+
 set(_myapp_tidy_args -quiet -p "${PROJECT_BINARY_DIR}"
                      "-clang-tidy-binary=${MYAPP_CLANG_TIDY}")
 if(MYAPP_TIDY_WERROR)
@@ -49,7 +61,7 @@ if(NOT _myapp_tidy_files)
 endif()
 
 add_custom_target(tidy
-    COMMAND "${MYAPP_RUN_CLANG_TIDY}" ${_myapp_tidy_args}
+    COMMAND ${_myapp_tidy_runner} ${_myapp_tidy_args}
             # Report findings in the project's own headers only. Anchored at the
             # source tree so the generated build/**/generated/include/<name>/
             # headers can never match.

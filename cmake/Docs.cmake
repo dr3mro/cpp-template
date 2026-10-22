@@ -61,7 +61,8 @@ file(GLOB _myapp_handwritten_dots "${PROJECT_SOURCE_DIR}/diagrams/*.dot")
 foreach(_dot IN LISTS _myapp_handwritten_dots)
     get_filename_component(_name "${_dot}" NAME_WE)
     list(APPEND _myapp_render_commands
-        COMMAND "${MYAPP_DOT_EXECUTABLE}" -Tpng "${_dot}" -o "${MYAPP_DIAGRAMS_DIR}/${_name}.png")
+        COMMAND "${MYAPP_DOT_EXECUTABLE}" -Tpng "${_dot}"
+                -o "${MYAPP_DIAGRAMS_DIR}/${_name}.png")
 endforeach()
 
 set(_myapp_class_graphs_dir "${PROJECT_BINARY_DIR}/class-diagrams")

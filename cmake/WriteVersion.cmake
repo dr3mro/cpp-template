@@ -55,5 +55,6 @@ endfunction()
 
 # Script mode (cmake -P): the inputs arrive as -D variables.
 if(CMAKE_SCRIPT_MODE_FILE STREQUAL CMAKE_CURRENT_LIST_FILE)
-    myapp_write_version_header(TEMPLATE "${TEMPLATE}" OUTPUT "${OUTPUT}" SOURCE_DIR "${SOURCE_DIR}")
+    myapp_write_version_header(TEMPLATE "${TEMPLATE}" OUTPUT "${OUTPUT}"
+        SOURCE_DIR "${SOURCE_DIR}")
 endif()

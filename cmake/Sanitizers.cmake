@@ -137,4 +137,5 @@ if(MYAPP_SANITIZER STREQUAL "address")
 else()
     set(_myapp_san_flag "-fsanitize=${MYAPP_SANITIZER}")
 endif()
-_myapp_use_sanitizer("${_myapp_san_flag}" "${_myapp_san_flag}" "MYAPP_SANITIZER=${MYAPP_SANITIZER}")
+_myapp_use_sanitizer("${_myapp_san_flag}" "${_myapp_san_flag}"
+    "MYAPP_SANITIZER=${MYAPP_SANITIZER}")
