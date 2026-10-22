@@ -27,6 +27,8 @@ set(MYAPP_EXPORT_HEADER "${MYAPP_GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${PROJEC
 generate_export_header(${PROJECT_NAME}_lib
     BASE_NAME MYAPP
     EXPORT_FILE_NAME "${MYAPP_EXPORT_HEADER}")
+target_sources(${PROJECT_NAME}_lib PUBLIC
+    FILE_SET HEADERS FILES "${MYAPP_EXPORT_HEADER}")
 
 # PUBLIC, so consumers of a static library (in-tree and installed) see the
 # same empty <NAME>_EXPORT the library was compiled with.

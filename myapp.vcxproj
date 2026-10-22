@@ -100,13 +100,14 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <!-- The same warnings as the CMake build (cmake/Warnings.cmake):
-           /W4 and /permissive-, without warnings-as-errors. -->
+           /W4, /permissive-, /sdl and the extra /w14xxx warnings that /W4
+           leaves off, without warnings-as-errors. -->
       <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalOptions>/utf-8 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus /w14242 /w14254 /w14263 /w14265 /w14287 /w14296 /w14311 /w14826 /w14905 /w14906 /w14928 %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>MYAPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(GeneratedIncludeDir);$(MSBuildProjectDirectory)\include;$(MSBuildProjectDirectory)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -131,13 +132,13 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <!-- The hardening flags of cmake/Hardening.cmake. -->
-      <AdditionalOptions>/utf-8 /Zc:__cplusplus /GS /guard:cf %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/GS /guard:cf /guard:ehcont /ZH:SHA_256 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /CETCOMPAT %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /CETCOMPAT /guard:ehcont %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -155,8 +156,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <!-- /CETCOMPAT is x86-64 only, so it is left out on ARM64. -->
-      <AdditionalOptions>/utf-8 /Zc:__cplusplus /GS /guard:cf %(AdditionalOptions)</AdditionalOptions>
+      <!-- /CETCOMPAT and /guard:ehcont are x86-64 only, so they are left
+           out on ARM64. -->
+      <AdditionalOptions>/GS /guard:cf /ZH:SHA_256 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -181,7 +183,7 @@
     <None Include="README.md" />
     <None Include=".clang-format" />
     <None Include=".clang-tidy" />
-    <None Include="include\**\*.in" />
+    <None Include="cmake\templates\version.hpp.in" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <PropertyGroup>
@@ -200,8 +202,8 @@
   <!--
     The two headers the CMake build generates are written here, before every
     compile, in plain MSBuild: the solution never runs CMake.
-      version.hpp       include/<name>/version.hpp.in with the version from
-                        vcpkg.json and the current git hash (the same
+      version.hpp       cmake/templates/version.hpp.in with the version from
+                        vcpkg.json and `git describe` of the build (the same
                         substitution cmake/WriteVersion.cmake makes)
       <name>_export.h   the static-build export header
     Both are only rewritten when their content changes, so an unchanged
@@ -225,9 +227,9 @@
       <VsVersionMinor>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.(\d+).*$', '$1'))</VsVersionMinor>
       <VsVersionPatch>$([System.Text.RegularExpressions.Regex]::Replace('$(VsVersion)', '^\d+\.\d+\.(\d+).*$', '$1'))</VsVersionPatch>
     </PropertyGroup>
-    <!-- The short git hash, or "unknown" without git or outside a repository,
-         exactly like WriteVersion.cmake. Git is optional. -->
-    <Exec Command="git rev-parse --short HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+    <!-- git describe of the build, or "unknown" without git or outside a
+         repository, exactly like WriteVersion.cmake. Git is optional. -->
+    <Exec Command="git describe --tags --always --dirty" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
           IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" EchoOff="true"
           StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ConsoleOutput" PropertyName="VsGitOutput" />
@@ -236,8 +238,8 @@
     <PropertyGroup>
       <VsGitHash>unknown</VsGitHash>
       <VsGitCandidate Condition="'$(VsGitExitCode)'=='0'">$(VsGitOutput.Trim())</VsGitCandidate>
-      <VsGitHash Condition="'$(VsGitCandidate)'!='' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(VsGitCandidate)', '^[0-9a-f]{4,40}$'))">$(VsGitCandidate)</VsGitHash>
-      <VsVersionText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\include\$(ProjectName)\version.hpp.in'))</VsVersionText>
+      <VsGitHash Condition="'$(VsGitCandidate)'!='' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(VsGitCandidate)', '^[0-9A-Za-z._+-]{4,100}$'))">$(VsGitCandidate)</VsGitHash>
+      <VsVersionText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\cmake\templates\version.hpp.in'))</VsVersionText>
       <VsVersionText>$(VsVersionText.Replace('@PROJECT_NAME@', '$(ProjectName)').Replace('@PROJECT_VERSION_MAJOR@', '$(VsVersionMajor)').Replace('@PROJECT_VERSION_MINOR@', '$(VsVersionMinor)').Replace('@PROJECT_VERSION_PATCH@', '$(VsVersionPatch)').Replace('@PROJECT_VERSION@', '$(VsVersion)').Replace('@MYAPP_GIT_HASH@', '$(VsGitHash)').TrimEnd())</VsVersionText>
     </PropertyGroup>
     <MakeDir Directories="$(GeneratedIncludeDir)$(ProjectName)" />

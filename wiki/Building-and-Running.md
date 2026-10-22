@@ -24,8 +24,9 @@ mixes results.
 | `debug` | everyday development and running tests | debug info + AddressSanitizer + UndefinedBehaviorSanitizer |
 | `debug-nosan` | the debugger | debug info, no sanitizers |
 | `release` | the program you ship, and speed measurements | optimised, hardened |
-| `tsan` | code with threads | ThreadSanitizer |
+| `tsan` | code with threads | ThreadSanitizer (Linux and macOS) |
 | `ci` | checking before you push | like `debug`, every warning is an error |
+| `ci-gcc`, `ci-clang` | the same with a named compiler | Linux only; CI runs both |
 | `coverage` | seeing which lines the tests run | needs clang |
 | `fuzz` | fuzzing | needs LLVM clang |
 | `docs` | the documentation website | used by `cmake --workflow --preset docs` |
@@ -86,7 +87,7 @@ Every switch in [Options reference](Options-Reference) is set at configure
 time with `-D`:
 
 ```bash
-cmake --preset debug -DMYAPP_WARNINGS_AS_ERRORS=ON
+cmake --preset debug -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 cmake --preset release -DBUILD_SHARED_LIBS=ON
 ```
 

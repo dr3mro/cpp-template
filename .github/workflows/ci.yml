@@ -36,9 +36,26 @@ jobs:
         with:
           arch: ${{ contains(matrix.os, 'arm') && 'arm64' || 'x64' }}
 
-      # The ci preset adds ASan/UBSan and turns warnings into errors.
-      - name: Build and test (Linux/macOS)
-        if: runner.os != 'Windows'
+      # The ci presets add ASan/UBSan and turn warnings into errors. Linux
+      # builds with both GCC and Clang, since each warns about different
+      # things; macOS with Apple Clang.
+      - name: Install the Clang sanitizer runtimes (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libclang-rt-dev
+
+      - name: Build and test (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          for preset in ci-gcc ci-clang; do
+            echo "::group::$preset"
+            cmake --preset "$preset"
+            cmake --build --preset "$preset"
+            ctest --preset "$preset"
+            echo "::endgroup::"
+          done
+
+      - name: Build and test (macOS)
+        if: runner.os == 'macOS'
         run: |
           cmake --preset ci
           cmake --build --preset ci
@@ -48,7 +65,7 @@ jobs:
       - name: Build and test (Windows)
         if: runner.os == 'Windows'
         run: |
-          cmake --preset release -DMYAPP_WARNINGS_AS_ERRORS=ON
+          cmake --preset release -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
           cmake --build --preset release
           ctest --preset release
 

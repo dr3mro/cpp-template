@@ -52,6 +52,8 @@ reads, so you can read any one of them on its own.
 | `cmake/Warnings.cmake`                                                        | compiler warnings                                                               |
 | `cmake/Sanitizers.cmake`                                                      | ASan/UBSan, TSan, MSan and fuzzing instrumentation                              |
 | `cmake/Hardening.cmake`                                                       | security flags for release builds                                               |
+| `cmake/StdlibChecks.cmake`                                                    | the standard library's own checks (Debug too)                                   |
+| `cmake/Lto.cmake`                                                             | link-time optimisation for optimised app builds                                 |
 | `cmake/Coverage.cmake`                                                        | coverage instrumentation and the `coverage` target                              |
 | `cmake/Ccache.cmake`                                                          | compiler caching with ccache                                                    |
 | `cmake/Version.cmake`, `WriteVersion.cmake`                                   | the generated `<name>/version.hpp` (version + git hash)                         |
@@ -176,8 +178,9 @@ with the MAJOR version, signalling an ABI break.
 
 ## The generated version header
 
-`include/myapp/version.hpp.in` is a template; CMake fills in the version (from
-`vcpkg.json`) and the short git hash, writing
+`cmake/templates/version.hpp.in` is a template; CMake fills in the version
+(from `vcpkg.json`) and `git describe --tags --always --dirty` of the build
+(`v1.2.0-3-gabc1234`, with `-dirty` for uncommitted changes), writing
 `build/<preset>/generated/include/myapp/version.hpp`. It's written twice:
 
 - **at configure time**, so clangd and clang-tidy find the header straight

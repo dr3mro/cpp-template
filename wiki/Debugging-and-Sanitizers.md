@@ -184,7 +184,17 @@ everyday work, and TSan (`tsan`) for threads.
 ## Useful runtime options
 
 Sanitizers read options from environment variables, as `key=value` pairs
-separated by `:`.
+separated by `:`. The test presets already set some for every test run:
+
+| Preset | Set for the tests |
+| --- | --- |
+| `debug`, `ci`, `ci-gcc`, `ci-clang` | `ASAN_OPTIONS=detect_stack_use_after_return=1:strict_string_checks=1:check_initialization_order=1`, `UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1` |
+| `tsan` | `TSAN_OPTIONS=halt_on_error=1:second_deadlock_stack=1` |
+
+Leak checking is not in that list because AddressSanitizer already does it by
+default where it can (Linux); naming it would make macOS, which has no leak
+checking, refuse to start the tests. Running a program by hand, set the
+variables yourself:
 
 | Variable | Option | Effect |
 | --- | --- | --- |

@@ -17,27 +17,43 @@ set(_myapp_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
 if(NOT MYAPP_LIBRARY_MODE)
     # ---- app -------------------------------------------------------------------
-    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    # With shared libraries from vcpkg (a dynamic triplet), the program needs
+    # them next to it: install the ones it links, but none of the system's.
+    # GET_RUNTIME_DEPENDENCIES cannot inspect binaries for another platform,
+    # so a cross-compiled app installs only itself.
+    if(CMAKE_CROSSCOMPILING)
+        install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    else()
+        install(TARGETS ${PROJECT_NAME}
+            RUNTIME_DEPENDENCY_SET ${PROJECT_NAME}_runtime_deps
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+        install(RUNTIME_DEPENDENCY_SET ${PROJECT_NAME}_runtime_deps
+            PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*"
+            POST_EXCLUDE_REGEXES
+                ".*[Ss]ystem32/.*" ".*[Ww]in[Ss]x[Ss]/.*"  # Windows
+                "^/lib" "^/usr/lib" "^/lib64" "^/usr/lib64"  # Linux
+                "^/usr/lib/.*\\.dylib$" "^/System/.*"     # macOS
+            DIRECTORIES $<TARGET_FILE_DIR:${PROJECT_NAME}>
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
 else()
     # ---- library: binaries and the exported target -----------------------------
+    # The headers come with the target: its HEADERS file set holds include/
+    # and the generated version.hpp and export header (src/CMakeLists.txt).
+    # cmakelang predates FILE_SET (CMake 3.23) and takes its DESTINATION for
+    # a second one of RUNTIME.
+    # cmake-lint: disable=E1122
     install(TARGETS ${PROJECT_NAME}_lib
         EXPORT ${PROJECT_NAME}Targets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}     # .so / .dylib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}     # .a / .lib
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})    # .dll
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}     # .dll
+        FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
     install(EXPORT ${PROJECT_NAME}Targets
         FILE ${PROJECT_NAME}Targets.cmake
         NAMESPACE ${PROJECT_NAME}::
         DESTINATION ${_myapp_package_dir})
-
-    # ---- headers: include/ (minus the .in template) plus the generated ones ----
-    install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        PATTERN "*.in" EXCLUDE)
-    install(FILES
-        "${MYAPP_GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/version.hpp"
-        "${MYAPP_GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${PROJECT_NAME}_export.h"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
     # ---- package config: <name>Config.cmake and <name>ConfigVersion.cmake -------
     # Each package recorded with myapp_find_dependency(... PUBLIC) becomes a

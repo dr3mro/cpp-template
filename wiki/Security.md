@@ -18,20 +18,30 @@ the compiler. The configure output lists exactly what was chosen.
 
 | Platform / compiler | Flags |
 | --- | --- |
-| GCC/Clang on Linux (libstdc++ or libc++) | `-fstack-protector-strong`, `-D_FORTIFY_SOURCE=3`, `-fstack-clash-protection`, `-fcf-protection=full` on x64, `-mbranch-protection=standard` on ARM64, `-Wl,-z,relro,-z,now,-z,noexecstack` |
-| Apple Clang / Clang on macOS | the same stack, stack-clash and branch-protection flags, plus `-D_FORTIFY_SOURCE=3` (Apple's libc); no RELRO or CET flags |
+| GCC/Clang on Linux (libstdc++ or libc++) | `-fstack-protector-strong`, `-D_FORTIFY_SOURCE=3`, `-fstack-clash-protection`, `-fcf-protection=full` on x64, `-mbranch-protection=standard` on ARM64, `-ftrivial-auto-var-init=zero`, `-fstrict-flex-arrays=3`, `-Wl,-z,relro,-z,now,-z,noexecstack`, `-Wl,--as-needed` |
+| Apple Clang / Clang on macOS | the same stack, stack-clash, branch-protection, `-ftrivial-auto-var-init` and `-fstrict-flex-arrays` flags, plus `-D_FORTIFY_SOURCE=3` (Apple's libc); no RELRO or CET flags |
 | Clang on Windows (GNU-style `clang++`) | `-mguard=cf` at compile time, `-Wl,/guard:cf -Wl,/DYNAMICBASE -Wl,/NXCOMPAT -Wl,/HIGHENTROPYVA`, `-Wl,/CETCOMPAT` on x64 only, `-mbranch-protection=standard` on ARM64 |
 | Clang on Windows (`clang-cl`) | `/guard:cf` at compile time, `/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`, `/CETCOMPAT` on x64 only |
-| MSVC (`cl`) | `/GS /guard:cf`, `/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`, `/CETCOMPAT` on x64 only |
+| MSVC (`cl`) | `/GS /guard:cf /ZH:SHA_256`, `/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`, `/CETCOMPAT` and `/guard:ehcont` on x64 only; `/sdl` in every configuration (`cmake/Warnings.cmake`) |
 
-The standard library's own checks are detected with a test compile, so they
-work with any compiler:
+The flags follow the [OpenSSF Compiler Options Hardening
+Guide](https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html),
+except `-Wl,-z,nodlopen`: it would stop a library project from being loaded
+with `dlopen()`.
 
-| Standard library | Flag |
-| --- | --- |
-| libstdc++ (`__GLIBCXX__`) | `-D_GLIBCXX_ASSERTIONS` |
-| libc++ (`_LIBCPP_VERSION`) | `-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` |
-| Visual Studio STL (`_MSVC_STL_VERSION`) | `-D_MSVC_STL_HARDENING=1`, only when that STL is new enough to know it |
+The standard library's own checks (`cmake/StdlibChecks.cmake`) are detected
+with a test compile, so they work with any compiler. They are cheap, so they
+are on in **Debug builds too**, where they catch an out-of-range index or
+`front()` on an empty container at the line that does it:
+
+| Standard library | Optimised builds | Debug |
+| --- | --- | --- |
+| libstdc++ (`__GLIBCXX__`) | `-D_GLIBCXX_ASSERTIONS` | `-D_GLIBCXX_ASSERTIONS` |
+| libc++ (`_LIBCPP_VERSION`) | `_LIBCPP_HARDENING_MODE_FAST` | `_LIBCPP_HARDENING_MODE_DEBUG` |
+| Visual Studio STL (`_MSVC_STL_VERSION`) | `-D_MSVC_STL_HARDENING=1`, when that STL is new enough to know it | its own debug checks (`_ITERATOR_DEBUG_LEVEL=2`) |
+
+`_GLIBCXX_DEBUG` (libstdc++'s full debug mode) is not set: it changes the
+ABI, so everything linked into the program would have to use it.
 
 `_FORTIFY_SOURCE` is only added with glibc or Apple's libc. It is a glibc
 feature and does nothing with the Visual Studio STL, so it is left out on

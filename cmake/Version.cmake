@@ -1,7 +1,8 @@
 # =============================================================================
 # Version.cmake - the generated <name>/version.hpp header
 #
-# The header carries the project version (from vcpkg.json) and the git hash.
+# The header carries the project version (from vcpkg.json) and the git
+# description of the build (git describe --tags --always --dirty).
 # It is written:
 #   - once at configure time, so clangd and clang-tidy find it right away, and
 #   - again before every build by the ${PROJECT_NAME}_version target, so the
@@ -17,7 +18,7 @@ include(WriteVersion)
 
 set(MYAPP_GENERATED_INCLUDE_DIR "${PROJECT_BINARY_DIR}/generated/include")
 set(MYAPP_VERSION_HEADER "${MYAPP_GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/version.hpp")
-set(_myapp_version_template "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/version.hpp.in")
+set(_myapp_version_template "${PROJECT_SOURCE_DIR}/cmake/templates/version.hpp.in")
 
 # Configure time.
 myapp_write_version_header(

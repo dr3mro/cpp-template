@@ -18,8 +18,9 @@ include_guard(GLOBAL)
 # myapp_write_version_header(TEMPLATE <in> OUTPUT <header> SOURCE_DIR <dir>)
 #
 # Configures <in> with @ONLY into <header>. Besides the PROJECT_VERSION*
-# variables of the caller, the template sees MYAPP_GIT_HASH: the short hash of
-# HEAD in <dir>, or "unknown" outside a git checkout.
+# variables of the caller, the template sees MYAPP_GIT_HASH: `git describe
+# --tags --always --dirty` in <dir> (the nearest tag and commit, with -dirty
+# for uncommitted changes), or "unknown" outside a git checkout.
 function(myapp_write_version_header)
     cmake_parse_arguments(ARG "" "TEMPLATE;OUTPUT;SOURCE_DIR" "" ${ARGN})
     foreach(_required TEMPLATE OUTPUT SOURCE_DIR)
@@ -34,7 +35,7 @@ function(myapp_write_version_header)
         # git walks up from SOURCE_DIR, so a copy embedded in a parent
         # repository still gets that repository's hash.
         execute_process(
-            COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
+            COMMAND "${GIT_EXECUTABLE}" describe --tags --always --dirty
             WORKING_DIRECTORY "${ARG_SOURCE_DIR}"
             OUTPUT_VARIABLE _hash
             OUTPUT_STRIP_TRAILING_WHITESPACE

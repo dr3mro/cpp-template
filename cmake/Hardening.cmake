@@ -6,10 +6,10 @@
 # hardened: _FORTIFY_SOURCE needs optimisation, and Debug builds are already
 # instrumented by the sanitizers. PIC/PIE is set in ProjectDefaults.cmake.
 #
-# The flags depend on the platform and on the standard library, not on the
-# compiler: libc++, libstdc++ and the Visual Studio STL each have their own
-# switch for the standard library's own checks. Every flag is probed first, so
-# a toolchain that does not know one does not fail the build.
+# The flags depend on the platform, not on the compiler. Every flag that not
+# every supported toolchain knows is probed first, so a toolchain that does
+# not know one does not fail the build. The choices follow the OpenSSF
+# Compiler Options Hardening Guide for C and C++.
 #
 # Reads: MYAPP_ENABLE_HARDENING (Options.cmake)
 # =============================================================================
@@ -20,7 +20,6 @@ if(NOT MYAPP_ENABLE_HARDENING)
 endif()
 
 include(CheckCXXCompilerFlag)
-include(CheckCXXSourceCompiles)
 include(CheckLinkerFlag)
 
 set(_myapp_hardened_configs "Release,RelWithDebInfo,MinSizeRel")
@@ -60,54 +59,8 @@ function(_myapp_harden)
     set(_myapp_hardening_summary "${_myapp_hardening_summary}" PARENT_SCOPE)
 endfunction()
 
-# ---- which standard library? -----------------------------------------------------
-# The standard library's own checks are the cheapest hardening there is, and
-# every library spells its switch differently. Detect the library instead of
-# guessing from the operating system: a libc++ build on Linux is hardened the
-# libc++ way, and clang on Windows uses the Visual Studio STL.
-check_cxx_source_compiles([[
-    #include <cstdint>
-    #if !defined(_LIBCPP_VERSION)
-    #error not libc++
-    #endif
-    int main() { return 0; }]] MYAPP_USING_LIBCXX)
-check_cxx_source_compiles([[
-    #include <cstdint>
-    #if !defined(__GLIBCXX__)
-    #error not libstdc++
-    #endif
-    int main() { return 0; }]] MYAPP_USING_LIBSTDCXX)
-check_cxx_source_compiles([[
-    #include <cstdint>
-    #if !defined(_MSVC_STL_VERSION)
-    #error not the Visual Studio STL
-    #endif
-    int main() { return 0; }]] MYAPP_USING_MSVC_STL)
-
-if(MYAPP_USING_LIBCXX)
-    # libc++ checks the indices of the containers (with the debug mode) and
-    # hardens the string and memory functions.
-    _myapp_harden(COMPILE -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST)
-elseif(MYAPP_USING_MSVC_STL)
-    # _MSVC_STL_HARDENING turns on the Visual Studio STL's own checks. Only
-    # newer STLs know the switch, so compile a program with it first: a
-    # compiler that does not accept it must not break the build.
-    set(CMAKE_REQUIRED_FLAGS "-D_MSVC_STL_HARDENING=1")
-    check_cxx_source_compiles([[
-        #include <vector>
-        #if !defined(_MSVC_STL_HARDENING)
-        #error the STL does not know the hardening switch
-        #endif
-        int main() { return 0; }]] MYAPP_HAS_MSVC_STL_HARDENING)
-    unset(CMAKE_REQUIRED_FLAGS)
-    if(MYAPP_HAS_MSVC_STL_HARDENING)
-        _myapp_harden(COMPILE -D_MSVC_STL_HARDENING=1)
-    endif()
-elseif(MYAPP_USING_LIBSTDCXX)
-    # Standard-library assertions (cheap bounds checks in operator[], front(),
-    # ...).
-    _myapp_harden(COMPILE -D_GLIBCXX_ASSERTIONS)
-endif()
+# The standard library's own checks are in StdlibChecks.cmake, because they
+# are on in Debug builds too.
 
 if(MSVC)
     # Buffer-overrun checks and Control Flow Guard; ASLR and DEP at link time.
@@ -115,13 +68,17 @@ if(MSVC)
     # flag only marks the objects, the linker flag turns the feature on.
     _myapp_harden(COMPILE /GS /guard:cf
                   LINK /guard:cf /DYNAMICBASE /NXCOMPAT)
+    # SHA-256 instead of MD5 for the source file hashes in the PDB.
+    _myapp_harden(COMPILE /ZH:SHA_256)
     # High-entropy ASLR needs a 64-bit image.
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         _myapp_harden(LINK /HIGHENTROPYVA)
     endif()
-    # /CETCOMPAT only exists on x64 (not ARM64).
+    # /CETCOMPAT only exists on x64 (not ARM64). EH continuation metadata
+    # (/guard:ehcont) lets CET shadow stacks check exception handling too; it
+    # needs the flag at compile and at link time, and is x64-only as well.
     if(_myapp_arch_x64)
-        _myapp_harden(LINK /CETCOMPAT)
+        _myapp_harden(COMPILE /guard:ehcont LINK /CETCOMPAT /guard:ehcont)
     endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # Windows with LLVM's clang in its GNU style (clang++ instead of
@@ -177,6 +134,11 @@ else()
     set(CMAKE_REQUIRED_FLAGS "-Werror")
     check_cxx_compiler_flag("-fstack-clash-protection" MYAPP_HAS_STACK_CLASH)
     check_cxx_compiler_flag("-fcf-protection=full" MYAPP_HAS_CF_PROTECTION)
+    # Zero instead of leftover stack data in variables that are read before
+    # they are written (GCC 12+, Clang 16+), and _FORTIFY_SOURCE bounds for
+    # trailing arrays that are not declared as flexible (GCC 13+, Clang 16+).
+    check_cxx_compiler_flag("-ftrivial-auto-var-init=zero" MYAPP_HAS_AUTO_VAR_INIT)
+    check_cxx_compiler_flag("-fstrict-flex-arrays=3" MYAPP_HAS_STRICT_FLEX_ARRAYS)
     # ARM64: branch protection (BTI) needs -mbranch-protection=standard. The
     # flag does not exist on other architectures, so it is only probed there.
     if(_myapp_arch_arm64)
@@ -189,13 +151,21 @@ else()
     if(MYAPP_HAS_CF_PROTECTION)
         _myapp_harden(COMPILE -fcf-protection=full)
     endif()
+    if(MYAPP_HAS_AUTO_VAR_INIT)
+        _myapp_harden(COMPILE -ftrivial-auto-var-init=zero)
+    endif()
+    if(MYAPP_HAS_STRICT_FLEX_ARRAYS)
+        _myapp_harden(COMPILE -fstrict-flex-arrays=3)
+    endif()
     if(MYAPP_HAS_BRANCH_PROTECTION)
         _myapp_harden(COMPILE -mbranch-protection=standard)
     endif()
 
-    # Full RELRO and a non-executable stack (GNU linker options).
+    # Full RELRO and a non-executable stack (GNU linker options), and no
+    # DT_NEEDED entries for libraries nothing uses. (-z,nodlopen is left out
+    # on purpose: it would stop a library project from being dlopen()ed.)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        _myapp_harden(LINK -Wl,-z,relro,-z,now,-z,noexecstack)
+        _myapp_harden(LINK -Wl,-z,relro,-z,now,-z,noexecstack -Wl,--as-needed)
     endif()
 endif()
 

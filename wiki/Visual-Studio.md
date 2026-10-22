@@ -183,8 +183,8 @@ Two headers are generated, and the project writes them itself before every
 compile:
 
 - `<name>/version.hpp`: the version from `vcpkg.json` (the single source of
-  truth) and the current git hash (`unknown` without git or outside a
-  repository). The project fills in `include/<name>/version.hpp.in` itself,
+  truth) and `git describe` of the build (`unknown` without git or outside a
+  repository). The project fills in `cmake/templates/version.hpp.in` itself,
   in plain MSBuild — the same substitution `cmake/WriteVersion.cmake` makes
   for the CMake build — so CMake is never run.
 - `<name>/<name>_export.h`: the export header, in its static-build version.

@@ -1,0 +1,21 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "my-debug",
+      "displayName": "My debug build (Homebrew LLVM, no ccache)",
+      "inherits": "debug",
+      "cacheVariables": {
+        "MYAPP_USE_LLVM_CLANG": "ON",
+        "MYAPP_USE_CCACHE": "OFF"
+      },
+      "environment": { "VCPKG_ROOT": "$env{HOME}/.vcpkg" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "my-debug", "configurePreset": "my-debug", "jobs": 8 }
+  ],
+  "testPresets": [
+    { "name": "my-debug", "inherits": "test-asan", "configurePreset": "my-debug" }
+  ]
+}

@@ -17,11 +17,17 @@ of them also run in CI.
 
 ## Compiler warnings
 
-Every target compiles with `-Wall -Wextra -pedantic -Wshadow -Wconversion`
-(MSVC: `/W4 /permissive-`), set in `cmake/Warnings.cmake`. Normal builds show
-warnings and carry on; the `ci` preset (`MYAPP_WARNINGS_AS_ERRORS=ON`) fails
-on them, and so does CI. Build with `--preset ci` before pushing to avoid a
-red CI run.
+Every target compiles with `-Wall -Wextra -pedantic -Wshadow -Wconversion
+-Wsign-conversion -Wold-style-cast -Wnon-virtual-dtor -Woverloaded-virtual
+-Wcast-align -Wnull-dereference -Wdouble-promotion -Wformat=2
+-Wimplicit-fallthrough`, plus `-Wduplicated-cond -Wduplicated-branches
+-Wlogical-op -Wuseless-cast -Wmisleading-indentation` with GCC (MSVC: `/W4
+/permissive- /sdl` and the `/w14xxx` warnings that `/W4` leaves off), set in
+`cmake/Warnings.cmake`. Normal builds show warnings and carry on; the `ci`
+presets (`CMAKE_COMPILE_WARNING_AS_ERROR=ON`) fail on them, and so does CI.
+On Linux, CI builds with both GCC (`ci-gcc`) and Clang (`ci-clang`), since
+each warns about different things. Build with `--preset ci` before pushing to
+avoid a red CI run.
 
 ## Formatting: clang-format
 

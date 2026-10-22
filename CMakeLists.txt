@@ -54,7 +54,9 @@ include(ProjectDefaults)    # C++ dialect, build type, PIC/PIE, install prefix
 add_library(${PROJECT_NAME}_options INTERFACE)
 include(Warnings)           # -Wall -Wextra ... (and -Werror on request)
 include(Sanitizers)         # ASan/UBSan, TSan, MSan, libFuzzer instrumentation
+include(StdlibChecks)       # the standard library's own checks (Debug too)
 include(Hardening)          # stack protector, FORTIFY_SOURCE, RELRO, CET, ...
+include(Lto)                # link-time optimisation for optimised app builds
 include(Coverage)           # LLVM coverage instrumentation (coverage preset)
 include(Ccache)             # compiler cache
 include(Version)            # generated <name>/version.hpp (version + git hash)
@@ -78,6 +80,15 @@ endif()
 if(MYAPP_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests) # ${PROJECT_NAME}_tests, registered with CTest
+
+    # A smoke test of the program itself: it starts, and reports the version
+    # from vcpkg.json.
+    if(NOT MYAPP_LIBRARY_MODE)
+        add_test(NAME ${PROJECT_NAME}_version COMMAND ${PROJECT_NAME} --version)
+        string(REPLACE "." "\\." _myapp_version_regex "${PROJECT_VERSION}")
+        set_tests_properties(${PROJECT_NAME}_version PROPERTIES
+            PASS_REGULAR_EXPRESSION "^${PROJECT_NAME} ${_myapp_version_regex} ")
+    endif()
 endif()
 
 if(MYAPP_BUILD_FUZZERS)

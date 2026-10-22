@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Warnings as errors is CMake's own `CMAKE_COMPILE_WARNING_AS_ERROR`;
+  `MYAPP_WARNINGS_AS_ERRORS` is gone.
+- Public headers are a `FILE_SET HEADERS` of the library and install with it.
+- The version template moved to `cmake/templates/version.hpp.in`, and
+  `kGitHash` is now `git describe --tags --always --dirty`.
+
 - One project generator, `scripts/new-project.cmake`, runs in CMake's script
   mode on every system. `new-project.sh` and `new-project.ps1` are now thin
   wrappers around it, so they always produce the same project;
@@ -17,6 +23,17 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- More warnings (`-Wsign-conversion`, `-Wold-style-cast`, `-Wnull-dereference`
+  and others; GCC-only ones; the MSVC `/w14xxx` set and `/sdl`).
+- The standard library's own checks in Debug builds too.
+- Hardening: `-ftrivial-auto-var-init=zero`, `-fstrict-flex-arrays=3`,
+  `--as-needed`; MSVC `/guard:ehcont` and `/ZH:SHA_256`.
+- `MYAPP_ENABLE_LTO` (on): link-time optimisation of optimised app builds.
+- Sanitizer runtime options in the test presets; `ci-gcc` and `ci-clang`
+  presets, both run in CI on Linux; `tsan` and `fuzz` hidden on Windows.
+- A `--version` smoke test of the app, and installing the shared libraries
+  an app links (`RUNTIME_DEPENDENCY_SET`).
+- `CMakeUserPresets.json.example`.
 - A personal defaults file for the generator (`AUTHOR`, `GITHUB_USER`, `STD`).
 - `.template-version` in every generated project.
 - Releases carry `SHA256SUMS`, build-provenance attestations, an SBOM per

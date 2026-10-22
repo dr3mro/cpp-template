@@ -6,8 +6,7 @@ Names use the placeholder `myapp`; yours carry your project's name.
 ```text
 myapp/
 ├── include/myapp/          ✏️ public headers
-│   ├── core/greeter.hpp       example class, replace it
-│   └── version.hpp.in         template for the generated version header
+│   └── core/greeter.hpp       example class, replace it
 ├── src/
 │   ├── CMakeLists.txt         the library target (you rarely touch it)
 │   └── myapp/core/greeter.cpp ✏️ implementations
@@ -28,10 +27,12 @@ myapp/
 ├── cmake/                     build modules, one per feature
 │   ├── Dependencies.cmake  ✏️ third-party packages
 │   ├── Options.cmake          every build option
+│   ├── templates/version.hpp.in  template for the generated version header
 │   └── ...                    see "CMake internals"
 ├── CMakeLists.txt             the build's table of contents
 ├── CMakePresets.json          the presets (debug, release, ...)
 ├── CMakeUserPresets.json   ✏️ your personal presets (create it; git-ignored)
+├── CMakeUserPresets.json.example  a starting point for it
 ├── vcpkg.json              ✏️ name, version and dependencies
 ├── Doxyfile.in                documentation settings
 ├── .clang-format              code style
@@ -44,6 +45,7 @@ myapp/
 ├── .zed/  .vscode/            editor tasks and debugger configs
 ├── .github/                   CI workflows, Dependabot
 ├── CHANGELOG.md            ✏️ what changed in each version
+├── .template-version          the template release this project was made from
 ├── SECURITY.md                how to report a vulnerability
 └── README.md               ✏️ your project's front page
 ```

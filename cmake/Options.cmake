@@ -17,7 +17,8 @@ option(MYAPP_BUILD_FUZZERS
        "Build the libFuzzer targets in fuzz/ (needs clang; the fuzz preset sets this)" OFF)
 
 # ---- compiler checks -----------------------------------------------------------
-option(MYAPP_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+# Warnings as errors: CMake's own CMAKE_COMPILE_WARNING_AS_ERROR (the ci
+# preset sets it). `cmake --compile-no-warning-as-error` turns it off again.
 
 set(MYAPP_SANITIZER "" CACHE STRING
     "Sanitizer to enable: address (includes UBSan), thread or memory; empty for none")
@@ -25,6 +26,8 @@ set_property(CACHE MYAPP_SANITIZER PROPERTY STRINGS "" address thread memory)
 
 option(MYAPP_ENABLE_HARDENING
        "Add security hardening flags to optimised (Release-like) builds" ON)
+option(MYAPP_ENABLE_LTO
+       "Link-time optimisation for optimised builds of the app (not in library mode)" ON)
 option(MYAPP_ENABLE_COVERAGE
        "Instrument for LLVM source-based coverage and add the coverage target (clang only)" OFF)
 
