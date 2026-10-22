@@ -20,50 +20,13 @@ if(NOT MYAPP_CMAKE_LINT)
     return()
 endif()
 
-# Keep this list explicit: configure-dependent globs make Ninja regenerate
-# while optional tools or package managers update generated files.
-set(_myapp_cmake_candidates
+# This is an optional lint target, so its file discovery must not become a
+# configure dependency for Ninja's glob verifier.
+file(GLOB _myapp_cmake_files
     "${PROJECT_SOURCE_DIR}/CMakeLists.txt"
-    "${PROJECT_SOURCE_DIR}/src/CMakeLists.txt"
-    "${PROJECT_SOURCE_DIR}/tests/CMakeLists.txt"
-    "${PROJECT_SOURCE_DIR}/fuzz/CMakeLists.txt"
-    "${PROJECT_SOURCE_DIR}/examples/CMakeLists.txt"
-    "${PROJECT_SOURCE_DIR}/cmake/ArchitectureDiagram.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/CMakeLint.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Ccache.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/CollectClassDiagrams.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/CompileCommands.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Coverage.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Dependencies.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/DistClean.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Docs.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/ExportHeader.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/FetchDependencies.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Format.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Hardening.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Helpers.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/HomebrewLLVM.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Install.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Lto.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Options.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/PreProject.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/ProjectDefaults.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Sanitizers.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/StdlibChecks.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Summary.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/TestFramework.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Tidy.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Version.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Warnings.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/WindowsClang.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/WriteVersion.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/VcpkgToolchain.cmake")
-set(_myapp_cmake_files "")
-foreach(_file IN LISTS _myapp_cmake_candidates)
-    if(EXISTS "${_file}")
-        list(APPEND _myapp_cmake_files "${_file}")
-    endif()
-endforeach()
+    "${PROJECT_SOURCE_DIR}/*/CMakeLists.txt"
+    "${PROJECT_SOURCE_DIR}/cmake/*.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/*.cmake.in")
 add_custom_target(cmake-lint
     COMMAND "${MYAPP_CMAKE_LINT}" ${_myapp_cmake_files}
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
