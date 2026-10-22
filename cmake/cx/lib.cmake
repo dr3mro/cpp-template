@@ -107,6 +107,7 @@ endfunction()
 # so each ";" is stored as the control character _cx_arg_sep, and _cx_run turns
 # it back into ";" when it builds the command.
 string(ASCII 1 _cx_arg_sep)
+# Appends one user argument to a list, encoding its semicolons.
 function(_cx_arg_append list_var value)
     string(REPLACE ";" "${_cx_arg_sep}" _cx_encoded "${value}")
     list(APPEND ${list_var} "${_cx_encoded}")
