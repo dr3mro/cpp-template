@@ -4,5 +4,29 @@
   "clangd.arguments": [
     "--background-index",
     "--clang-tidy"
-  ]
+  ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.cache": true,
+    "**/build": true,
+    "**/cmake-build-*": true,
+    "**/docs": true,
+    "**/.vscode": true,
+    "**/.zed": true,
+    "**/cx": true,
+    "**/cx.cmd": true,
+    "**/cx.ps1": true,
+    "**/*.sln": true,
+    "**/*.vcxproj": true,
+    "**/*.props": true,
+    "**/*.targets": true,
+    "**/cliff.toml": true,
+    "**/lychee.toml": true,
+    "**/examples": true,
+    "**/scripts": true,
+    "**/wiki": true,
+    "**/vcpkg_installed": true,
+    "*.md": true,
+    "Doxyfile*": true
+  }
 }
