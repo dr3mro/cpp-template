@@ -997,6 +997,16 @@ jobs:
               Where-Object { $_ -ne '' } |
               ForEach-Object { $_ -replace 'kGitHash = "[^"]*"', 'kGitHash = "<git>"' })
           }
+          # The cx test immediately before this step removes every build
+          # directory with `cx clean --all`; configure again so CMake writes
+          # its configure-time version header before the comparison.
+          Push-Location $project
+          try {
+            cmake --preset release -DVSAPP_BUILD_TESTS=OFF
+            if ($LASTEXITCODE -ne 0) { throw "CMake release configure failed" }
+          } finally {
+            Pop-Location
+          }
           $fromCMake = Get-Lines "$project\build\release\generated\include\vsapp\version.hpp"
           $fromMSBuild = Get-Lines "$project\build\vs\generated\vsapp\version.hpp"
           $diff = Compare-Object -ReferenceObject $fromCMake -DifferenceObject $fromMSBuild -CaseSensitive -SyncWindow 0
