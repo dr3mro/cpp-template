@@ -43,12 +43,17 @@ the **Desktop development with C++** workload. Sources under `src/`, headers
 under `include/` and the `myapp` `main.cpp` are found automatically; add a
 file on disk and reload the solution.
 
+The solution holds two projects: the program and `myapp_tests`, which builds
+the unit tests. Press **F5** on either to run it; add
+`-p:RunTests=true` to an `msbuild` command to run the tests as part of the
+build.
+
 The project is **read-only** (`ReadOnlyProject`) so that the wildcards are
 allowed without the IDE's wildcard warning. Visual Studio never saves it:
-add files on disk, and change settings by editing the `.vcxproj` or the
-optional `myapp.user.props` next to it (git-ignored). The solution loads a
-little slower because a read-only project cannot use Visual Studio's project
-cache.
+add files on disk, and change settings by editing the `.props`/`.targets`
+files, the `.vcxproj`, or the optional `myapp.user.props` next to it
+(git-ignored). The solution loads a little slower because a read-only project
+cannot use Visual Studio's project cache.
 
 Everything the build writes stays under `build/vs/`: the program, the
 intermediate files, the generated headers and the vcpkg packages. Only
@@ -57,9 +62,10 @@ intermediate files, the generated headers and the vcpkg packages. Only
 moved per user via **Tools → Options → Text Editor → C/C++ → Advanced →
 Fallback Location**.
 
-The tests are not part of the solution (they need doctest from CMake), so
-they still run through `cmake --preset debug && cmake --build --preset debug
-&& ctest --preset debug`. More: [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio).
+The tests take doctest from vcpkg when the manifest is in use, and from a
+pinned download otherwise, so they need no CMake and no developer shell.
+More: [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio)
+and [Testing guide](https://github.com/dr3mro/cpp-template/wiki/Testing-Guide).
 
 ## License
 

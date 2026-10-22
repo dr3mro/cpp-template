@@ -140,11 +140,12 @@ instead of `bank`.
    | options `MYAPP_SANITIZER`, ... | `BANK_APP_SANITIZER`, ... |
    | helper `myapp_find_dependency()` | `bank_app_find_dependency()` |
    | `"name": "myapp"` in `vcpkg.json` | `"name": "bank-app"` (vcpkg names use hyphens) |
-   | `myapp.sln`, `myapp.vcxproj` | `bank_app.sln`, `bank_app.vcxproj` |
+   | `myapp.sln`, `myapp.vcxproj`, `myapp_tests.vcxproj` | `bank_app.sln`, `bank_app.vcxproj`, `bank_app_tests.vcxproj` |
+   | `myapp.props`, `myapp.targets`, `myapp.tests.targets` | `bank_app.props`, `bank_app.targets`, `bank_app.tests.targets` |
 
    Any file or folder whose name carries the placeholder is renamed, so new
-   template files are covered automatically. The Visual Studio files also get
-   a **fresh project GUID**, so two projects never share one.
+   template files are covered automatically. Each Visual Studio project also
+   gets its own **fresh project GUID**, so no two projects share one.
 
 3. Writes the author (`--author`, or your git user name) into the header
    comment of `main.cpp`.

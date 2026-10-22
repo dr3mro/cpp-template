@@ -330,7 +330,10 @@ list(FILTER _files EXCLUDE REGEX "^(\\.gitmodules|NOTES\\.md|wiki/.*)$")
 list(REMOVE_DUPLICATES _files)
 
 # ---- copy, renaming the placeholder in paths and in contents ----------------------
+# The app project and the test project are two projects, so each carries its
+# own placeholder GUID and gets its own fresh one.
 set(_template_guid "3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69")
+set(_template_test_guid "9C8D7E6F-5A4B-4C3D-8E2F-1A2B3C4D5E6F")
 # cmakelang predates file(COPY_FILE) (CMake 3.21) and reports a false
 # "invalid form discriminator" for it.
 # cmake-lint: disable=E1126
@@ -340,6 +343,9 @@ string(RANDOM LENGTH 32 _seed)
 string(TIMESTAMP _now "%s%f")
 string(UUID _guid NAMESPACE 6ba7b810-9dad-11d1-80b4-00c04fd430c8
        NAME "${_seed}${_now}${NAME}" TYPE SHA1 UPPER)
+string(RANDOM LENGTH 32 _seed_tests)
+string(UUID _guid_tests NAMESPACE 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+       NAME "${_seed_tests}${_now}${NAME}_tests" TYPE SHA1 UPPER)
 
 # _rename_path(<relative path> <out-var>): the path with the placeholder renamed.
 function(_rename_path rel out_var)
@@ -378,6 +384,7 @@ foreach(_rel IN LISTS _files)
     file(READ "${_source}" _text)
     set(_new "${_text}")
     string(REPLACE "${_template_guid}" "${_guid}" _new "${_new}")
+    string(REPLACE "${_template_test_guid}" "${_guid_tests}" _new "${_new}")
     string(REPLACE "MYAPP" "${_upper}" _new "${_new}")
     string(REPLACE "myapp" "${NAME}" _new "${_new}")
     string(REPLACE "@AUTHOR@" "${AUTHOR}" _new "${_new}")

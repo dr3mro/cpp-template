@@ -111,9 +111,9 @@
     <!-- Wildcards: files added under src/ or include/ are built after a reload
          (and appear in Solution Explorer). One Include per item: a
          semicolon-separated list is the other construct the IDE warns about.
-         main.cpp sits in the project root. tests/, fuzz/ and examples/ are
-         not part of this project: the unit tests need doctest from CMake and
-         keep running through ctest. -->
+         main.cpp sits in the project root. tests/ and fuzz/ are not part of
+         this project: the tests are the separate myapp_tests project, and the
+         fuzz targets belong to the CMake build. -->
     <ClCompile Include="src\**\*.cpp" />
     <ClCompile Include="main.cpp" Condition="Exists('main.cpp')" />
     <ClInclude Include="include\**\*.hpp" />

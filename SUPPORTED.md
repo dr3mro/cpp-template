@@ -12,7 +12,7 @@ treat it as best effort.
 | macOS arm64 | Apple Clang | Ninja presets (`ci`, `coverage`) | tested in CI, with ASan/UBSan |
 | macOS x64 | Apple Clang | `release` preset (cross-built on arm64) | built by the release workflow, not tested |
 | macOS | Homebrew LLVM | `MYAPP_USE_LLVM_CLANG=ON` | best effort (the template author's setup) |
-| Windows x64 | MSVC (Visual Studio 2026) | the checked-in `.sln` (MSBuild) | tested in CI |
+| Windows x64 | MSVC (Visual Studio 2026) | the checked-in `.sln` (MSBuild), tests included | tested in CI |
 | Windows x64 | MSVC (Visual Studio 2026) | `vs2026` preset | tested in CI |
 | Windows x64 | MSVC | Ninja presets from a developer shell (`release`, `debug` with ASan) | tested in CI |
 | Windows ARM64 | MSVC | the `.sln`, and the `release` preset from a developer shell | tested in CI |

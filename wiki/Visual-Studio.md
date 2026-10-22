@@ -1,9 +1,10 @@
 # Visual Studio
 
 Every project created from the template ships a Visual Studio solution and
-project: `<name>.sln` and `<name>.vcxproj` in the project root. They open
-directly in **Visual Studio 2019, 2022 and 2026** (x64 and ARM64, Debug and
-Release) **without CMake**: no generate step, no configure.
+projects: `<name>.sln`, `<name>.vcxproj` and `<name>_tests.vcxproj` in the
+project root. They open directly in **Visual Studio 2019, 2022 and 2026** (x64
+and ARM64, Debug and Release) **without CMake**: no generate step, no
+configure.
 
 ## What you need
 
@@ -62,9 +63,10 @@ Double-click `<name>.sln` in the project root, or in Visual Studio:
 you want (Debug/Release, x64/ARM64) in the toolbar and press **F7** to build,
 **F5** to run.
 
-The solution has one project, `<name>`, which holds the program. The
-debugger starts in the project root, so data files that sit next to the
-sources are found.
+The solution has two projects: `<name>`, which holds the program, and
+`<name>_tests`, which builds the unit tests (and builds them like the program,
+from the same `src/` sources). The debugger starts in the project root, so data
+files that sit next to the sources are found.
 
 ## Sources are discovered automatically (in a read-only project)
 
@@ -170,9 +172,9 @@ the two shared files.
 | --- | --- |
 | Program, import library, linker PDB | `build/vs/<Platform>/<Configuration>/<project>/` (for example `build/vs/x64/Release/vsapp/`) |
 | Intermediate files | `build/vs/obj/<Platform>/<Configuration>/<project>/` (objects, `.ilk`, `.iobj`, `.ipdb`, `.tlog`, `.lastbuildstate`, `.recipe`, the compiler PDB, the code-analysis output) |
-| NuGet restore files | `build/vs/obj/` |
-| Generated headers | `build/vs/generated/<name>/` |
-| vcpkg packages (manifest mode) | `build/vs/vcpkg_installed/<Platform>/` |
+| NuGet restore files | `build/vs/obj/<project>/` |
+| Generated headers | `build/vs/generated/<name>/`, and `build/vs/generated-tests/<name>/` for the tests |
+| vcpkg packages (manifest mode) | `build/vs/vcpkg_installed/<Platform>/`, and `.../<Platform>/tests/` for the tests |
 
 The project name is part of the output path, so that two projects of the same
 solution (the app and the test program) compile and link next to each other
@@ -197,9 +199,11 @@ Three things, and all are git-ignored:
   Its location is fixed by Visual Studio; no project setting moves it.
 - **`<name>.vcxproj.user`**: created when someone changes the debugger
   settings in the IDE. The project keeps `LocalDebuggerWorkingDirectory` and
-  `DebuggerFlavor` in the `.vcxproj`, so most people never need one.
-- **`<name>.user.props`**: optional, for settings you want without editing the
-  read-only project. The `.vcxproj` imports it when it exists.
+  `DebuggerFlavor` in the `.vcxproj`, so most people never need one. The tests
+  project gets `<name>_tests.vcxproj.user` the same way.
+- **`<name>.user.props`** and **`<name>_tests.user.props`**: optional, for
+  settings you want without editing the read-only project. Each `.vcxproj`
+  imports its own file when it exists.
 
 The IntelliSense cache can be moved, but only per user: **Tools → Options →
 Text Editor → C/C++ → Advanced → Fallback Location** (set it to a folder
@@ -226,10 +230,8 @@ hold a version like `0.1.0`, the build stops with a message saying so.
 
 ## What is *not* in the solution
 
-- **The unit tests.** They need doctest, which comes from CMake and vcpkg, so
-  they keep running through CMake: `cmake --preset debug && cmake --build
-  --preset debug && ctest --preset debug`.
-- **Sanitizers and the coverage tools.** Those are CMake features too.
+- **Sanitizers and the coverage tools.** Those are CMake features; the
+  solution builds the tests but without the sanitizers the presets add.
 
 ## CMake and Visual Studio side by side
 
@@ -238,7 +240,8 @@ CMake-managed solution under `build/vs2026/`. The two approaches don't
 conflict: they build into different folders (`build/vs/` for the checked-in
 solution, `build/vs2026/` for the CMake one), so you can use whichever fits
 the moment. The CMake build is the one CI uses, and the one with the
-sanitizers, the tests and the coverage report.
+sanitizers and the coverage report. (The unit tests run in both: the solution
+builds `<name>_tests` too, see [Testing guide](Testing-Guide).)
 
 That CMake build also has test presets, so the tests of a Windows project can
 run with the generator of your choice:
@@ -255,9 +258,13 @@ configuration and print the output of a failing test.
 `new-project.sh` (or `scripts/new-project.ps1` on Windows) takes care of the
 bookkeeping:
 
-- `myapp.sln` and `myapp.vcxproj` become `<name>.sln` and `<name>.vcxproj`.
+- `myapp.sln`, `myapp.vcxproj`, `myapp.props`, `myapp.targets` and
+  `myapp.tests.targets` become `<name>.sln`, `<name>.vcxproj`,
+  `<name>.props`, `<name>.targets` and `<name>.tests.targets`;
+  `myapp_tests.vcxproj` becomes `<name>_tests.vcxproj`.
 - Every project gets a **fresh project GUID** (the template ships a
-  placeholder, so two projects never share one).
+  placeholder per project, so two projects never share one, in this project or
+  in any other).
 - The **C++ standard** you chose with `--std` is written into the property
   sheet: `stdcpp17` for C++17, `stdcpp20` for C++20 and `stdcpplatest` for
   C++23 (Visual Studio 2019 and 2022 have no `stdcpp23`).

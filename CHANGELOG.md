@@ -36,6 +36,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- The Visual Studio solution builds and runs the unit tests: `myapp_tests`
+  is a second project in `myapp.sln`, and `msbuild ... -p:RunTests=true`
+  runs the tests as part of the build. doctest comes from the manifest's
+  `tests` feature when vcpkg's integration is installed, and from a pinned
+  download checked against its SHA-256 otherwise, so the solution needs
+  neither CMake nor vcpkg.
 - `--no-vcpkg` (`-NoVcpkg`) option for the project generators: the project has
   no vcpkg at all. The manifest, the vcpkg toolchain file and the vcpkg
   Dependabot block are left out, and the dependencies are built from their

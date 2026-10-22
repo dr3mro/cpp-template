@@ -360,6 +360,16 @@ jobs:
         with:
           arch: ${{ contains(matrix.os, 'arm') && 'arm64' || 'x64' }}
 
+      - name: Install the vcpkg integration
+        # The Visual Studio projects take doctest from the manifest when
+        # vcpkg's MSBuild integration is installed, and download the pinned
+        # header when it is not. Install it here, so this job exercises the
+        # vcpkg path; the project without vcpkg exercises the download path.
+        shell: pwsh
+        run: |
+          & "$env:USERPROFILE\vcpkg\vcpkg.exe" integrate install
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg integrate install failed" }
+
       - name: Generate projects from the template
         shell: bash
         run: |
@@ -493,12 +503,19 @@ jobs:
         run: |
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
           foreach ($config in @('Debug', 'Release')) {
-            msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=$config -p:Platform=$platform -m | Tee-Object -Variable log
+            # RunTests=true builds the solution and then runs the test
+            # program, so a failing test fails the build.
+            msbuild "$env:RUNNER_TEMP\vsapp\vsapp.sln" -p:Configuration=$config -p:Platform=$platform -m -p:RunTests=true | Tee-Object -Variable log
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vsapp ($config)" }
             # The solution must build without CMake.
             if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vsapp ran CMake" }
             # The wildcards are supported because the project is read-only.
             if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of vsapp warned about wildcards" }
+            # The tests are a project of the solution, and they ran.
+            $testsExe = "$env:RUNNER_TEMP\vsapp\build\vs\$platform\$config\vsapp_tests\vsapp_tests.exe"
+            if (-not (Test-Path -LiteralPath $testsExe)) { throw "the Visual Studio project built no test program ($config)" }
+            # doctest wraps the line in ANSI colour codes.
+            if ($log -notmatch 'Status:.*SUCCESS!') { throw "the unit tests built by Visual Studio did not pass ($config)" }
             Push-Location "$env:RUNNER_TEMP\vsapp"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
@@ -562,12 +579,16 @@ jobs:
         run: |
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
           foreach ($config in @('Debug', 'Release')) {
-            msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=$platform -m | Tee-Object -Variable log
+            msbuild "$env:RUNNER_TEMP\vslib\vslib.sln" -p:Configuration=$config -p:Platform=$platform -m -p:RunTests=true | Tee-Object -Variable log
             if ($LASTEXITCODE -ne 0) { throw "msbuild failed for vslib ($config)" }
             # The solution must build without CMake.
             if ($log -match 'cmake(\.exe)?"?\s+-') { throw "the Visual Studio build of vslib ran CMake" }
             # The wildcards are supported because the project is read-only.
             if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of vslib warned about wildcards" }
+            # A library project has tests too, and they ran.
+            $testsExe = "$env:RUNNER_TEMP\vslib\build\vs\$platform\$config\vslib_tests\vslib_tests.exe"
+            if (-not (Test-Path -LiteralPath $testsExe)) { throw "the library project built no test program ($config)" }
+            if ($log -notmatch 'Status:.*SUCCESS!') { throw "the unit tests of vslib did not pass ($config)" }
             Push-Location "$env:RUNNER_TEMP\vslib"
             $extra = git status --porcelain --ignored | Where-Object { $_ -notmatch '^!! build/' }
             Pop-Location
@@ -599,7 +620,7 @@ jobs:
             throw "the project without vcpkg does not turn the vcpkg manifest mode off"
           }
           $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
-          msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
+          msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m -p:RunTests=true | Tee-Object -Variable log
           if ($LASTEXITCODE -ne 0) { throw "msbuild failed for the project without vcpkg" }
           if ($log -match 'Wildcards and/or some other MSBuild constructs') { throw "the Visual Studio build of the project without vcpkg warned about wildcards" }
           # The program lands in a folder of its own, so that the app and the
@@ -607,3 +628,25 @@ jobs:
           if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg\vsnovcpkg.exe")) {
             throw "the project without vcpkg produced no executable"
           }
+          # Without a manifest the tests take doctest from the pinned download,
+          # and they ran.
+          if (-not (Test-Path -LiteralPath "$project\build\vs\third_party\doctest\doctest.h")) {
+            throw "the project without vcpkg did not download doctest"
+          }
+          if (-not (Test-Path -LiteralPath "$project\build\vs\$platform\Release\vsnovcpkg_tests\vsnovcpkg_tests.exe")) {
+            throw "the project without vcpkg produced no test program"
+          }
+          if ($log -notmatch 'Status:.*SUCCESS!') { throw "the tests of the project without vcpkg did not pass" }
+
+      - name: A corrupted doctest header fails the build
+        # The header is checked against a pinned SHA-256 on every build, so a
+        # half-downloaded or tampered file is caught instead of compiled.
+        shell: pwsh
+        run: |
+          $project = "$env:RUNNER_TEMP\vsnovcpkg"
+          $platform = if ($env:RUNNER_ARCH -eq 'ARM64' -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+          $header = "$project\build\vs\third_party\doctest\doctest.h"
+          Add-Content -LiteralPath $header -Value "// corrupted by the template test"
+          msbuild "$project\vsnovcpkg.sln" -p:Configuration=Release -p:Platform=$platform -m | Tee-Object -Variable log
+          if ($LASTEXITCODE -eq 0) { throw "the build accepted a doctest header with the wrong hash" }
+          if ($log -notmatch 'not the pinned one') { throw "the build failed without naming the doctest hash" }

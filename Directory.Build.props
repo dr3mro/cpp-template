@@ -23,9 +23,10 @@
     <BuildRoot Condition="'$(BuildRoot)' == ''">$(MSBuildThisFileDirectory)build\vs\</BuildRoot>
 
     <!-- NuGet restore and the C++ targets create obj\ next to the project by
-         default; both follow these two. -->
-    <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(BuildRoot)obj\</BaseIntermediateOutputPath>
-    <MSBuildProjectExtensionsPath Condition="'$(MSBuildProjectExtensionsPath)' == ''">$(BuildRoot)obj\</MSBuildProjectExtensionsPath>
+         default; both follow these two. One folder per project, because NuGet
+         writes the same file names for every project it restores. -->
+    <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(BuildRoot)obj\$(ProjectName)\</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath Condition="'$(MSBuildProjectExtensionsPath)' == ''">$(BuildRoot)obj\$(ProjectName)\</MSBuildProjectExtensionsPath>
 
     <!-- The program, the import library and the linker PDB. The project name
          is part of the path, so that two projects of the same solution (the

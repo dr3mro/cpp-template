@@ -26,11 +26,11 @@ build folder.
 
 ### Can I build in Visual Studio without CMake?
 
-Yes. Every project ships `<name>.sln` and `<name>.vcxproj`, which open in
-Visual Studio 2019, 2022 and 2026 and find the sources under `src/` and
-`include/` by wildcard. The tests are not part of that solution (they need
-doctest from CMake), so they still run with `ctest`. See
-[Visual Studio](Visual-Studio).
+Yes. Every project ships `<name>.sln`, `<name>.vcxproj` and
+`<name>_tests.vcxproj`, which open in Visual Studio 2019, 2022 and 2026 and
+find the sources under `src/` and `include/` by wildcard. The tests are the
+second project of the solution, so they build and run there too (with
+`-p:RunTests=true` as part of the build). See [Visual Studio](Visual-Studio).
 
 ### Where did my program go?
 

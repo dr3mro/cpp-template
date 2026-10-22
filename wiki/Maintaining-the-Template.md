@@ -73,9 +73,11 @@ and every `MYAPP` with the capitalised name, in every text file. So:
 - files that only make sense in the template (like `template-test.yml`,
   `wiki/`, `wiki.yml` and `NOTES.md`) must be left out by the generator; see
   the `list(FILTER _files EXCLUDE ...)` lines in `new-project.cmake`;
-- `myapp.sln` and `myapp.vcxproj` carry a placeholder project GUID
-  (`3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69`); the generator replaces it with a
-  fresh GUID in both files, so don't hard-code it anywhere else.
+- `myapp.vcxproj` and `myapp_tests.vcxproj` carry a placeholder project GUID
+  each (`3F2A6B1C-9D4E-4C7A-8B5F-1E2D3C4B5A69` for the app,
+  `9C8D7E6F-5A4B-4C3D-8E2F-1A2B3C4D5E6F` for the tests); the generator
+  replaces each with its own fresh GUID in the project and in `myapp.sln`, so
+  don't hard-code either of them anywhere else.
 - Keep `ReadOnlyProject` in the `.vcxproj`: it is what lets the wildcards work
   without the IDE warning. When adding a project item, give each glob or file
   its own `<ClCompile Include="...">` / `<ClInclude Include="...">` line; never

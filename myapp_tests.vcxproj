@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    The unit tests of the template, as a Visual Studio project.
+
+    It builds tests\*.cpp together with the library sources under src\ into
+    one test program, <name>_tests.exe, which is the same program the CMake
+    build creates: main() comes from tests/test_main.cpp (doctest), so the
+    project does not link the app project and does not need main.cpp.
+
+    The project is read-only and uses wildcards, like the app project: a new
+    test file under tests/ is part of the build after a reload of the
+    solution. The compiler and linker settings come from myapp.props, the
+    generated headers from myapp.targets, so the tests build like the app.
+
+    new-project.sh and new-project.ps1 rename this file, replace the
+    placeholder GUID with a fresh one and set the C++ standard.
+  -->
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{9C8D7E6F-5A4B-4C3D-8E2F-1A2B3C4D5E6F}</ProjectGuid>
+    <RootNamespace>myapp</RootNamespace>
+    <ProjectName>myapp_tests</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <!-- Same markers as the app project: the output goes to build/vs/, and
+         the wildcards stay warning-free because the IDE never rewrites the
+         project. -->
+    <VsBuildRootProject>true</VsBuildRootProject>
+    <ReadOnlyProject>true</ReadOnlyProject>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <!-- Before the shared property sheet is imported: myapp.props expands
+       $(GeneratedIncludeDir) into the include path as it is evaluated. -->
+  <PropertyGroup>
+    <TargetName>myapp_tests</TargetName>
+    <!-- The generated headers go to a folder of their own, so that building
+         the app and the tests at the same time does not write the same files
+         twice. The content is the same: the header namespace is the library's
+         (VsHeaderName), not the project's. -->
+    <GeneratedIncludeDir>$(BuildRoot)generated-tests\</GeneratedIncludeDir>
+  </PropertyGroup>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+    <!-- The same property sheet as the app project: the tests use the same
+         warnings, the same C++ standard and the same hardening. -->
+    <Import Project="$(MSBuildProjectDirectory)\myapp.props" Label="Shared" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <!-- vcpkg: the tests need doctest, which is the "tests" feature of the
+         manifest. Without vcpkg (or without the vcpkg integration installed)
+         the header comes from myapp.tests.targets instead. -->
+    <VcpkgEnableManifest Condition="'$(VcpkgRoot)' != '' or '$(VCPKG_ROOT)' != ''">true</VcpkgEnableManifest>
+    <VcpkgEnableManifest Condition="!Exists('$(MSBuildProjectDirectory)\vcpkg.json')">false</VcpkgEnableManifest>
+    <!-- The x-feature option is how vcpkg's MSBuild integration installs a
+         feature of the manifest; VcpkgEnabledFeature does nothing there, but
+         is kept in step with it. Duplicate features are harmless. -->
+    <VcpkgAdditionalInstallOptions Condition="'$(VcpkgEnableManifest)' == 'true'">--x-feature=tests</VcpkgAdditionalInstallOptions>
+    <VcpkgEnabledFeature Condition="'$(VcpkgEnableManifest)' == 'true'">tests</VcpkgEnabledFeature>
+    <!-- The app installs the manifest without the tests feature, the tests
+         install it with it, so the two need an install folder each. -->
+    <VcpkgInstalledDir Condition="'$(VcpkgEnableManifest)' == 'true'">$(BuildRoot)vcpkg_installed\$(Platform)\tests\</VcpkgInstalledDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The test sources and the library they test. main() comes from
+         tests/test_main.cpp, so main.cpp of the app is not part of this
+         project. -->
+    <ClCompile Include="tests\**\*.cpp" />
+    <ClCompile Include="src\**\*.cpp" />
+    <ClInclude Include="include\**\*.hpp" />
+    <ClInclude Include="include\**\*.h" />
+    <ClInclude Include="src\**\*.hpp" />
+    <ClInclude Include="src\**\*.h" />
+    <ClInclude Include="tests\**\*.hpp" />
+    <ClInclude Include="tests\**\*.h" />
+    <None Include="VERSION" />
+    <None Include="cmake\templates\version.hpp.in" />
+  </ItemGroup>
+  <PropertyGroup>
+    <!-- The debugger starts in the project root, so data files next to the
+         sources are found. -->
+    <LocalDebuggerWorkingDirectory>$(MSBuildProjectDirectory)\</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <!-- Optional per-user settings, exactly like the app project. -->
+  <Import Project="$(MSBuildProjectName).user.props" Condition="Exists('$(MSBuildProjectName).user.props')" />
+  <Import Project="$(MSBuildProjectDirectory)\myapp.targets" Label="Shared" />
+  <!-- doctest, from vcpkg or from the pinned download. -->
+  <Import Project="$(MSBuildProjectDirectory)\myapp.tests.targets" Label="Shared" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <!--
+    RunTests: msbuild myapp.sln -p:RunTests=true builds and then runs the test
+    program, so a failing test fails the build. A plain build never runs the
+    tests.
+  -->
+  <Target Name="RunTests" AfterTargets="Build" Condition="'$(RunTests)' == 'true'">
+    <Exec Command="&quot;$(TargetPath)&quot;" />
+  </Target>
+</Project>

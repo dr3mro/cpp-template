@@ -7,7 +7,9 @@ covers how to write useful tests and how to run exactly the ones you want.
 ## How the pieces fit
 
 - Every `.cpp` in `tests/` is compiled into **one** test program,
-  `build/<preset>/tests/myapp_tests`, which links the project library.
+  `build/<preset>/tests/myapp_tests`, which links the project library. The
+  Visual Studio solution builds the same program as `<name>_tests.exe`; see
+  [Running the tests in Visual Studio](#running-the-tests-in-visual-studio).
 - `tests/test_main.cpp` supplies `main()` for doctest. Leave it as it is.
 - CMake asks the test program for its list of `TEST_CASE`s and registers each
   one with CTest separately, so `ctest` shows them one by one.
@@ -139,6 +141,33 @@ subcases, suites, extra detail), run the test program directly:
 ```
 
 `./build/debug/tests/myapp_tests --help` lists every option.
+
+## Running the tests in Visual Studio
+
+The solution has a second project, `<name>_tests`, next to the app. It builds
+`tests/` together with the library sources into
+`build/vs/<Platform>/<Configuration>/<name>_tests/<name>_tests.exe`, the same
+program CMake builds. **F5** runs it under the debugger, so breakpoints in a
+test work like anywhere else.
+
+To run the tests as part of a build, pass `RunTests`:
+
+```powershell
+msbuild myapp.sln -p:Configuration=Release -p:Platform=x64 -p:RunTests=true
+```
+
+The build then runs the test program after linking it, and a failing test fails
+the build. A plain build (and **F7**) never runs the tests.
+
+doctest comes from one of two places:
+
+- **vcpkg**, when the project has a manifest and `vcpkg integrate install` has
+  been run: the tests are the `tests` feature of `vcpkg.json`.
+- **A pinned download**, otherwise (a `--no-vcpkg` project, or vcpkg without
+  the integration): `build/vs/third_party/doctest/doctest.h`, downloaded once
+  from the commit in `cmake/TestFramework.cmake` and checked against a pinned
+  SHA-256 on every build. A corrupted file fails the build instead of
+  compiling.
 
 ## Debugging a failing test
 

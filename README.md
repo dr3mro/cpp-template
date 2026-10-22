@@ -48,6 +48,7 @@ and [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio).
   ThreadSanitizer, CI (warnings as errors, GCC and Clang), coverage, fuzzing
   and docs, plus one-command workflows (`cmake --workflow --preset test`)
 - **Visual Studio**: a checked-in `<name>.sln` that finds new sources by itself
+  and builds and runs the unit tests without CMake
 - **App + library layout**: all code in a library that the app, tests and
   fuzzers share; a library mode with an installable CMake package
 - **vcpkg** dependencies, pinned and cached (or, with `--no-vcpkg`, dependencies

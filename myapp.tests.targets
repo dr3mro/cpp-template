@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    myapp.tests.targets - the unit test framework for the Visual Studio build.
+
+    The tests include <doctest/doctest.h>. Where the header comes from depends
+    on how the project gets its dependencies:
+      - vcpkg: doctest is the "tests" feature of the manifest, so vcpkg
+        installs it (see myapp_tests.vcxproj)
+      - otherwise: the header is downloaded once from a pinned commit and
+        checked against a pinned SHA-256, the same commit and file that
+        cmake/TestFramework.cmake fetches for the CMake build
+
+    The file is renamed with the project (new-project.sh and
+    new-project.ps1), so <name>.tests.targets belongs to <name>.
+  -->
+  <PropertyGroup>
+    <!-- The same doctest that cmake/TestFramework.cmake pins. Update both
+         together; the SHA-256 is of the exact file at that commit. -->
+    <VsDoctestUrl Condition="'$(VsDoctestUrl)' == ''">https://raw.githubusercontent.com/doctest/doctest/2d0a9359a60c51affe2a9bebb1be1dca47868151/doctest/doctest.h</VsDoctestUrl>
+    <VsDoctestSha256 Condition="'$(VsDoctestSha256)' == ''">cfd518a3ef90f67e1f3ba514df23fb3627437de1a2feeba78cf5062a40021421</VsDoctestSha256>
+    <VsDoctestDir>$(BuildRoot)third_party\doctest</VsDoctestDir>
+    <VsDoctestHeader>$(VsDoctestDir)\doctest.h</VsDoctestHeader>
+  </PropertyGroup>
+  <!-- The downloaded header is on the include path whether or not vcpkg is in
+       use: an empty folder costs nothing, and vcpkg's own include folder is
+       added after this one, so an installed doctest wins over a stale file. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(BuildRoot)third_party\</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!--
+    GetClCommandLines is the target the Visual Studio design-time build runs,
+    so the header is there for IntelliSense before the first build.
+  -->
+  <Target Name="PrepareDoctestHeader" BeforeTargets="ClCompile;GetClCommandLines"
+          Condition="'$(VcpkgEnableManifest)' != 'true' or '$(VcpkgPropsImported)' != 'true' or '$(VcpkgEnabled)' == 'false'">
+    <MakeDir Directories="$(VsDoctestDir)" />
+    <!-- Only when it is missing: the hash check below then tells a good file
+         from a corrupted one, instead of silently downloading it again. -->
+    <DownloadFile Condition="!Exists('$(VsDoctestHeader)')"
+                  SourceUrl="$(VsDoctestUrl)"
+                  DestinationFolder="$(VsDoctestDir)"
+                  DestinationFileName="doctest.h" />
+    <GetFileHash Files="$(VsDoctestHeader)" Algorithm="SHA256" HashEncoding="hex">
+      <Output TaskParameter="Items" ItemName="VsDoctestFileHash" />
+    </GetFileHash>
+    <Error Condition="'%(VsDoctestFileHash.FileHash)' != '$(VsDoctestSha256)'"
+           Text="The downloaded doctest header is not the pinned one. Expected SHA-256 $(VsDoctestSha256), got %(VsDoctestFileHash.FileHash). Delete $(VsDoctestHeader) to download it again." />
+  </Target>
+</Project>
