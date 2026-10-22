@@ -683,6 +683,10 @@ jobs:
               if ($stale -notmatch '--fresh') {
                 throw "stale-build error did not explain recovery"
               }
+              # The failing cmake above is the last native command in the step:
+              # clear its exit code, or the runner fails the step even though
+              # every check passed.
+              $global:LASTEXITCODE = 0
             } finally {
               Pop-Location
             }

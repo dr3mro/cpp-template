@@ -50,6 +50,12 @@ function(myapp_read_version out_var version_file)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${version_file}")
 endfunction()
 
+# myapp_validate_build_tree(<source dir>)
+#
+# A build directory records the source tree and toolchain it was configured
+# with. Reusing it from another checkout, or after moving the project, mixes
+# objects from two trees without any warning, so stop with instructions to
+# start with a fresh build directory instead.
 function(myapp_validate_build_tree source_dir)
     if(NOT DEFINED CMAKE_HOME_DIRECTORY)
         return()

@@ -29,7 +29,10 @@ endif()
 # ---- 1. Before project() ------------------------------------------------------
 # These must run before project() enables C++, so they are included by path.
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Helpers.cmake)
-if(DEFINED CMAKE_HOME_DIRECTORY)
+# Only the top-level project owns its build directory: when this project is
+# pulled into another one (add_subdirectory/FetchContent), the recorded source
+# is the parent's and the check would always fail.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     myapp_validate_build_tree("${CMAKE_CURRENT_LIST_DIR}")
 endif()
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/PreProject.cmake)

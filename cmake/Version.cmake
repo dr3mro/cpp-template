@@ -40,7 +40,8 @@ add_custom_command(
     DEPENDS ${_myapp_version_template} ${PROJECT_SOURCE_DIR}/cmake/WriteVersion.cmake
     COMMENT "Writing ${PROJECT_NAME}/version.hpp"
     VERBATIM)
-add_custom_target(${PROJECT_NAME}_version DEPENDS ${MYAPP_VERSION_HEADER})
+add_custom_target(${PROJECT_NAME}_version DEPENDS ${MYAPP_VERSION_HEADER}
+    COMMENT "Updating ${PROJECT_NAME}/version.hpp")
 
 # The generated headers (version.hpp here, the export header from
 # ExportHeader.cmake) are public headers of the library: src/CMakeLists.txt
