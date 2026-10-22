@@ -31,13 +31,17 @@ else()
     set(DOCTEST_WITH_MAIN_IN_STATIC_LIB OFF CACHE BOOL
         "Build a static library with a main() function" FORCE)
     # The version comes from the doctest override in vcpkg.json, so this path
-    # builds the same doctest that vcpkg installs. FetchContent needs a commit,
-    # so each version is mapped to the commit its tag points to.
-    file(READ "${CMAKE_CURRENT_LIST_DIR}/../vcpkg.json" _myapp_manifest)
-    string(JSON _doctest_name GET "${_myapp_manifest}" overrides 0 name)
-    string(JSON _doctest_version GET "${_myapp_manifest}" overrides 0 version)
-    if(NOT _doctest_name STREQUAL "doctest")
-        message(FATAL_ERROR "vcpkg.json: the first override must pin doctest")
+    # builds the same doctest that vcpkg installs. A project without vcpkg has
+    # no manifest, so the default below is used there. FetchContent needs a
+    # commit, so each version is mapped to the commit its tag points to.
+    set(_doctest_version 2.5.3)
+    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../vcpkg.json")
+        file(READ "${CMAKE_CURRENT_LIST_DIR}/../vcpkg.json" _myapp_manifest)
+        string(JSON _doctest_name GET "${_myapp_manifest}" overrides 0 name)
+        string(JSON _doctest_version GET "${_myapp_manifest}" overrides 0 version)
+        if(NOT _doctest_name STREQUAL "doctest")
+            message(FATAL_ERROR "vcpkg.json: the first override must pin doctest")
+        endif()
     endif()
     if(_doctest_version STREQUAL "2.5.3")
         set(_doctest_commit 2d0a9359a60c51affe2a9bebb1be1dca47868151)
