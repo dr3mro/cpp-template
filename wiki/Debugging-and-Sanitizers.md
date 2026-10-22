@@ -29,13 +29,16 @@ On Windows the `debug` preset uses MSVC's AddressSanitizer, whose runtime is
 the **C++ AddressSanitizer** component of the Visual Studio Installer. It is
 not part of every install: on ARM64 it comes with the ARM64 build tools.
 
-CMake compiles *and links* a test program before it turns the sanitizer on, so
-a missing runtime is reported with the fix instead of as a link error in the
-first target:
+CMake compiles, links *and runs* a test program before it turns the sanitizer
+on, so a missing runtime is reported with the fix instead of as a failure in
+the first target:
 
 ```text
-MSVC AddressSanitizer does not work here: the ASan runtime for this architecture is missing.
+MSVC AddressSanitizer does not run here: the probe program either failed to build or failed to start.
 ```
+
+Running the probe matters: an x64 ASan program can link fine and still crash at
+startup, for example when x64 code runs under emulation on Windows on ARM.
 
 Install the component (Visual Studio Installer → **Modify** → **Individual
 components**), or build without the sanitizer:

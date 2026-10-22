@@ -60,10 +60,11 @@ that compiler cannot use the Visual Studio standard library. Pick one:
 
   The `CXX` environment variable works as well.
 
-**`MSVC AddressSanitizer does not work here: the ASan runtime for this
-architecture is missing`**
-The AddressSanitizer runtime is a separate component of Visual Studio and is
-not part of every install: on ARM64 it comes with the ARM64 build tools. Open
+**`MSVC AddressSanitizer does not run here: the probe program either failed to build or failed to start`**
+The usual cause is that the AddressSanitizer runtime is a separate component of
+Visual Studio and is not part of every install: on ARM64 it comes with the ARM64
+build tools. Another cause is running an x64 binary under emulation on Windows on
+ARM, where ASan does not start. Open
 the Visual Studio Installer, choose **Modify** → **Individual components** and
 install **C++ AddressSanitizer** (on ARM64 the **MSVC v143 ARM64 build
 tools** as well). Until then, build without the sanitizer:
