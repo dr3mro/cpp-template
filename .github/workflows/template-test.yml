@@ -624,52 +624,275 @@ jobs:
             Pop-Location
           }
 
-      - name: The cx wrappers build, test and run the project
+      - name: The cx commands work for the app
         shell: pwsh
         run: |
           $project = "$env:RUNNER_TEMP\vsapp"
           Push-Location $project
           try {
-            # The same wrapper in Windows PowerShell 5.1 and PowerShell 7:
-            # cx.ps1 puts the "--" in an array, which 5.1 needs.
-            foreach ($shell in @('powershell', 'pwsh')) {
-              & $shell -NoProfile -ExecutionPolicy Bypass -File "$project\cx.ps1" version
-              if ($LASTEXITCODE -ne 0) { throw "cx.ps1 version failed under $shell" }
+            function Invoke-Cx {
+              param([string[]]$CxArgs)
+              $out = & .\cx.cmd @CxArgs 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                $out | Out-String | Write-Host
+                throw "cx.cmd $($CxArgs -join ' ') failed with exit code $LASTEXITCODE"
+              }
+              return ,$out
+            }
+            function Expect-CxFail {
+              param([string[]]$CxArgs, [string]$Pattern, [string]$What)
+              $out = & .\cx.cmd @CxArgs 2>&1
+              if ($LASTEXITCODE -eq 0) { throw "$What succeeded but should have failed" }
+              $text = $out | Out-String
+              if ($Pattern -and $text -notmatch $Pattern) {
+                $text | Write-Host
+                throw "$What did not print '$Pattern'"
+              }
+              return ,$out
+            }
+            function Assert-Match {
+              param($Output, [string]$Pattern, [string]$What)
+              $text = $Output | Out-String
+              if ($text -notmatch $Pattern) {
+                $text | Write-Host
+                throw "${What}: '$Pattern' was not in the output"
+              }
+            }
+            function Invoke-CxPs {
+              param([string]$Shell, [string[]]$CxArgs)
+              $out = & $Shell -NoProfile -ExecutionPolicy Bypass -File "$project\cx.ps1" @CxArgs 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                $out | Out-String | Write-Host
+                throw "cx.ps1 $($CxArgs -join ' ') failed under $Shell with exit code $LASTEXITCODE"
+              }
+              return ,$out
+            }
+            function New-Copy {
+              param([string]$Name)
+              $dest = "$env:RUNNER_TEMP\$Name"
+              if (Test-Path -LiteralPath $dest) { Remove-Item -LiteralPath $dest -Recurse -Force }
+              New-Item -ItemType Directory -Path $dest | Out-Null
+              Get-ChildItem -LiteralPath $project -Force |
+                Where-Object { $_.Name -notin @('build', 'docs', 'vcpkg_installed', '.git') } |
+                Copy-Item -Destination $dest -Recurse -Force
+              return $dest
+            }
+            function Get-DefaultPreset {
+              $arm = ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') -or
+                     ($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64')
+              if ($arm) { return 'debug-nosan' }
+              return 'debug'
+            }
+            function Test-ClangFormat20 {
+              $major = 0
+              $command = Get-Command clang-format -ErrorAction SilentlyContinue
+              if ($command) {
+                $out = & $command.Source --version 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                  $text = $out | Out-String
+                  if ($text -match 'version ([0-9]+)') { $major = [int]$Matches[1] }
+                }
+              }
+              if ($env:ProgramFiles) {
+                $llvm = Join-Path $env:ProgramFiles 'LLVM\bin\clang-format.exe'
+                if (Test-Path -LiteralPath $llvm) {
+                  $out = & $llvm --version 2>&1
+                  if ($LASTEXITCODE -eq 0) {
+                    $text = $out | Out-String
+                    if ($text -match 'version ([0-9]+)' -and [int]$Matches[1] -gt $major) {
+                      $major = [int]$Matches[1]
+                    }
+                  }
+                }
+              }
+              return $major -ge 20
             }
 
-            & .\cx.cmd help | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd help failed" }
-            & .\cx.cmd version | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd version failed" }
-            & .\cx.cmd presets | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd presets failed" }
-            & .\cx.cmd targets | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd targets failed" }
+            Invoke-Cx @('help') | Out-Null
+            Assert-Match (Invoke-Cx @('help', 'build')) 'cx build' 'cx help build'
+            Invoke-Cx @('presets') | Out-Null
+            Invoke-Cx @('targets') | Out-Null
+            Invoke-Cx @('doctor') | Out-Null
 
-            & .\cx.cmd build nosan
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd build nosan failed" }
-            & .\cx.cmd test nosan
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd test nosan failed" }
-            $out = & .\cx.cmd run nosan 2>&1 | Out-String
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd run nosan failed" }
-            if ($out -notmatch 'Hello, World!') { $out; throw "cx.cmd run printed no greeting" }
-            & .\cx.cmd test nosan -- -R Greeter
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd test with ctest arguments failed" }
+            Invoke-Cx @('configure', 'release') | Out-Null
+            $out = Invoke-Cx @('build')
+            $text = $out | Out-String
+            $default = Get-DefaultPreset
+            if ($text -notmatch "> cmake --build --preset $default") {
+              $text | Write-Host
+              throw "the default build on this host did not use $default"
+            }
+            Invoke-Cx @('build', 'release') | Out-Null
+            Invoke-Cx @('build', 'nosan') | Out-Null
+            Invoke-Cx @('test') | Out-Null
+            Invoke-Cx @('test', 'release') | Out-Null
+            Assert-Match (Invoke-Cx @('run', '--', 'Amr')) 'Hello, Amr!' 'cx run'
+            Assert-Match (Invoke-Cx @('run', 'release', '--', 'Amr')) 'Hello, Amr!' 'cx run release'
 
-            & .\cx.cmd build release
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd build release failed" }
-            & .\cx.cmd test release
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd test release failed" }
-            & .\cx.cmd install release --prefix "$env:RUNNER_TEMP\cx-install"
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd install failed" }
+            if (Test-ClangFormat20) {
+              Invoke-Cx @('fmt', '--check') | Out-Null
+            } else {
+              Write-Host 'Skipping cx fmt --check: clang-format 20+ is not installed'
+            }
 
-            # These presets exist but their conditions exclude Windows.
-            $out = & .\cx.cmd build gcc 2>&1 | Out-String
-            if ($LASTEXITCODE -eq 0) { throw "cx.cmd build gcc succeeded on Windows" }
-            if ($out -notmatch 'not available') { $out; throw "the disabled-preset message is missing" }
+            Invoke-Cx @('build', 'vs') | Out-Null
+            $exe = "$project\build\vs2026\Debug\vsapp.exe"
+            if (-not (Test-Path -LiteralPath $exe)) { throw "cx build vs did not produce $exe" }
+            Invoke-Cx @('test', 'vs') | Out-Null
+            Assert-Match (Invoke-Cx @('run', 'vs', '--', 'Amr')) 'Hello, Amr!' 'cx run vs'
 
-            & .\cx.cmd clean nosan
-            if ($LASTEXITCODE -ne 0) { throw "cx.cmd clean nosan failed" }
+            foreach ($shell in @('powershell', 'pwsh')) {
+              Invoke-CxPs $shell @('build', 'release') | Out-Null
+              Invoke-CxPs $shell @('test', 'release') | Out-Null
+              Assert-Match (Invoke-CxPs $shell @('run', 'release', '--', 'Amr')) 'Hello, Amr!' "cx.ps1 run under $shell"
+            }
+
+            Expect-CxFail @('frobnicate') 'unknown' 'an unknown command' | Out-Null
+            Expect-CxFail @('build', 'relase') 'release' 'a misspelled preset' | Out-Null
+            Expect-CxFail @('build', 'tsan') '' 'a preset this host lacks' | Out-Null
+
+            $failTest = New-Copy 'vsapp-failing-test'
+            Add-Content -LiteralPath "$failTest\tests\test_greeter.cpp" -Encoding Ascii -Value @'
+
+          TEST_CASE("intentional failure")
+          {
+              CHECK(1 == 2);
+          }
+          '@
+            Push-Location $failTest
+            try {
+              Expect-CxFail @('test', 'debug-nosan') 'FAILED|FAILURE|failed' 'a failing test' | Out-Null
+            } finally {
+              Pop-Location
+            }
+
+            $failCompile = New-Copy 'vsapp-compile-error'
+            Add-Content -LiteralPath "$failCompile\main.cpp" -Encoding Ascii -Value 'this is not valid C++'
+            Push-Location $failCompile
+            try {
+              Expect-CxFail @('build', 'debug-nosan') '' 'a compile error' | Out-Null
+            } finally {
+              Pop-Location
+            }
+
+            Invoke-Cx @('clean', 'nosan') | Out-Null
+            Invoke-Cx @('clean', '--all') | Out-Null
+          } finally {
+            Pop-Location
+          }
+
+      - name: The cx commands work for the library
+        shell: pwsh
+        run: |
+          $project = "$env:RUNNER_TEMP\vslib"
+          Push-Location $project
+          try {
+            function Invoke-Cx {
+              param([string[]]$CxArgs)
+              $out = & .\cx.cmd @CxArgs 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                $out | Out-String | Write-Host
+                throw "cx.cmd $($CxArgs -join ' ') failed with exit code $LASTEXITCODE"
+              }
+              return ,$out
+            }
+            function Expect-CxFail {
+              param([string[]]$CxArgs, [string]$Pattern, [string]$What)
+              $out = & .\cx.cmd @CxArgs 2>&1
+              if ($LASTEXITCODE -eq 0) { throw "$What succeeded but should have failed" }
+              $text = $out | Out-String
+              if ($Pattern -and $text -notmatch $Pattern) {
+                $text | Write-Host
+                throw "$What did not print '$Pattern'"
+              }
+              return ,$out
+            }
+            function Assert-Match {
+              param($Output, [string]$Pattern, [string]$What)
+              $text = $Output | Out-String
+              if ($text -notmatch $Pattern) {
+                $text | Write-Host
+                throw "${What}: '$Pattern' was not in the output"
+              }
+            }
+            function Invoke-CxPs {
+              param([string]$Shell, [string[]]$CxArgs)
+              $out = & $Shell -NoProfile -ExecutionPolicy Bypass -File "$project\cx.ps1" @CxArgs 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                $out | Out-String | Write-Host
+                throw "cx.ps1 $($CxArgs -join ' ') failed under $Shell with exit code $LASTEXITCODE"
+              }
+              return ,$out
+            }
+            function Get-DefaultPreset {
+              $arm = ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') -or
+                     ($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64')
+              if ($arm) { return 'debug-nosan' }
+              return 'debug'
+            }
+            function Test-ClangFormat20 {
+              $major = 0
+              $command = Get-Command clang-format -ErrorAction SilentlyContinue
+              if ($command) {
+                $out = & $command.Source --version 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                  $text = $out | Out-String
+                  if ($text -match 'version ([0-9]+)') { $major = [int]$Matches[1] }
+                }
+              }
+              if ($env:ProgramFiles) {
+                $llvm = Join-Path $env:ProgramFiles 'LLVM\bin\clang-format.exe'
+                if (Test-Path -LiteralPath $llvm) {
+                  $out = & $llvm --version 2>&1
+                  if ($LASTEXITCODE -eq 0) {
+                    $text = $out | Out-String
+                    if ($text -match 'version ([0-9]+)' -and [int]$Matches[1] -gt $major) {
+                      $major = [int]$Matches[1]
+                    }
+                  }
+                }
+              }
+              return $major -ge 20
+            }
+
+            Invoke-Cx @('help') | Out-Null
+            Assert-Match (Invoke-Cx @('help', 'build')) 'cx build' 'cx help build'
+            Invoke-Cx @('presets') | Out-Null
+            Invoke-Cx @('targets') | Out-Null
+            Invoke-Cx @('doctor') | Out-Null
+
+            Invoke-Cx @('configure', 'release') | Out-Null
+            $out = Invoke-Cx @('build')
+            $text = $out | Out-String
+            $default = Get-DefaultPreset
+            if ($text -notmatch "> cmake --build --preset $default") {
+              $text | Write-Host
+              throw "the default build on this host did not use $default"
+            }
+            Invoke-Cx @('build', 'release') | Out-Null
+            Invoke-Cx @('build', 'nosan') | Out-Null
+            Invoke-Cx @('test') | Out-Null
+            Invoke-Cx @('test', 'release') | Out-Null
+
+            if (Test-ClangFormat20) {
+              Invoke-Cx @('fmt', '--check') | Out-Null
+            } else {
+              Write-Host 'Skipping cx fmt --check: clang-format 20+ is not installed'
+            }
+
+            foreach ($shell in @('powershell', 'pwsh')) {
+              Invoke-CxPs $shell @('build', 'release') | Out-Null
+              Invoke-CxPs $shell @('test', 'release') | Out-Null
+            }
+
+            $out = Expect-CxFail @('run') 'this is a library project' 'cx run in a library'
+            if (($out | Out-String) -match '> cmake --build') {
+              $out | Out-String | Write-Host
+              throw 'cx run configured or built before saying that a library has no program'
+            }
+
+            Invoke-Cx @('clean', 'nosan') | Out-Null
+            Invoke-Cx @('clean', '--all') | Out-Null
           } finally {
             Pop-Location
           }
