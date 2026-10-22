@@ -322,7 +322,13 @@ jobs:
           ./cx clean
           ./cx clean --all
           if [ "$RUNNER_OS" = "Linux" ]; then
-            CC=clang CXX=clang++ ./cx build msan
+            # The generated project uses an uninstrumented vcpkg doctest.
+            # Linking it into an MSan test binary reports false positives
+            # during doctest's static registration; compile the project without
+            # tests instead. The sanitizer docs cover full MSan setup.
+            CC=clang CXX=clang++ cmake --preset debug \
+              -DAPP17_SANITIZER=memory -DAPP17_BUILD_TESTS=OFF
+            CC=clang CXX=clang++ cmake --build --preset debug
           fi
 
       - name: The project without vcpkg says where its dependencies come from
