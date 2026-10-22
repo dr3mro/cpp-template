@@ -795,7 +795,7 @@ jobs:
             $out = Invoke-Cx @('build')
             $text = $out | Out-String
             $default = Get-DefaultPreset
-            if ($text -notmatch "> cmake --build --preset $default") {
+            if ($text -notmatch "> cmake --build \S*[\\/]$default\s") {
               $text | Write-Host
               throw "the default build on this host did not use $default"
             }
@@ -945,7 +945,7 @@ jobs:
             $out = Invoke-Cx @('build')
             $text = $out | Out-String
             $default = Get-DefaultPreset
-            if ($text -notmatch "> cmake --build --preset $default") {
+            if ($text -notmatch "> cmake --build \S*[\\/]$default\s") {
               $text | Write-Host
               throw "the default build on this host did not use $default"
             }
