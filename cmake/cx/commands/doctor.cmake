@@ -4,7 +4,7 @@
 #   cx doctor
 #
 # Checks CMake 3.25+, Ninja, a C++ compiler, git, VCPKG_ROOT (only when the
-# project has vcpkg.json), clang-format 20+, clang-tidy, cmake-lint, watchexec,
+# project has vcpkg.json), clang-format 21+, clang-tidy, cmake-lint, watchexec,
 # Doxygen with Graphviz, and the developer shell on Windows. Every missing item comes
 # with an install command for this operating system. The exit status is
 # non-zero only when a required tool is missing.
@@ -134,7 +134,10 @@ endfunction()
 function(_cx_doctor_row check status detail)
     list(APPEND _checks "${check}")
     list(APPEND _statuses "${status}")
-    list(APPEND _details "${detail}")
+    # A detail may hold a semicolon (the "old" row does). It has to stay one
+    # list element, or the rows below it shift up by one.
+    string(REPLACE ";" "\\;" _detail "${detail}")
+    list(APPEND _details "${_detail}")
     set(_checks "${_checks}" PARENT_SCOPE)
     set(_statuses "${_statuses}" PARENT_SCOPE)
     set(_details "${_details}" PARENT_SCOPE)
@@ -206,15 +209,15 @@ if(_clang_format)
                     OUTPUT_VARIABLE _format_version ERROR_QUIET
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
     string(REGEX REPLACE "[\r\n].*" "" _format_version "${_format_version}")
-    if(_format_version MATCHES "version ([0-9]+)" AND CMAKE_MATCH_1 GREATER_EQUAL 20)
+    if(_format_version MATCHES "version ([0-9]+)" AND CMAKE_MATCH_1 GREATER_EQUAL 21)
         _cx_doctor_row("clang-format" "ok" "${_format_version}")
     else()
         _cx_doctor_install(clang-format _command)
-        _cx_doctor_row("clang-format" "old" "${_format_version}; needs 20+: ${_command}")
+        _cx_doctor_row("clang-format" "old" "${_format_version}; needs 21+: ${_command}")
     endif()
 else()
     _cx_doctor_install(clang-format _command)
-    _cx_doctor_row("clang-format" "missing" "cx fmt needs 20+: ${_command}")
+    _cx_doctor_row("clang-format" "missing" "cx fmt needs 21+: ${_command}")
 endif()
 
 find_program(_clang_tidy NAMES clang-tidy HINTS ${_llvm_hints})

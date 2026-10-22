@@ -85,7 +85,7 @@ disappear after a configure, because it's generated then.
 
 ### `format` says clang-format is too old
 
-The style file needs clang-format 20 or newer. On macOS: `brew install llvm`
+The style file needs clang-format 21 or newer. On macOS: `brew install llvm`
 (CMake prefers Homebrew's copy). On Linux: `pipx install clang-format`. Or
 point CMake at a specific binary: `-DMYAPP_CLANG_FORMAT=/path/to/clang-format`.
 

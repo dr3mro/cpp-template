@@ -36,7 +36,7 @@ cmake --build --preset debug --target format         # rewrite files in the proj
 cmake --build --preset debug --target format-check   # only check (what CI runs)
 ```
 
-The style lives in `.clang-format` and needs **clang-format 20 or newer**.
+The style lives in `.clang-format` and needs **clang-format 21 or newer**.
 CMake prefers Homebrew's LLVM on macOS; if it finds only an older copy, it
 skips these targets with a warning (see [Troubleshooting](Troubleshooting)).
 Zed formats on save, and VS Code does too with "Format On Save" enabled.

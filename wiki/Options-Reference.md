@@ -35,7 +35,7 @@ If CMake picks the wrong copy of a tool, point it at the right one:
 
 | Variable | Tool |
 | --- | --- |
-| `MYAPP_CLANG_FORMAT` | `clang-format` (version 20+) |
+| `MYAPP_CLANG_FORMAT` | `clang-format` (version 21+) |
 | `MYAPP_RUN_CLANG_TIDY` | `run-clang-tidy` |
 | `MYAPP_LLVM_PROFDATA`, `MYAPP_LLVM_COV` | coverage tools |
 | `MYAPP_CCACHE_PROGRAM` | `ccache` |

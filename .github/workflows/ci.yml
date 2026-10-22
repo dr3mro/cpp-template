@@ -283,7 +283,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-vcpkg
-      - name: Install clang-format (.clang-format needs v20+)
+      - name: Install clang-format (.clang-format needs v21+)
         # Pinned to match the pre-commit hook rev, so CI and the local hook
         # agree on formatting. Keep both in step.
         run: pipx install clang-format==21.1.5

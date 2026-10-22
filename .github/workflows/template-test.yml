@@ -523,6 +523,19 @@ jobs:
           & "$env:USERPROFILE\vcpkg\vcpkg.exe" integrate install
           if ($LASTEXITCODE -ne 0) { throw "vcpkg integrate install failed" }
 
+      - name: Install clang-format (the pinned version)
+        # The runner's LLVM is older than .clang-format needs, so install the
+        # pinned clang-format, like the other jobs do. Its bin folder goes
+        # first on PATH, and CMAKE_PROGRAM_PATH points CMake at it too:
+        # CMake searches the LLVM folder of the Windows installer before
+        # PATH, and the cache keeps the clang-format of the first configure.
+        shell: pwsh
+        run: |
+          pipx install clang-format==21.1.5
+          $bin = pipx environment --value PIPX_BIN_DIR
+          Add-Content -Path $env:GITHUB_PATH -Value $bin
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_PROGRAM_PATH=$bin"
+
       - name: Generate projects from the template
         shell: bash
         run: |
@@ -683,7 +696,10 @@ jobs:
               if ($arm) { return 'debug-nosan' }
               return 'debug'
             }
-            function Test-ClangFormat20 {
+            # The style file needs clang-format 21, so read the major version
+            # of every copy we can find: the one on PATH (the pinned one this
+            # job installs) and the LLVM of the Windows installer.
+            function Test-ClangFormat21 {
               $major = 0
               $command = Get-Command clang-format -ErrorAction SilentlyContinue
               if ($command) {
@@ -705,7 +721,7 @@ jobs:
                   }
                 }
               }
-              return $major -ge 20
+              return $major -ge 21
             }
 
             Invoke-Cx @('help') | Out-Null
@@ -729,10 +745,10 @@ jobs:
             Assert-Match (Invoke-Cx @('run', '--', 'Amr')) 'Hello, Amr!' 'cx run'
             Assert-Match (Invoke-Cx @('run', 'release', '--', 'Amr')) 'Hello, Amr!' 'cx run release'
 
-            if (Test-ClangFormat20) {
+            if (Test-ClangFormat21) {
               Invoke-Cx @('fmt', '--check') | Out-Null
             } else {
-              Write-Host 'Skipping cx fmt --check: clang-format 20+ is not installed'
+              Write-Host 'Skipping cx fmt --check: clang-format 21+ is not installed'
             }
 
             Invoke-Cx @('build', 'vs') | Out-Null
@@ -830,7 +846,10 @@ jobs:
               if ($arm) { return 'debug-nosan' }
               return 'debug'
             }
-            function Test-ClangFormat20 {
+            # The style file needs clang-format 21, so read the major version
+            # of every copy we can find: the one on PATH (the pinned one this
+            # job installs) and the LLVM of the Windows installer.
+            function Test-ClangFormat21 {
               $major = 0
               $command = Get-Command clang-format -ErrorAction SilentlyContinue
               if ($command) {
@@ -852,7 +871,7 @@ jobs:
                   }
                 }
               }
-              return $major -ge 20
+              return $major -ge 21
             }
 
             Invoke-Cx @('help') | Out-Null
@@ -874,10 +893,10 @@ jobs:
             Invoke-Cx @('test') | Out-Null
             Invoke-Cx @('test', 'release') | Out-Null
 
-            if (Test-ClangFormat20) {
+            if (Test-ClangFormat21) {
               Invoke-Cx @('fmt', '--check') | Out-Null
             } else {
-              Write-Host 'Skipping cx fmt --check: clang-format 20+ is not installed'
+              Write-Host 'Skipping cx fmt --check: clang-format 21+ is not installed'
             }
 
             foreach ($shell in @('powershell', 'pwsh')) {

@@ -4,8 +4,9 @@
 #   format        reformat every project source file in place
 #   format-check  fail if any file is not formatted (CI, pre-commit)
 #
-# .clang-format uses options that need clang-format 20 or newer, so an older
-# copy is rejected with a warning instead of reformatting with the wrong rules.
+# .clang-format writes SortIncludes as a map, which clang-format only reads
+# from version 21 on, so an older copy is rejected with a warning instead of
+# reformatting with the wrong rules.
 # Homebrew's LLVM is preferred over the (usually older) one on PATH; on Windows
 # the LLVM installer's folder is searched as well. The "too old" warning gives
 # the install command for the host OS.
@@ -21,7 +22,7 @@ execute_process(
     COMMAND "${MYAPP_CLANG_FORMAT}" --version
     OUTPUT_VARIABLE _myapp_clang_format_version
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT _myapp_clang_format_version MATCHES "version ([0-9]+)" OR CMAKE_MATCH_1 LESS 20)
+if(NOT _myapp_clang_format_version MATCHES "version ([0-9]+)" OR CMAKE_MATCH_1 LESS 21)
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
         set(_myapp_clang_format_advice
             "Windows: 'winget upgrade LLVM.LLVM', or 'pipx install clang-format'.")
@@ -34,9 +35,9 @@ if(NOT _myapp_clang_format_version MATCHES "version ([0-9]+)" OR CMAKE_MATCH_1 L
     endif()
     message(WARNING
         "${MYAPP_CLANG_FORMAT} is too old (\"${_myapp_clang_format_version}\"): "
-        ".clang-format needs version 20+. The format targets are not defined. "
+        ".clang-format needs version 21+. The format targets are not defined. "
         "Install a newer LLVM (${_myapp_clang_format_advice}), or point "
-        "-DMYAPP_CLANG_FORMAT=<path> at clang-format 20+.")
+        "-DMYAPP_CLANG_FORMAT=<path> at clang-format 21+.")
     return()
 endif()
 

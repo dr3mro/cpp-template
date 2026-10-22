@@ -12,7 +12,7 @@ project takes one command.
 | **Ninja** | runs the compile commands, fast and in parallel | yes |
 | **A C++ compiler** | Clang (macOS: comes with Xcode), GCC (Linux) or MSVC (Windows) | yes |
 | **vcpkg** | a package manager that downloads and builds the libraries your project uses | yes, unless the project was created with `--no-vcpkg` |
-| **LLVM** | clang-format 20+ (formatting), clang-tidy (static analysis), and clang for fuzzing and coverage | recommended |
+| **LLVM** | clang-format 21+ (formatting), clang-tidy (static analysis), and clang for fuzzing and coverage | recommended |
 | **Doxygen** + **Graphviz** | generate the documentation website and its diagrams | optional |
 
 New to these words? See the [Glossary](Glossary).
@@ -58,7 +58,7 @@ first configure. See [Adding-Dependencies](Adding-Dependencies).
 ```bash
 sudo apt install cmake ninja-build g++ clang clang-tidy llvm libclang-rt-dev \
                  doxygen graphviz git curl zip unzip tar pkg-config pipx
-pipx install clang-format          # the distribution's copy is often older than 20
+pipx install clang-format          # the distribution's copy is often older than 21
 git clone https://github.com/microsoft/vcpkg ~/.vcpkg
 ~/.vcpkg/bootstrap-vcpkg.sh -disableMetrics
 echo 'export VCPKG_ROOT="$HOME/.vcpkg"' >> ~/.bashrc
@@ -84,8 +84,8 @@ steps; only the developer-shell architecture differs.
    components** tab. Without them Visual Studio cannot build the ARM64
    solution platform.
 
-2. LLVM is optional, but needed for clang-format 20+, clang-tidy, fuzzing and
-   coverage. Install LLVM 20 or newer:
+2. LLVM is optional, but needed for clang-format 21+, clang-tidy, fuzzing and
+   coverage. Install LLVM 21 or newer:
 
    ```powershell
    winget install LLVM.LLVM
@@ -199,7 +199,7 @@ The bash script still works from **Git Bash** or WSL.
 cmake --version          # 3.25 or newer
 ninja --version
 echo $VCPKG_ROOT         # must print the vcpkg folder, not an empty line
-clang-format --version   # 20 or newer (optional)
+clang-format --version   # 21 or newer (optional)
 ```
 
 ## Get the template

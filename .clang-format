@@ -1,5 +1,5 @@
 # clang-format rules for the project (matches the existing code style)
-# Needs clang-format 20 or newer (Homebrew LLVM, or `pip install clang-format`).
+# Needs clang-format 21 or newer (Homebrew LLVM, or `pip install clang-format`).
 BasedOnStyle: Microsoft
 Language: Cpp
 Standard: c++17

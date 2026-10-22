@@ -240,7 +240,7 @@ columns (matching `format.line_width`) and turns on lower-case command names.
 If you still see the old 80-column warning, restart the language server
 (**editor: restart language server**) so it re-reads the file.
 
-**`clang-format ... is too old: .clang-format needs version 20+`**
+**`clang-format ... is too old: .clang-format needs version 21+`**
 `brew install llvm` (macOS) or `pipx install clang-format` (Linux), then
 reconfigure. Or name the binary: `-DMYAPP_CLANG_FORMAT=/path/to/clang-format`.
 
@@ -249,7 +249,7 @@ reconfigure. Or name the binary: `-DMYAPP_CLANG_FORMAT=/path/to/clang-format`.
 The tool wasn't found when CMake configured, so the target wasn't defined.
 The configure output says why. Install the tool and configure again. For
 `cmake-lint` that means `pipx install cmakelang==0.6.13`; for the others it is
-the program in the message (clang-format 20+, clang-tidy, dot, ...).
+the program in the message (clang-format 21+, clang-tidy, dot, ...).
 
 **clangd shows errors the compiler doesn't, or can't find headers**
 Configure the preset you're working with (that refreshes

@@ -7,7 +7,7 @@
 #
 # This is a module of its own, so that the target exists even when
 # clang-format is missing or too old (the format targets need clang-format
-# 20+, this one needs nothing but cmakelang).
+# 21+, this one needs nothing but cmakelang).
 # =============================================================================
 include_guard(DIRECTORY)
 
