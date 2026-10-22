@@ -1,4 +1,4 @@
-# run - build, then run the program
+# run - stop the old program, build, then run the program
 #
 # Usage:
 #   cx run [preset] [target...] [-- program args]
@@ -22,17 +22,18 @@ _cx_ensure_configured("${_preset}" _result)
 if(NOT _result EQUAL 0)
     _cx_fail("configure failed for preset '${_preset}'")
 endif()
-_cx_build("${_preset}" "${_targets}" _result)
-if(NOT _result EQUAL 0)
-    _cx_fail("build failed for preset '${_preset}'")
-endif()
-
 _cx_program_path("${_preset}" _program _is_app)
 if(NOT _is_app)
     _cx_fail("this is a library project: there is no program to run.\n"
              "Run the tests with `cx test`, or build the example consumer in "
              "examples/ (see the README).")
 endif()
+_cx_stop_program("${_program}")
+_cx_build("${_preset}" "${_targets}" _result)
+if(NOT _result EQUAL 0)
+    _cx_fail("build failed for preset '${_preset}'")
+endif()
+
 if(NOT EXISTS "${_program}")
     _cx_fail("the program was not built: ${_program}")
 endif()

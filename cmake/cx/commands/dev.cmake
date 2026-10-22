@@ -4,7 +4,7 @@
 #   cx dev [preset] [target...] [-- ctest args]
 #   cx dev [preset] --run [-- program args]
 #
-# Watches src/, include/, tests/, the CMake files, VERSION and vcpkg.json
+# Watches main.cpp, src/, include/, tests/, the CMake files, VERSION and vcpkg.json
 # (never build/ or docs/). With watchexec installed it runs
 # `cx test` (or `cx run` for --run) on every change, restarting the program
 # with --restart. Without watchexec a CMake polling loop does the same once a
@@ -33,7 +33,7 @@ foreach(_dir src include tests cmake)
         list(APPEND _watch_paths "${CX_ROOT}/${_dir}")
     endif()
 endforeach()
-foreach(_file CMakeLists.txt CMakePresets.json VERSION vcpkg.json)
+foreach(_file CMakeLists.txt CMakePresets.json VERSION vcpkg.json main.cpp)
     if(EXISTS "${CX_ROOT}/${_file}")
         list(APPEND _watch_paths "${CX_ROOT}/${_file}")
     endif()
@@ -100,7 +100,7 @@ function(_cx_dev_files out)
             list(APPEND _files "${_rel}")
         endif()
     endforeach()
-    foreach(_file CMakePresets.json VERSION vcpkg.json)
+    foreach(_file CMakePresets.json VERSION vcpkg.json main.cpp)
         if(EXISTS "${CX_ROOT}/${_file}")
             list(APPEND _files "${_file}")
         endif()

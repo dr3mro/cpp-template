@@ -20,7 +20,7 @@ its upper-case form.
 ```bash
 ./cx build                  # configure if needed, then build the default preset
 ./cx test                   # build, then run the unit tests
-./cx run -- Amr             # build, then run the program with an argument
+./cx run -- Amr             # stop the old instance, build, then run the program
 ./cx help                   # list every command
 ./cx help build             # what one command does
 ```
@@ -87,7 +87,7 @@ A word that names a target picks the preset that target belongs to:
 | `cx configure [preset] [--fresh]` | always runs `cmake --preset`; `--fresh` starts the folder over |
 | `cx build [preset] [target...]` | configures when the cache is missing or stale, then builds |
 | `cx test [preset] [target...] [-- ctest args]` | builds, then runs `ctest --preset` |
-| `cx run [preset] [-- program args]` | builds, then runs the program |
+| `cx run [preset] [-- program args]` | stops the previous instance, builds, then runs the program |
 | `cx clean [preset]` | removes one preset's compiled files; settings stay |
 | `cx clean --all` | removes `build/`, `docs/` and `vcpkg_installed/` |
 
@@ -113,8 +113,9 @@ Arguments after `--` go to the program or to `ctest` unchanged:
 ```
 
 `cx dev` watches `src/`, `include/`, `tests/`, `cmake/` (except the `cx`
-implementation itself), the root `CMakeLists.txt`, `CMakePresets.json`,
-`VERSION` and `vcpkg.json`. It never watches `build/` or `docs/`.
+implementation itself), the root `main.cpp`, `CMakeLists.txt`,
+`CMakePresets.json`, `VERSION` and `vcpkg.json`. It never watches `build/` or
+`docs/`.
 
 With [watchexec](https://github.com/watchexec/watchexec) installed, it uses
 `--restart`, so a running program is replaced by the new build. Without

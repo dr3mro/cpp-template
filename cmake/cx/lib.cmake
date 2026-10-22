@@ -594,6 +594,24 @@ function(_cx_build preset targets out_result)
     set(${out_result} "${CX_RUN_RESULT}" PARENT_SCOPE)
 endfunction()
 
+# Stop an existing instance of the program before `cx run` rebuilds it.
+function(_cx_stop_program program)
+    get_filename_component(_name "${program}" NAME)
+    if(CMAKE_HOST_WIN32)
+        find_program(_taskkill NAMES taskkill)
+        if(_taskkill)
+            execute_process(COMMAND "${_taskkill}" /IM "${_name}" /T /F
+                            OUTPUT_QUIET ERROR_QUIET)
+        endif()
+    else()
+        find_program(_pkill NAMES pkill)
+        if(_pkill)
+            execute_process(COMMAND "${_pkill}" -TERM -x "${_name}"
+                            OUTPUT_QUIET ERROR_QUIET)
+        endif()
+    endif()
+endfunction()
+
 # Run ctest --preset for <preset>, with any arguments after --.
 function(_cx_ctest preset out_result)
     if(NOT CX_CTEST)

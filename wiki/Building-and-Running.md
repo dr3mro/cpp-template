@@ -8,7 +8,7 @@ commands for you:
 ```bash
 ./cx build             # configure if needed, then build
 ./cx test              # build, then run the unit tests
-./cx run -- Amr        # build, then run the program
+./cx run -- Amr        # stop the old instance, build, then run the program
 ./cx dev               # rebuild and retest on every change
 ```
 
