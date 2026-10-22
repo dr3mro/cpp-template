@@ -84,8 +84,8 @@ A word that names a target picks the preset that target belongs to:
 
 | Command | Does |
 | --- | --- |
-| `cx configure [preset] [--fresh]` | always runs `cmake --preset`; `--fresh` starts the folder over |
-| `cx build [preset] [target...]` | configures when the cache is missing or stale, then builds |
+| `cx configure [preset] [--fresh] [--arch <name>] [-- cmake args]` | always runs `cmake --preset`; `--fresh` starts the folder over |
+| `cx build [preset] [target...] [--arch <name>] [-- cmake args]` | configures when the cache is missing or stale, or when `--` gives cmake args, then builds |
 | `cx test [preset] [target...] [-- ctest args]` | builds, then runs `ctest --preset` |
 | `cx run [preset] [-- program args]` | stops the previous instance, builds, then runs the program |
 | `cx clean [preset]` | removes one preset's compiled files; settings stay |
@@ -163,12 +163,28 @@ without `--prefix` installs to `build/install/<preset>/`.
 | `--check` | `fmt` | check formatting instead of changing files |
 | `--run` | `dev` | restart the program instead of running tests |
 | `--seconds <n>` | `fuzz` | how long to fuzz |
+| `--arch <name>` | build/test/run/configure | `x64`, `arm64` or `x86`, on every OS. Not given: this machine's architecture (or the preset's). Given: forces the settings for that OS. The build folder records it, and a change reconfigures |
+| `-- <args>` | configure/build | passed straight to cmake, e.g. `cx configure debug -- -DFOO=1` |
 | `--prefix <dir>` | `install` | install somewhere else |
 | `-v`, `--verbose` | build/test | verbose CMake or CTest output |
 | `-h`, `--help` | all | command help |
 
 An option and a preset that disagree, such as `--release --preset debug`, are
 an error rather than a silent choice.
+
+`--arch` works on every OS. Without it, cx picks this machine's architecture,
+or the one the preset declares. With it, cx forces the matching settings:
+
+- macOS: `-DCMAKE_OSX_ARCHITECTURES=x86_64` or `arm64`. `x86` is not supported.
+- Windows: `-DMYAPP_WINDOWS_TARGET_ARCH` selects the vcpkg triplet. A cross
+  build (for example x64 host to ARM64) loads the MSVC cross environment with
+  `vcvarsall.bat`. A preset that already declares an architecture is kept.
+- Linux: `x86` on an x64 host uses `-m32` and the `x86-linux` triplet. Other
+  cross builds need the GCC cross compilers (`aarch64-linux-gnu-gcc` or
+  `x86_64-linux-gnu-gcc`), or cx stops with a hint.
+
+The build folder records the target in `CX_TARGET_ARCH`, so changing `--arch`
+reconfigures that folder.
 
 ## Editor tasks
 

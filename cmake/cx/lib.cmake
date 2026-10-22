@@ -67,7 +67,10 @@ endfunction()
 function(_cx_run)
     set(_cx_call ${ARGN})
     set(_cx_display "")
+    set(_cx_quoted "")
     foreach(_cx_arg IN LISTS _cx_call)
+        string(REPLACE "${_cx_arg_sep}" ";" _cx_arg "${_cx_arg}")
+        string(APPEND _cx_quoted " [==[${_cx_arg}]==]")
         if(_cx_arg STREQUAL "${CMAKE_COMMAND}")
             set(_cx_arg "cmake")
         elseif(_cx_arg STREQUAL "${CX_CTEST}")
@@ -83,7 +86,7 @@ function(_cx_run)
         endif()
     endforeach()
     _cx_say("> ${_cx_display}")
-    execute_process(COMMAND ${_cx_call} RESULT_VARIABLE _cx_result)
+    cmake_language(EVAL CODE "execute_process(COMMAND${_cx_quoted} RESULT_VARIABLE _cx_result)")
     set(CX_RUN_RESULT "${_cx_result}" PARENT_SCOPE)
 endfunction()
 
@@ -92,13 +95,21 @@ endfunction()
 get_filename_component(_cx_cmake_dir "${CMAKE_COMMAND}" DIRECTORY)
 find_program(CX_CTEST NAMES ctest HINTS "${_cx_cmake_dir}")
 
-# Appending an argument that contains a semicolon to a CMake list would split
-# it, so the semicolon is escaped on the way in. Arguments after "--" are the
-# user's: they must reach the program exactly as typed.
 # A function for the same reason as _cx_run: an argument may be a Windows path.
 function(_cx_list_append list_var value)
     string(REPLACE ";" "\\;" _cx_escaped "${value}")
     list(APPEND ${list_var} "${_cx_escaped}")
+    set(${list_var} "${${list_var}}" PARENT_SCOPE)
+endfunction()
+
+# Arguments after "--" are the user's: they must reach the command exactly as
+# typed, semicolons included. A CMake list cannot hold ";" inside an element,
+# so each ";" is stored as the control character _cx_arg_sep, and _cx_run turns
+# it back into ";" when it builds the command.
+string(ASCII 1 _cx_arg_sep)
+function(_cx_arg_append list_var value)
+    string(REPLACE ";" "${_cx_arg_sep}" _cx_encoded "${value}")
+    list(APPEND ${list_var} "${_cx_encoded}")
     set(${list_var} "${${list_var}}" PARENT_SCOPE)
 endfunction()
 
@@ -600,22 +611,269 @@ function(_cx_needs_configure preset out)
     set(${out} "${_need}" PARENT_SCOPE)
 endfunction()
 
-# Run cmake --preset for <preset>; the result is the exit code.
+# ---- architecture -------------------------------------------------------------
+# cx knows three architectures by these names: x64, arm64 and x86. Anything else
+# gives "" and the caller decides whether that is an error.
+function(_cx_canonical_arch value out)
+    string(TOLOWER "${value}" _lower)
+    set(_arch "")
+    if(_lower MATCHES "^(x64|x86_64|amd64)$")
+        set(_arch x64)
+    elseif(_lower MATCHES "^(arm64|aarch64)$")
+        set(_arch arm64)
+    elseif(_lower MATCHES "^(x86|i386|i686|win32)$")
+        set(_arch x86)
+    endif()
+    set(${out} "${_arch}" PARENT_SCOPE)
+endfunction()
+
+# The architecture this machine runs cx on.
+function(_cx_host_arch out)
+    if(CMAKE_HOST_WIN32)
+        set(_raw "$ENV{PROCESSOR_ARCHITEW6432}")
+        if(_raw STREQUAL "")
+            set(_raw "$ENV{PROCESSOR_ARCHITECTURE}")
+        endif()
+    else()
+        # CMAKE_HOST_SYSTEM_PROCESSOR is not set when cmake runs a script.
+        execute_process(COMMAND uname -m OUTPUT_VARIABLE _raw
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
+    _cx_canonical_arch("${_raw}" _arch)
+    if(_arch STREQUAL "")
+        _cx_fail("cannot tell this machine's architecture from '${_raw}'")
+    endif()
+    set(${out} "${_arch}" PARENT_SCOPE)
+endfunction()
+
+# The architecture a preset builds for, when the preset names one (the Visual
+# Studio presets do: "architecture": { "value": "ARM64" }). "" otherwise.
+function(_cx_preset_architecture preset out)
+    set(_value "")
+    foreach(_file IN ITEMS "${CX_ROOT}/CMakePresets.json" "${CX_ROOT}/CMakeUserPresets.json")
+        if(EXISTS "${_file}")
+            file(READ "${_file}" _json)
+            string(JSON _count ERROR_VARIABLE _error LENGTH "${_json}" configurePresets)
+            if(NOT _error)
+                set(_i 0)
+                while(_i LESS _count)
+                    string(JSON _name GET "${_json}" configurePresets ${_i} name)
+                    if(_name STREQUAL preset)
+                        string(JSON _platform ERROR_VARIABLE _error GET
+                               "${_json}" configurePresets ${_i} architecture value)
+                        if(NOT _error)
+                            set(_value "${_platform}")
+                        endif()
+                    endif()
+                    math(EXPR _i "${_i} + 1")
+                endwhile()
+            endif()
+        endif()
+    endforeach()
+    _cx_canonical_arch("${_value}" _arch)
+    set(${out} "${_arch}" PARENT_SCOPE)
+endfunction()
+
+# The architecture a build targets, in order: the preset's own (the Visual
+# Studio presets name one), then --arch, then this machine's.
+function(_cx_target_arch preset host out)
+    _cx_preset_architecture("${preset}" _platform)
+    if(NOT _platform STREQUAL "" AND NOT CX_ARCH STREQUAL ""
+       AND NOT CX_ARCH STREQUAL _platform)
+        _cx_fail("preset '${preset}' builds ${_platform}, which conflicts with "
+                 "--arch ${CX_ARCH}; use the preset for ${CX_ARCH} or drop --arch")
+    endif()
+    if(NOT _platform STREQUAL "")
+        set(_target "${_platform}")
+    elseif(NOT CX_ARCH STREQUAL "")
+        set(_target "${CX_ARCH}")
+    else()
+        set(_target "${host}")
+    endif()
+    set(${out} "${_target}" PARENT_SCOPE)
+endfunction()
+
+# The cmake arguments that select the target on this machine. A preset that
+# names its platform gets none: the preset already sets it.
+function(_cx_arch_args preset host target out)
+    set(_args "")
+    _cx_preset_architecture("${preset}" _platform)
+    if(_platform STREQUAL "")
+        if(CMAKE_HOST_APPLE)
+            if(target STREQUAL "x86")
+                _cx_fail("macOS does not build for x86 (32-bit); use --arch x64 or arm64")
+            endif()
+            if(target STREQUAL "x64")
+                set(_osx x86_64)
+            else()
+                set(_osx arm64)
+            endif()
+            set(_args "-DCMAKE_OSX_ARCHITECTURES=${_osx}")
+        elseif(CMAKE_HOST_WIN32)
+            # VcpkgToolchain.cmake turns this into the vcpkg triplet. The
+            # compiler comes from _cx_arch_env.
+            set(_args "-DMYAPP_WINDOWS_TARGET_ARCH=${target}")
+        elseif(target STREQUAL host)
+            # A native build needs no arguments.
+        elseif(host STREQUAL "x64" AND target STREQUAL "x86")
+            set(_args
+                -DCMAKE_C_FLAGS_INIT=-m32
+                -DCMAKE_CXX_FLAGS_INIT=-m32
+                -DCMAKE_EXE_LINKER_FLAGS_INIT=-m32
+                -DCMAKE_SHARED_LINKER_FLAGS_INIT=-m32
+                -DVCPKG_TARGET_TRIPLET=x86-linux)
+        else()
+            if(target STREQUAL "x86")
+                _cx_fail("cannot build for x86 on a Linux ${host} machine")
+            endif()
+            if(target STREQUAL "arm64")
+                set(_triple aarch64-linux-gnu)
+                set(_processor aarch64)
+            else()
+                set(_triple x86_64-linux-gnu)
+                set(_processor x86_64)
+            endif()
+            find_program(_cx_cc NAMES ${_triple}-gcc)
+            find_program(_cx_cxx NAMES ${_triple}-g++)
+            if(NOT _cx_cc OR NOT _cx_cxx)
+                _cx_fail("a ${target} build on ${host} needs the ${_triple} GCC cross "
+                         "compiler (${_triple}-gcc and ${_triple}-g++); install it first")
+            endif()
+            set(_args
+                "-DCMAKE_C_COMPILER=${_cx_cc}"
+                "-DCMAKE_CXX_COMPILER=${_cx_cxx}"
+                -DCMAKE_SYSTEM_NAME=Linux
+                "-DCMAKE_SYSTEM_PROCESSOR=${_processor}"
+                "-DVCPKG_TARGET_TRIPLET=${target}-linux")
+        endif()
+    endif()
+    set(${out} "${_args}" PARENT_SCOPE)
+endfunction()
+
+# Visual Studio's name for an architecture, as vcvarsall.bat takes it.
+function(_cx_vcvars_arch arch out)
+    if(arch STREQUAL "x64")
+        set(_name amd64)
+    else()
+        set(_name "${arch}")
+    endif()
+    set(${out} "${_name}" PARENT_SCOPE)
+endfunction()
+
+# A Windows build for another architecture runs in that architecture's Visual
+# Studio environment (vcvarsall.bat <host>_<target>). The variables it sets are
+# applied to this process, so cmake and the build tools it starts inherit them.
+# Loaded once per cx run; the global property is the guard.
+function(_cx_arch_env preset host target)
+    if(NOT CMAKE_HOST_WIN32 OR target STREQUAL host)
+        return()
+    endif()
+    _cx_preset_architecture("${preset}" _platform)
+    if(NOT _platform STREQUAL "")
+        return()
+    endif()
+    get_property(_loaded GLOBAL PROPERTY CX_MSVC_ENV SET)
+    if(_loaded)
+        return()
+    endif()
+
+    _cx_vcvars_arch("${host}" _host_name)
+    _cx_vcvars_arch("${target}" _target_name)
+    set(_combo "${_host_name}_${_target_name}")
+    set(_vswhere "$ENV{ProgramFiles\(x86\)}/Microsoft Visual Studio/Installer/vswhere.exe")
+    if(NOT EXISTS "${_vswhere}")
+        _cx_fail("cannot find Visual Studio (vswhere.exe) to build for ${target}")
+    endif()
+    execute_process(COMMAND "${_vswhere}" -latest -products *
+                            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+                            -property installationPath
+                    OUTPUT_VARIABLE _install OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(_vcvars "${_install}/VC/Auxiliary/Build/vcvarsall.bat")
+    if(_install STREQUAL "" OR NOT EXISTS "${_vcvars}")
+        _cx_fail("cannot find the Visual Studio C++ tools for ${_combo}; "
+                 "install the MSVC build tools for ${target}")
+    endif()
+
+    set(_bat "${CX_ROOT}/build/cx-msvc-${_combo}.bat")
+    file(WRITE "${_bat}"
+         "@echo off\r\ncall \"${_vcvars}\" ${_combo} >nul\r\nif errorlevel 1 exit /b 1\r\nset\r\n")
+    execute_process(COMMAND cmd /c "${_bat}"
+                    OUTPUT_VARIABLE _env RESULT_VARIABLE _result)
+    file(REMOVE "${_bat}")
+    if(NOT _result EQUAL 0)
+        _cx_fail("could not load the ${_combo} environment from ${_vcvars}")
+    endif()
+
+    # Semicolons are escaped while the lines are split, so a PATH stays whole.
+    string(REPLACE ";" "\\;" _env "${_env}")
+    string(REPLACE "\r\n" "\n" _env "${_env}")
+    string(REPLACE "\n" ";" _lines "${_env}")
+    foreach(_line IN LISTS _lines)
+        string(FIND "${_line}" "=" _eq)
+        if(_eq GREATER 0)
+            string(SUBSTRING "${_line}" 0 ${_eq} _name)
+            math(EXPR _start "${_eq} + 1")
+            string(SUBSTRING "${_line}" ${_start} -1 _value)
+            string(REPLACE "\\;" ";" _value "${_value}")
+            set(ENV{${_name}} "${_value}")
+        endif()
+    endforeach()
+    set_property(GLOBAL PROPERTY CX_MSVC_ENV ON)
+endfunction()
+
+# True when the build folder was configured for another architecture. A folder
+# with no record counts as the host's: it is only stale for another target.
+function(_cx_arch_mismatch preset host target out)
+    set(_mismatch OFF)
+    set(_cache "${CX_ROOT}/build/${preset}/CMakeCache.txt")
+    if(EXISTS "${_cache}")
+        _cx_cache_value("${_cache}" CX_TARGET_ARCH _recorded)
+        if(_recorded STREQUAL "")
+            set(_recorded "${host}")
+        endif()
+        if(NOT _recorded STREQUAL target)
+            set(_mismatch ON)
+        endif()
+    endif()
+    set(${out} "${_mismatch}" PARENT_SCOPE)
+endfunction()
+
+# Run cmake --preset for <preset>; the result is the exit code. The target
+# architecture picks the arguments, and the arguments after -- (CX_CMAKE_ARGS)
+# come last, so they can override them.
 function(_cx_configure preset out_result)
+    _cx_host_arch(_host)
+    _cx_target_arch("${preset}" "${_host}" _target)
+    _cx_arch_env("${preset}" "${_host}" "${_target}")
+    _cx_arch_mismatch("${preset}" "${_host}" "${_target}" _mismatch)
+    _cx_arch_args("${preset}" "${_host}" "${_target}" _arch_args)
     set(_args --preset "${preset}")
-    if(CX_FRESH)
+    if(CX_FRESH OR _mismatch)
         list(APPEND _args --fresh)
     endif()
-    if(CX_CONFIGURE_EXTRA)
+    list(APPEND _args "-DCX_TARGET_ARCH=${_target}" ${_arch_args})
+    if(NOT CX_CONFIGURE_EXTRA STREQUAL "")
         list(APPEND _args ${CX_CONFIGURE_EXTRA})
+    endif()
+    if(NOT CX_CMAKE_ARGS STREQUAL "")
+        list(APPEND _args ${CX_CMAKE_ARGS})
     endif()
     _cx_run(${CMAKE_COMMAND} ${_args})
     set(${out_result} "${CX_RUN_RESULT}" PARENT_SCOPE)
 endfunction()
 
-# Configure only when the build folder is missing or stale.
+# Configure only when the build folder is missing or stale, when its target
+# architecture differs, or when -- gives cmake arguments. The Visual Studio
+# environment is loaded here too, because the build step runs the compiler.
 function(_cx_ensure_configured preset out_result)
+    _cx_host_arch(_host)
+    _cx_target_arch("${preset}" "${_host}" _target)
+    _cx_arch_env("${preset}" "${_host}" "${_target}")
     _cx_needs_configure("${preset}" _need)
+    _cx_arch_mismatch("${preset}" "${_host}" "${_target}" _mismatch)
+    if(_mismatch OR NOT CX_CMAKE_ARGS STREQUAL "")
+        set(_need ON)
+    endif()
     if(NOT _need)
         set(${out_result} 0 PARENT_SCOPE)
         return()
