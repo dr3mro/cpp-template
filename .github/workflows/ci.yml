@@ -166,6 +166,28 @@ jobs:
             throw "expected one controller.obj per folder, found app: $($app.Count), data: $($data.Count)"
           }
 
+  x86-hardening:
+    name: x86 hardening flags (windows-latest)
+    # The runner is x64, so CMAKE_SYSTEM_PROCESSOR reports AMD64 even for the
+    # x86 preset. An x86 image must not get /guard:ehcont or /CETCOMPAT, which
+    # the linker rejects with LNK1246. Only the configure step runs here; the
+    # Hardening status line shows which flags were chosen.
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Check the hardening flags of the x86 build
+        shell: pwsh
+        run: |
+          cmake --preset vs2026-x86 -DMYAPP_BUILD_TESTS=OFF 2>&1 | Tee-Object -Variable log
+          if ($LASTEXITCODE -ne 0) { throw "cmake --preset vs2026-x86 failed" }
+          $line = $log | Select-String -SimpleMatch 'Hardening (optimised configs):' | Select-Object -First 1
+          if (-not $line) { throw "the Hardening status line is missing" }
+          if ($line.Line -match '/guard:ehcont|/CETCOMPAT') {
+            throw "the x86 build got x64-only flags: $($line.Line)"
+          }
+
   version:
     name: version matches the VERSION file (ubuntu-latest)
     runs-on: ubuntu-latest

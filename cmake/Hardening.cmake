@@ -30,14 +30,23 @@ set(_myapp_hardening_summary "")
 # branch protection (BTI) is an ARM64 thing. cl and clang-cl report the
 # architecture in MSVC's spelling (CMAKE_CXX_COMPILER_ARCHITECTURE_ID), every
 # other compiler in the processor name.
+#
+# CMAKE_SYSTEM_PROCESSOR is the HOST, not the target: an x86 build on GitHub's
+# x64 Windows runner still reports AMD64. So the compiler's answer is used
+# whenever it has one, and the processor only when it is empty.
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _myapp_processor)
 string(TOLOWER "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" _myapp_architecture_id)
+if(_myapp_architecture_id)
+    set(_myapp_target_arch "${_myapp_architecture_id}")
+else()
+    set(_myapp_target_arch "${_myapp_processor}")
+endif()
 set(_myapp_arch_x64 OFF)
 set(_myapp_arch_arm64 OFF)
-if(_myapp_architecture_id STREQUAL "x64" OR _myapp_processor MATCHES "^(amd64|x64)$")
+if(_myapp_target_arch MATCHES "^(amd64|x64|x86_64)$")
     set(_myapp_arch_x64 ON)
 endif()
-if(_myapp_architecture_id STREQUAL "arm64" OR _myapp_processor MATCHES "^(arm64|aarch64)$")
+if(_myapp_target_arch MATCHES "^(arm64|aarch64)$")
     set(_myapp_arch_arm64 ON)
 endif()
 
