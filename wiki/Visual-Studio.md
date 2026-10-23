@@ -68,6 +68,24 @@ The solution has two projects: `<name>`, which holds the program, and
 from the same `src/` sources). The debugger starts in the project root, so data
 files that sit next to the sources are found.
 
+## Running and debugging
+
+Visual Studio runs the **startup project**. A fresh clone starts `<name>`,
+the program, because it is the first project in the solution. To run
+whichever project is selected in Solution Explorer instead, set this once
+per user:
+
+1. Right-click the solution and choose **Properties**.
+2. Go to **Common Properties → Startup Project** and choose **Current
+   selection**.
+
+Then **F5** (or **Ctrl+F5**) builds and runs the selected project: select
+`<name>` to run the program, or `<name>_tests` to run the unit tests.
+
+Visual Studio stores this choice per user, in the `.vs/` folder next to the
+solution, not in the `.sln`. A committed file cannot set it for everyone,
+and `.vs/` is git-ignored, so each developer sets it once.
+
 ## Sources are discovered automatically (in a read-only project)
 
 The project file uses wildcards, not a list of files:

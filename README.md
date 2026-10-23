@@ -48,6 +48,12 @@ script. Both are covered in
 [Getting started](https://github.com/dr3mro/cpp-template/wiki/Getting-Started)
 and [Visual Studio](https://github.com/dr3mro/cpp-template/wiki/Visual-Studio).
 
+**Running from Visual Studio:** F5 runs the startup project, which is
+`<name>` at first. To run whichever project is selected in Solution
+Explorer (select `<name>_tests` to run the tests), set **Solution Properties
+→ Common Properties → Startup Project → Current selection** once. Visual
+Studio keeps that per user in `.vs/`, so it cannot be committed.
+
 ## What you get
 
 - **Presets** for debug (ASan + UBSan), release (hardened, LTO),
