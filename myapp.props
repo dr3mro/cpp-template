@@ -30,6 +30,10 @@
       <AdditionalOptions>/utf-8 /Zc:__cplusplus /w14242 /w14254 /w14263 /w14265 /w14287 /w14296 /w14311 /w14826 /w14905 /w14906 /w14928 %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>MYAPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(GeneratedIncludeDir);$(MSBuildProjectDirectory)\include;$(MSBuildProjectDirectory)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- One object file per source, in the folder of that source. MSBuild
+           puts every object in $(IntDir) by default, so app\controller.cpp and
+           data\controller.cpp would both write controller.obj. -->
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

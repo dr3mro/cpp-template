@@ -128,6 +128,44 @@ jobs:
           ctest --preset vs2026
           if ($LASTEXITCODE -ne 0) { throw "the vs2026 tests failed" }
 
+  msbuild-duplicate-names:
+    name: MSBuild with duplicate file names (windows-latest)
+    # The Visual Studio projects compile every src\**\*.cpp. MSBuild writes
+    # each object into $(IntDir) unless ObjectFileName says otherwise, so two
+    # controller.cpp files in different folders must still get two objects.
+    # The sample files exist only in this job, so the template's own src\ has
+    # no fixtures.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+      - name: Add two sources with the same file name
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force src\myapp\app, src\myapp\data | Out-Null
+          Set-Content -Path src\myapp\app\controller.cpp -Value 'int app_controller_marker() noexcept { return 1; }'
+          Set-Content -Path src\myapp\data\controller.cpp -Value 'int data_controller_marker() noexcept { return 2; }'
+      - name: Build the solution with MSBuild
+        shell: pwsh
+        run: |
+          msbuild myapp.sln /m /p:Configuration=Debug /p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { throw "the MSBuild build failed" }
+      - name: Check that each controller.cpp has its own object file
+        shell: pwsh
+        run: |
+          $objects = @(Get-ChildItem -Recurse -Filter controller.obj -Path build | ForEach-Object { $_.FullName })
+          # The tests project compiles src too, so anchor on the app's own folder.
+          $app = @($objects | Where-Object { $_ -match '\\myapp\\src\\myapp\\app\\controller\.obj$' })
+          $data = @($objects | Where-Object { $_ -match '\\myapp\\src\\myapp\\data\\controller\.obj$' })
+          if ($app.Count -ne 1 -or $data.Count -ne 1) {
+            throw "expected one controller.obj per folder, found app: $($app.Count), data: $($data.Count)"
+          }
+
   version:
     name: version matches the VERSION file (ubuntu-latest)
     runs-on: ubuntu-latest
