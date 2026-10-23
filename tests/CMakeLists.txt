@@ -20,6 +20,10 @@ add_executable(${PROJECT_NAME}_tests ${_myapp_test_sources})
 # ${PROJECT_NAME}_options, which every target of this project links itself.
 target_link_libraries(${PROJECT_NAME}_tests PRIVATE
     ${PROJECT_NAME}_lib ${PROJECT_NAME}_options doctest::doctest)
+# tests/ itself is an include folder, so tests in subfolders can share helpers
+# such as #include "support/test_support.hpp". The Visual Studio tests project
+# adds the same folder.
+target_include_directories(${PROJECT_NAME}_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 doctest_discover_tests(${PROJECT_NAME}_tests)
 

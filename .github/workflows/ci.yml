@@ -134,7 +134,8 @@ jobs:
     # each object into $(IntDir) unless ObjectFileName says otherwise, so two
     # controller.cpp files in different folders must still get two objects.
     # The sample files exist only in this job, so the template's own src\ has
-    # no fixtures.
+    # no fixtures. Their folders are unusual on purpose: a generated project
+    # may have real app\ and data\ folders, which must not be overwritten.
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -147,9 +148,9 @@ jobs:
       - name: Add two sources with the same file name
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force src\myapp\app, src\myapp\data | Out-Null
-          Set-Content -Path src\myapp\app\controller.cpp -Value 'int app_controller_marker() noexcept { return 1; }'
-          Set-Content -Path src\myapp\data\controller.cpp -Value 'int data_controller_marker() noexcept { return 2; }'
+          New-Item -ItemType Directory -Force src\myapp\ci_dupname_a, src\myapp\ci_dupname_b | Out-Null
+          Set-Content -Path src\myapp\ci_dupname_a\controller.cpp -Value 'int ci_dupname_a_marker() noexcept { return 1; }'
+          Set-Content -Path src\myapp\ci_dupname_b\controller.cpp -Value 'int ci_dupname_b_marker() noexcept { return 2; }'
       - name: Build the solution with MSBuild
         shell: pwsh
         run: |
@@ -160,8 +161,8 @@ jobs:
         run: |
           $objects = @(Get-ChildItem -Recurse -Filter controller.obj -Path build | ForEach-Object { $_.FullName })
           # The tests project compiles src too, so anchor on the app's own folder.
-          $app = @($objects | Where-Object { $_ -match '\\myapp\\src\\myapp\\app\\controller\.obj$' })
-          $data = @($objects | Where-Object { $_ -match '\\myapp\\src\\myapp\\data\\controller\.obj$' })
+          $app = @($objects | Where-Object { $_ -match '\\myapp\\src\\myapp\\ci_dupname_a\\controller\.obj$' })
+          $data = @($objects | Where-Object { $_ -match '\\myapp\\src\\myapp\\ci_dupname_b\\controller\.obj$' })
           if ($app.Count -ne 1 -or $data.Count -ne 1) {
             throw "expected one controller.obj per folder, found app: $($app.Count), data: $($data.Count)"
           }

@@ -108,6 +108,14 @@
          install it with it, so the two need an install folder each. -->
     <VcpkgInstalledDir Condition="'$(VcpkgEnableManifest)' == 'true'">$(BuildRoot)vcpkg_installed\$(Platform)\tests\</VcpkgInstalledDir>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- tests\ is an include folder, so tests in subfolders can share
+           helpers such as "support/test_support.hpp", the same folder
+           tests/CMakeLists.txt adds. -->
+      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory)\tests;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <!-- The test sources and the library they test. main() comes from
          tests/test_main.cpp, so main.cpp of the app is not part of this
