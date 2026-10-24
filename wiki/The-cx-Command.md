@@ -135,7 +135,7 @@ current operating system.
 
 | Command | Does |
 | --- | --- |
-| `cx new-class [path/]ClassName [namespace]` | create a paired `.hpp` / `.cpp` for a new class (see below) |
+| `cx new-class [path/]ClassName [namespace] [--no-test]` | create a paired `.hpp` / `.cpp` and a test file for a new class (see below) |
 | `cx fmt` | clang-format the sources in place |
 | `cx fmt --check` | fail if a source is not formatted |
 | `cx lint` | clang-tidy (`tidy` target) and `cmake-lint` |
@@ -161,10 +161,11 @@ already filled in: `#pragma once`, Doxygen stub, export macro, namespace and
 a default constructor/destructor pair.
 
 ```bash
-./cx new-class Parser                    # include/myapp/parser.hpp + src/myapp/parser.cpp
+./cx new-class Parser                    # include/myapp/parser.hpp + src/myapp/parser.cpp + tests/test_parser.cpp
 ./cx new-class parser/Parser             # include/myapp/parser/parser.hpp
 ./cx new-class core/network/HttpClient   # include/myapp/core/network/http_client.hpp
 ./cx new-class parser/Parser myapp::io   # same files, but namespace myapp::io
+./cx new-class parser/Parser --no-test   # skip the test file
 ```
 
 The path before the last `/` becomes both the subdirectory under `include/`
@@ -177,8 +178,11 @@ from the project: if `main.cc` exists the command generates `.cc`/`.h`, otherwis
 `.cpp`/`.hpp`. The extension is set once when the project is created with
 `new-project --ext cc` and never needs to be specified again.
 
-After running the command, register the new source file in the nearest
-`CMakeLists.txt` (the command prints the file to edit).
+A test file `tests/test_<snake_name>.<ext>` is also created with a
+placeholder `TEST_CASE`. Pass `--no-test` to skip it. The test file is picked
+up automatically by `tests/CMakeLists.txt` (which globs `tests/*.cpp`), so no
+registration is needed there. The source file does need to be added to the
+nearest `CMakeLists.txt` (the command prints the file to edit).
 
 ## Options
 
@@ -220,14 +224,13 @@ The Zed and VS Code tasks run `cx` instead of spelling out CMake commands.
 In VS Code, **Terminal → Run Task...** has `build`, `build release`,
 `build debug-nosan`, `run`, `test`, `test ci`, `dev`, `dev run`,
 `coverage report`, `fuzz run`, `format`, `format check`, `cmake-lint`, `tidy`,
-`docs`, `clean`, `clean all` and `new class`. The Windows variants use
-`cx.cmd`. **new class** pops an input box; type `[path/]ClassName` or
-`[path/]ClassName namespace` and press Enter.
+`docs`, `clean` and `clean all`. The Windows variants use `cx.cmd`.
 
-In Zed, **task: spawn** (`Cmd+Shift+R`) lists the same names. **new class**
-opens a terminal and prompts for the class input. On Windows use
-**new class (Windows)**, which calls `cx.ps1` via `Read-Host`.
-Formatting on save still uses `.clang-format` directly.
+In Zed, **task: spawn** (`Cmd+Shift+R`) lists the same names. Formatting on
+save still uses `.clang-format` directly.
+
+`cx new-class` is a command-line only command; run it from the integrated
+terminal.
 
 ## Requirements and exit status
 

@@ -20,12 +20,13 @@ The fastest way to create the first two is `cx new-class`:
 ./cx new-class io/Reader
 ```
 
-That writes `include/myapp/io/reader.hpp` and `src/myapp/io/reader.cpp` (or
-`.h`/`.cc` if the project was created with `--ext cc`) with the namespace,
-export macro and constructor stub already in place. Then add the source file
-to `src/myapp/io/CMakeLists.txt` (the command prints the file to edit) and
-create the test file by hand. See [The cx command](The-cx-Command) for the
-full syntax.
+That writes `include/myapp/io/reader.hpp`, `src/myapp/io/reader.cpp` and
+`tests/test_reader.cpp` (or `.h`/`.cc` if the project was created with
+`--ext cc`) with the namespace, export macro, constructor stub and a
+placeholder test case already in place. Pass `--no-test` to skip the test
+file. Then add the source file to `src/myapp/io/CMakeLists.txt` (the command
+prints the file to edit). See [The cx command](The-cx-Command) for the full
+syntax.
 
 You can also create the files by hand; nothing else to register.
 
