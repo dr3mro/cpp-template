@@ -8,9 +8,9 @@
     passed on unchanged; run with --help for the full list of options.
 
     Options can be written in the PowerShell style (-Std 20, -Lib, -NoGit,
-    -NoVcpkg, -GitHubUser <user>, -Author <name>) or in the bash style of
-    new-project.sh (--std 20, --lib, --no-git, --no-vcpkg, --github-user
-    <user>, --author <name>).
+    -NoVcpkg, -Ext cc, -GitHubUser <user>, -Author <name>) or in the bash style
+    of new-project.sh (--std 20, --lib, --no-git, --no-vcpkg, --ext cc,
+    --github-user <user>, --author <name>).
 
     Needs CMake 3.25+. When cmake is not on PATH, the copy that comes with
     Visual Studio (the "C++ CMake tools for Windows" component) is used.
@@ -21,6 +21,9 @@
 
 .EXAMPLE
     .\scripts\new-project.ps1 bank_app C:\dev\bank -Std 20 -Author "Jane Doe"
+
+.EXAMPLE
+    .\scripts\new-project.ps1 bank_app C:\dev\bank -Ext cc -NoGit
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\scripts\new-project.ps1 bank_lib --lib --no-git

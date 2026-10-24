@@ -272,6 +272,16 @@ cmake --preset vs2026 && cmake --build --preset vs2026 && ctest --preset vs2026
 The `ctest --preset vs2026` (and `vs2022`) presets build the `Debug`
 configuration and print the output of a failing test.
 
+`cx build vs`, `cx run vs` and `cx test vs` also always use **Debug**. To
+build or run a Release CMake VS build, pass `--config Release` directly:
+
+```bash
+cmake --build build/Windows/x64/vs2026 --config Release
+```
+
+For Release builds in everyday use, the Ninja `release` preset (`cx build
+release`) is the simpler path.
+
 ## How the files get their names
 
 `new-project.sh` (or `scripts/new-project.ps1` on Windows) takes care of the

@@ -1,4 +1,4 @@
-# new-class - generate a paired .hpp / .cpp for a new class
+# new-class - generate a paired header and source file for a new class
 #
 # Usage:
 #   cx new-class [path/]ClassName [namespace] [--no-test]
@@ -8,7 +8,10 @@
 # be overridden with a second argument. A matching test file is created in
 # tests/ unless --no-test is given.
 #
-# Examples
+# The file extension (.hpp/.cpp or .h/.cc) is detected automatically from the
+# project: if main.cc exists the command uses .h/.cc, otherwise .hpp/.cpp.
+#
+# Examples (shown with .hpp/.cpp; a project created with --ext cc uses .h/.cc)
 #   cx new-class Parser
 #       include/myapp/parser.hpp          namespace myapp
 #       tests/test_parser.cpp
@@ -174,7 +177,7 @@ namespace ${_namespace}
     class ${_PROJECT}_EXPORT ${_class_name}
     {
     public:
-        explicit ${_class_name}();
+        ${_class_name}();
         ~${_class_name}();
 
     private:
@@ -229,13 +232,3 @@ if(NOT _no_test)
 endif()
 _cx_say("")
 
-set(_cmake_hint "")
-foreach(_d "${_cpp_dir}" "${CX_ROOT}/src/${_project}")
-    if(EXISTS "${_d}/CMakeLists.txt")
-        file(RELATIVE_PATH _cmake_hint "${CX_ROOT}" "${_d}/CMakeLists.txt")
-        break()
-    endif()
-endforeach()
-if(NOT _cmake_hint STREQUAL "")
-    _cx_say("Next:     add ${_snake}.${_src_ext} to ${_cmake_hint}")
-endif()

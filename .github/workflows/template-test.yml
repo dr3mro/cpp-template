@@ -72,6 +72,8 @@ jobs:
           ./scripts/new-project.sh mylib /tmp/mylib --no-git --lib
           ./scripts/new-project.sh novcpkg_app /tmp/novcpkg_app --no-git --no-vcpkg
           ./scripts/new-project.sh novcpkg_lib /tmp/novcpkg_lib --no-git --no-vcpkg --lib
+          ./scripts/new-project.sh appcc /tmp/appcc --ext cc --no-git
+          ./scripts/new-project.sh cclib /tmp/cclib --ext cc --lib --no-git
 
       - name: A project without vcpkg has no vcpkg anywhere
         # --no-vcpkg takes the manifest, the toolchain file and the Dependabot
@@ -158,7 +160,7 @@ jobs:
         run: |
           if grep -rIl 'myapp\|MYAPP\|@AUTHOR@' \
              /tmp/app17 /tmp/app20 /tmp/app23 /tmp/mylib \
-             /tmp/novcpkg_app /tmp/novcpkg_lib --exclude-dir=.git; then
+             /tmp/novcpkg_app /tmp/novcpkg_lib /tmp/appcc /tmp/cclib --exclude-dir=.git; then
             echo "::error::placeholder 'myapp'/'MYAPP' still present in generated projects"
             exit 1
           fi
@@ -167,7 +169,7 @@ jobs:
         # The ci preset is warnings-as-errors + ASan, so this fails on any
         # warning the template introduces.
         run: |
-          for project in /tmp/app17 /tmp/app20 /tmp/app23 /tmp/mylib; do
+          for project in /tmp/app17 /tmp/app20 /tmp/app23 /tmp/mylib /tmp/appcc /tmp/cclib; do
             echo "::group::$project ci"
             (cd "$project" && cmake --preset ci && cmake --build --preset ci && ctest --preset ci)
             echo "::endgroup::"
@@ -330,6 +332,39 @@ jobs:
               -DAPP17_SANITIZER=memory -DAPP17_BUILD_TESTS=OFF
             CC=clang CXX=clang++ cmake --build --preset debug
           fi
+
+      - name: cx new-class generates files that compile
+        run: |
+          cd /tmp/app20
+          cmake --preset ci
+          ./cx new-class io/Reader
+          ./cx new-class core/network/HttpClient myapp::net --no-test
+          # verify --no-test leaves no test file
+          if [ -e tests/test_http_client.cpp ]; then
+            echo "::error::cx new-class --no-test still created a test file"
+            exit 1
+          fi
+          cmake --build --preset ci
+          ctest --preset ci
+
+      - name: A library project with --ext cc has no stray main.cc
+        run: |
+          if [ -e /tmp/cclib/main.cc ] || [ -e /tmp/cclib/main.cpp ]; then
+            echo "::error::--lib --ext cc left a main file in the library project"
+            ls /tmp/cclib/main.* 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: cx new-class generates .cc/.h files in an --ext cc project
+        run: |
+          cd /tmp/appcc
+          cmake --preset ci
+          ./cx new-class io/Reader
+          test -f include/appcc/io/reader.h
+          test -f src/appcc/io/reader.cc
+          test -f tests/test_reader.cc
+          cmake --build --preset ci
+          ctest --preset ci
 
       - name: The project without vcpkg says where its dependencies come from
         # The configure summary names the provider, so a vcpkg path that is
@@ -973,6 +1008,29 @@ jobs:
 
             Invoke-Cx @('clean', 'nosan') | Out-Null
             Invoke-Cx @('clean', '--all') | Out-Null
+          } finally {
+            Pop-Location
+          }
+
+      - name: cx new-class works in a Windows project
+        shell: pwsh
+        run: |
+          $project = "$env:RUNNER_TEMP\vsapp"
+          Push-Location $project
+          try {
+            .\cx.cmd configure | Out-Null
+            .\cx.cmd new-class io/Reader | Out-Null
+            if (-not (Test-Path -LiteralPath "include\vsapp\io\reader.hpp")) {
+              throw "cx new-class did not create include/vsapp/io/reader.hpp"
+            }
+            if (-not (Test-Path -LiteralPath "src\vsapp\io\reader.cpp")) {
+              throw "cx new-class did not create src/vsapp/io/reader.cpp"
+            }
+            .\cx.cmd new-class net/HttpClient vsapp::net --no-test | Out-Null
+            if (Test-Path -LiteralPath "tests\test_http_client.cpp") {
+              throw "cx new-class --no-test still created a test file"
+            }
+            .\cx.cmd build | Out-Null
           } finally {
             Pop-Location
           }

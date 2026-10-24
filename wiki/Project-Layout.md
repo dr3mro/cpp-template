@@ -145,4 +145,25 @@ Delete them all with `cmake -P cmake/DistClean.cmake`; everything regenerates.
 
 ## Template-only files
 
-scripts/new-project.cmake, new-project.sh, new-project.ps1 are template-repository only and are not in generated projects. .github/workflows/release-app.yml and release-lib.yml become release.yml in a project. .github/workflows/template-test.yml and wiki.yml are template only. .github/actions/setup-vcpkg/action.yml installs vcpkg, Ninja, ccache. .github/ISSUE_TEMPLATE/bug_report.yml, feature_request.yml, config.yml. .vscode/extensions.json, tasks.json, launch.json. .zed/settings.json, tasks.json, debug.json. cmake/HomebrewLLVM.cmake, cmake/WindowsClang.cmake. examples/CMakeLists.txt, examples/example.cpp. `fuzz/corpus/<fuzzer>/` holds seed inputs; see Fuzzing.
+These files live in the template repository but are not copied into generated
+projects (or are renamed/merged on the way):
+
+- **`scripts/new-project.cmake`**, **`new-project.sh`**, **`new-project.ps1`** —
+  the project generator; template-only.
+- **`.github/workflows/template-test.yml`**, **`wiki.yml`** — CI for the
+  template itself; not in generated projects.
+- **`.github/workflows/release-app.yml`** / **`release-lib.yml`** — become
+  `release.yml` in a generated project (the right one is kept, the other
+  dropped).
+- **`.github/actions/setup-vcpkg/action.yml`** — installs vcpkg, Ninja and
+  ccache for CI.
+- **`.github/ISSUE_TEMPLATE/`** — `bug_report.yml`, `feature_request.yml`,
+  `config.yml`.
+- **`.vscode/extensions.json`**, **`tasks.json`**, **`launch.json`**.
+- **`.zed/settings.json`**, **`tasks.json`**, **`debug.json`**.
+- **`cmake/HomebrewLLVM.cmake`**, **`cmake/WindowsClang.cmake`** — compiler
+  helpers, template-only.
+- **`examples/CMakeLists.txt`**, **`examples/example.cpp`** — kept only in
+  library-mode projects.
+- **`fuzz/corpus/<fuzzer>/`** — seed inputs for each fuzz target; see
+  [Fuzzing](Fuzzing).

@@ -184,12 +184,12 @@ explains the common ones.
 The function or class isn't marked `MYAPP_EXPORT`; see the
 [FAQ](FAQ#undefined-reference-when-linking-against-my-shared-library-but-static-works).
 
-**My new `.cpp` file isn't compiled**
-It must be under `src/` (or `tests/`, `fuzz/`), end in `.cpp`, and you need
-to rebuild. A file in a new top-level folder needs CMake lines; see
-[Recipes](Recipes#add-a-second-program). In Visual Studio the sources are
-found by wildcard, so reload the solution after adding a file; see
-[Visual Studio](Visual-Studio).
+**My new source file isn't compiled**
+It must be under `src/` (or `tests/`, `fuzz/`), end in `.cpp` (or `.cc` for
+projects created with `--ext cc`), and you need to rebuild. A file in a new
+top-level folder needs CMake lines; see [Recipes](Recipes#add-a-second-program).
+In Visual Studio the sources are found by wildcard, so reload the solution
+after adding a file; see [Visual Studio](Visual-Studio).
 
 **Visual Studio left files in the project root**
 The output paths live in `Directory.Build.props`, so everything should land
@@ -204,7 +204,7 @@ in the root are normal and git-ignored.
 Reload the solution (right-click the solution → **Reload Project**). The
 project is read-only and keeps its wildcards, so Visual Studio cannot have
 replaced them; make sure the file is under `src/` or `include/` (or is
-`main.cpp` in the root) and ends in the right extension. See
+`main.cpp` / `main.cc` in the root) and ends in the right extension. See
 [Visual Studio](Visual-Studio#sources-are-discovered-automatically-in-a-read-only-project).
 
 **`Wildcards and/or some other MSBuild constructs used in project item

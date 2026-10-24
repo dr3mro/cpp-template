@@ -1023,8 +1023,8 @@ endfunction()
 # _cx_is_library(<out-var> <preset>)
 # True for a library project. The configured cache wins; before the first
 # configure the default in cmake/Options.cmake is read (the generator flips
-# that default to ON for a library). The absence of main.cpp is the last
-# resort, for projects that do not have Options.cmake.
+# that default to ON for a library). The absence of main.cpp or main.cc is the
+# last resort, for projects that do not have Options.cmake.
 function(_cx_is_library out preset)
     _cx_project_name(_name "")
     string(TOUPPER "${_name}" _upper)
@@ -1055,7 +1055,7 @@ function(_cx_is_library out preset)
             return()
         endif()
     endif()
-    if(EXISTS "${CX_ROOT}/main.cpp")
+    if(EXISTS "${CX_ROOT}/main.cpp" OR EXISTS "${CX_ROOT}/main.cc")
         set(${out} OFF PARENT_SCOPE)
     else()
         set(${out} ON PARENT_SCOPE)

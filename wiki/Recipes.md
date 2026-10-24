@@ -27,6 +27,10 @@ src/myapp/io/reader.cpp          the implementation
 tests/test_reader.cpp            its unit tests
 ```
 
+The fastest way: `./cx new-class io/Reader` — it writes all three files with
+the namespace, export macro and a placeholder test already in place. See
+[The cx command → Generating a class](The-cx-Command#generating-a-class).
+
 That's all. `src/CMakeLists.txt` and `tests/CMakeLists.txt` collect every
 `.cpp` with `file(GLOB_RECURSE ... CONFIGURE_DEPENDS)`, so the next build sees
 the new files on its own; you never list files in CMake. Include headers by

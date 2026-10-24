@@ -24,9 +24,9 @@ That writes `include/myapp/io/reader.hpp`, `src/myapp/io/reader.cpp` and
 `tests/test_reader.cpp` (or `.h`/`.cc` if the project was created with
 `--ext cc`) with the namespace, export macro, constructor stub and a
 placeholder test case already in place. Pass `--no-test` to skip the test
-file. Then add the source file to `src/myapp/io/CMakeLists.txt` (the command
-prints the file to edit). See [The cx command](The-cx-Command) for the full
-syntax.
+file. The new files are picked up automatically by the glob in
+`src/CMakeLists.txt`; no registration is needed. See
+[The cx command](The-cx-Command) for the full syntax.
 
 You can also create the files by hand; nothing else to register.
 

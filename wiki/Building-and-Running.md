@@ -39,7 +39,8 @@ check automatically.
 A **preset** is a named set of build settings in `CMakePresets.json`. Each one
 builds into its own folder, `build/<os>/<preset>/`, so switching presets never
 mixes results. The Ninja presets don't put the processor in the path, since a preset
-can't detect it. The Visual Studio presets do: `build/Windows/<arch>/vs2022/`.
+can't detect it. The Visual Studio presets do: `build/Windows/<arch>/vs2026/`
+(or `vs2022/` for the older preset).
 
 | Preset | Use it for | Notes |
 | --- | --- | --- |

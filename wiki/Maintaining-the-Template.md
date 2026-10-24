@@ -97,12 +97,13 @@ cmake -P cmake/DistClean.cmake
 for p in debug ci release; do cmake --preset $p && cmake --build --preset $p && ctest --preset $p; done
 
 # 2. generated projects, from outside the template folder
-cd /tmp && rm -rf t17 t20 tlib
+cd /tmp && rm -rf t17 t20 tlib tcc
 ~/Templates/cpp-template/scripts/new-project.sh t17 --no-git
 ~/Templates/cpp-template/scripts/new-project.sh t20 --std 20 --no-git
 ~/Templates/cpp-template/scripts/new-project.sh tlib --lib --no-git
-grep -rIl 'myapp\|MYAPP' t17 t20 tlib            # must print nothing
-for d in t17 t20 tlib; do (cd $d && cmake --preset ci && cmake --build --preset ci && ctest --preset ci); done
+~/Templates/cpp-template/scripts/new-project.sh tcc --ext cc --no-git
+grep -rIl 'myapp\|MYAPP' t17 t20 tlib tcc        # must print nothing
+for d in t17 t20 tlib tcc; do (cd $d && cmake --preset ci && cmake --build --preset ci && ctest --preset ci); done
 
 # 3. library mode: install and consume
 cd tlib && cmake --preset release && cmake --build --preset release && cmake --install build/Darwin/release

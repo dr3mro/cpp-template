@@ -706,9 +706,9 @@ set(_workflows "${DEST}/.github/workflows")
 if(_lib)
     _edit(cmake/Options.cmake
           "(option\\(${_upper}_LIBRARY_MODE[ \t\r\n]+\"[^\"]*\"[ \t\r\n]+)OFF\\)" "\\1ON)")
-    file(REMOVE "${DEST}/main.cpp")
+    file(REMOVE "${DEST}/main.cpp" "${DEST}/main.cc")
     # The Visual Studio project needs no change: it builds a static library
-    # when main.cpp is missing, and an executable when it is there.
+    # when main.cpp (or main.cc) is missing, and an executable when it is there.
 
     # A library has no executable: drop the run tasks and the app debug
     # configuration. Zed's tasks.json keeps one task per line.

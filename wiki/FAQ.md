@@ -37,10 +37,12 @@ second project of the solution, so they build and run there too (with
 Each preset builds into its own folder: `build/Darwin/debug/myapp`,
 `build/Darwin/release/myapp`, and so on. Tests are in `build/<os>/<preset>/tests/`.
 
-### I added a `.cpp` file. Do I need to edit CMake?
+### I added a `.cpp` (or `.cc`) file. Do I need to edit CMake?
 
 No. The next build finds it. You only edit CMake to add a new *kind* of thing:
-a second program, a dependency, an option ([Recipes](Recipes)).
+a second program, a dependency, an option ([Recipes](Recipes)). Projects
+created with `--ext cc` use `.cc` and `.h`; the build picks those up the same
+way.
 
 ### What's the difference between `debug` and `debug-nosan`?
 

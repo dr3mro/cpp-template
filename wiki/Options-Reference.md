@@ -19,6 +19,7 @@ Every switch the template offers. Pass any of them when configuring, for example
 | `MYAPP_USE_CCACHE`               | `ON`    | use ccache when it is installed                                                                                              |
 | `MYAPP_TIDY_WERROR`              | `OFF`   | make `tidy` fail on findings                                                                                                 |
 | `MYAPP_FUZZ_SECONDS`             | `10`    | how long `fuzz-run` runs each fuzzer                                                                                         |
+| `MYAPP_WINDOWS_TARGET_ARCH`      | (host)  | Windows only: target architecture for the vcpkg triplet and cross-compilation (`x64`, `arm64`, `x86`); set by `cx --arch`    |
 | `BUILD_SHARED_LIBS`              | `OFF`   | standard CMake option: build the library as shared instead of static                                                         |
 | `CMAKE_COMPILE_WARNING_AS_ERROR` | `OFF`   | standard CMake option: fail the build on any warning (the `ci` presets set it; `--compile-no-warning-as-error` overrides it) |
 

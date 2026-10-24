@@ -279,6 +279,9 @@ The command deliberately reads `CMakePresets.json` itself instead of asking
 CMake, so plain words keep working in script mode and a disabled preset gets
 an explanation before CMake runs. A new command is one file under
 `cmake/cx/commands/`; its header comment is what `cx help` prints.
+`cmake/cx/commands/new-class.cmake` is a concrete example: it parses
+arguments, detects the source extension, generates three files and reports
+what it created — no changes to the dispatcher or the help system needed.
 
 ## Presets
 

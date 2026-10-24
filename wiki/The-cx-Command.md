@@ -58,6 +58,12 @@ Resolution order:
 | `clang` | `ci-clang` (Linux) |
 | `vs` | `vs2026` (Windows) |
 
+> **Note:** `cx build vs`, `cx run vs` and `cx test vs` always use the **Debug**
+> configuration. To build Release with the CMake-generated Visual Studio solution,
+> run `cmake --build build/Windows/x64/vs2026 --config Release` directly, or use
+> the checked-in solution (`.sln`) in Visual Studio itself and choose Release in
+> the toolbar.
+
 A word that names a target picks the preset that target belongs to:
 
 | Target | Preset |
@@ -116,8 +122,8 @@ Arguments after `--` go to the program or to `ctest` unchanged:
 ```
 
 `cx dev` watches `src/`, `include/`, `tests/`, `cmake/` (except the `cx`
-implementation itself), the root `main.cpp`, `CMakeLists.txt`,
-`CMakePresets.json`, `VERSION` and `vcpkg.json`. It never watches `build/` or
+implementation itself), the root `main.cpp` (or `main.cc` for `--ext cc`
+projects), `CMakeLists.txt`, `CMakePresets.json`, `VERSION` and `vcpkg.json`. It never watches `build/` or
 `docs/`.
 
 With [watchexec](https://github.com/watchexec/watchexec) installed, it uses
@@ -135,7 +141,7 @@ current operating system.
 
 | Command | Does |
 | --- | --- |
-| `cx new-class [path/]ClassName [namespace] [--no-test]` | create a paired `.hpp` / `.cpp` and a test file for a new class (see below) |
+| `cx new-class [path/]ClassName [namespace] [--no-test]` | create a paired header and source file and a test file for a new class (see below) |
 | `cx fmt` | clang-format the sources in place |
 | `cx fmt --check` | fail if a source is not formatted |
 | `cx lint` | clang-tidy (`tidy` target) and `cmake-lint` |
@@ -179,10 +185,10 @@ from the project: if `main.cc` exists the command generates `.cc`/`.h`, otherwis
 `new-project --ext cc` and never needs to be specified again.
 
 A test file `tests/test_<snake_name>.<ext>` is also created with a
-placeholder `TEST_CASE`. Pass `--no-test` to skip it. The test file is picked
-up automatically by `tests/CMakeLists.txt` (which globs `tests/*.cpp`), so no
-registration is needed there. The source file does need to be added to the
-nearest `CMakeLists.txt` (the command prints the file to edit).
+placeholder `TEST_CASE`. Pass `--no-test` to skip it. Both the source and test
+files are picked up automatically by the globs in `src/CMakeLists.txt` and
+`tests/CMakeLists.txt` (which glob `*.cpp`, or `*.cc` for `--ext cc`
+projects), so no registration is needed.
 
 ## Options
 
@@ -192,6 +198,7 @@ nearest `CMakeLists.txt` (the command prints the file to edit).
 | `--release` | most | shorthand for the `release` preset |
 | `--fresh` | `configure` | pass CMake's `--fresh` |
 | `--all` | `clean` | remove everything generated |
+| `--no-test` | `new-class` | skip generating the test file |
 | `--check` | `fmt` | check formatting instead of changing files |
 | `--run` | `dev` | restart the program instead of running tests |
 | `--seconds <n>` | `fuzz` | how long to fuzz |
