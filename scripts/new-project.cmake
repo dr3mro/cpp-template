@@ -16,6 +16,7 @@
 #   --no-vcpkg              no vcpkg: the dependencies are built from their
 #                           source with FetchContent instead
 #   --github-user <user>    fill in the README's GitHub Pages docs link
+#   --ext cpp|cc            source file extension: cpp/hpp (default) or cc/h
 #   --author <name>         name in main.cpp's header comment
 #                           (default: git config user.name, then "Your Name")
 #   -h, --help              print this text
@@ -63,6 +64,7 @@ Create a new C++ project from this template.
 
 Options:
   --std 17|20|23         C++ standard (default 17)
+  --ext cpp|cc           source file extension: cpp/hpp (default) or cc/h
   --lib                  an installable library package instead of an app
   --no-git               do not create a git repository
   --no-vcpkg             no vcpkg: the dependencies are built from their
@@ -72,9 +74,9 @@ Options:
                          (default: git config user.name, then "Your Name")
   -h, --help             print this text
 
-PowerShell spellings work too: -Std 20, -Lib, -NoGit, -NoVcpkg,
+PowerShell spellings work too: -Std 20, -Ext cc, -Lib, -NoGit, -NoVcpkg,
 -GitHubUser <user>, -Author <name>. Values may also follow an equals sign:
---std=20.
+--std=20, --ext=cc.
 
 <name> is a lower_snake_case C++ identifier, e.g. bank_app. It becomes the
 CMake project, the executable, the namespace and the include/<name>/ folder.]=])
@@ -91,7 +93,7 @@ function(_fail)
 endfunction()
 
 # ---- settings: defaults file, then -D values, then the command line -----------
-foreach(_var NAME DEST STD LIB NO_GIT NO_VCPKG GITHUB_USER AUTHOR)
+foreach(_var NAME DEST STD EXT LIB NO_GIT NO_VCPKG GITHUB_USER AUTHOR)
     if(DEFINED ${_var})
         set(_from_d_${_var} "${${_var}}")
         set(_has_d_${_var} ON)
@@ -106,12 +108,13 @@ elseif(DEFINED ENV{HOME})
     set(_defaults_file "$ENV{HOME}/.config/cpp-template/defaults.cmake")
 endif()
 set(STD "")
+set(EXT "")
 set(AUTHOR "")
 set(GITHUB_USER "")
 if(_defaults_file AND EXISTS "${_defaults_file}")
     include("${_defaults_file}")
 endif()
-foreach(_var NAME DEST STD LIB NO_GIT NO_VCPKG GITHUB_USER AUTHOR)
+foreach(_var NAME DEST STD EXT LIB NO_GIT NO_VCPKG GITHUB_USER AUTHOR)
     if(_has_d_${_var})
         set(${_var} "${_from_d_${_var}}")
     endif()
@@ -155,7 +158,7 @@ while(_i LESS CMAKE_ARGC)
     string(TOLOWER "${_option}" _key)
     string(REGEX REPLACE "^-+" "" _key "${_key}")
     string(REPLACE "-" "" _key "${_key}")
-    if(_key MATCHES "^(std|githubuser|author)$")
+    if(_key MATCHES "^(std|ext|githubuser|author)$")
         if(NOT _has_value)
             if(NOT _i LESS CMAKE_ARGC)
                 _fail("missing value for ${_option}")
@@ -179,6 +182,8 @@ while(_i LESS CMAKE_ARGC)
     list(APPEND _seen ${_key})
     if(_key STREQUAL "std")
         set(STD "${_value}")
+    elseif(_key STREQUAL "ext")
+        set(EXT "${_value}")
     elseif(_key STREQUAL "githubuser")
         set(GITHUB_USER "${_value}")
     elseif(_key STREQUAL "author")
@@ -208,6 +213,9 @@ if(NOT NAME)
 endif()
 if(STD STREQUAL "")
     set(STD 17)
+endif()
+if(EXT STREQUAL "")
+    set(EXT "cpp")
 endif()
 
 # ---- validate ------------------------------------------------------------------
@@ -245,6 +253,9 @@ if(NAME MATCHES "__" OR NAME MATCHES "_$")
 endif()
 if(NOT STD MATCHES "^(17|20|23)$")
     _fail("--std must be 17, 20 or 23")
+endif()
+if(NOT EXT MATCHES "^(cpp|cc)$")
+    _fail("--ext must be cpp or cc")
 endif()
 if(NOT GITHUB_USER STREQUAL "" AND NOT GITHUB_USER MATCHES "^[A-Za-z0-9-]+$")
     _fail("--github-user must be a GitHub user name (letters, digits, -)")
@@ -421,6 +432,38 @@ function(_edit path)
         _write_like("${_head}" "${DEST}/${path}" "${_new}")
     endif()
 endfunction()
+
+# ---- source file extensions ---------------------------------------------------
+# When --ext cc is given, rename every .cpp -> .cc and .hpp -> .h throughout
+# the project, and fix up any references inside files.
+if(EXT STREQUAL "cc")
+    file(GLOB_RECURSE _src_files LIST_DIRECTORIES false "${DEST}/*")
+    foreach(_f IN LISTS _src_files)
+        get_filename_component(_ext "${_f}" EXT)
+        if(_ext STREQUAL ".cpp")
+            string(REGEX REPLACE "\\.cpp$" ".cc" _f2 "${_f}")
+            file(RENAME "${_f}" "${_f2}")
+        elseif(_ext STREQUAL ".hpp")
+            string(REGEX REPLACE "\\.hpp$" ".h" _f2 "${_f}")
+            file(RENAME "${_f}" "${_f2}")
+        endif()
+    endforeach()
+    # Fix references inside all text files (.cc, .h, .cmake, .txt, .json, …).
+    file(GLOB_RECURSE _all_files LIST_DIRECTORIES false "${DEST}/*")
+    foreach(_f IN LISTS _all_files)
+        file(READ "${_f}" _head LIMIT 8192 HEX)
+        if(_head MATCHES "^([0-9a-f][0-9a-f])*00")
+            continue() # binary
+        endif()
+        file(READ "${_f}" _text)
+        set(_new "${_text}")
+        string(REPLACE ".cpp" ".cc" _new "${_new}")
+        string(REPLACE ".hpp" ".h"  _new "${_new}")
+        if(NOT _new STREQUAL _text)
+            _write_like("${_head}" "${_f}" "${_new}")
+        endif()
+    endforeach()
+endif()
 
 # vcpkg package names allow hyphens but not underscores. The manifest carries
 # the name and the dependencies; the version lives in the VERSION file.

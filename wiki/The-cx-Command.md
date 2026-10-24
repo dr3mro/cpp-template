@@ -172,7 +172,12 @@ and `src/` and the namespace segments after the project name. An explicit
 namespace as a second argument overrides only the namespace, not the path.
 Both `/` and `::` are accepted as separators.
 
-After running the command, register the new `.cpp` in the nearest
+The file extension (`.cpp`/`.hpp` or `.cc`/`.h`) is detected automatically
+from the project: if `main.cc` exists the command generates `.cc`/`.h`, otherwise
+`.cpp`/`.hpp`. The extension is set once when the project is created with
+`new-project --ext cc` and never needs to be specified again.
+
+After running the command, register the new source file in the nearest
 `CMakeLists.txt` (the command prints the file to edit).
 
 ## Options

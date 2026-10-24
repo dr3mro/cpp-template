@@ -66,6 +66,18 @@ if(_nwords EQUAL 2)
     endif()
 endif()
 
+# ---- detect source file extension --------------------------------------------
+# Check whether the project was created with --ext cc (main.cc) or the default
+# cpp (main.cpp), and use the same extension for the generated files.
+
+if(EXISTS "${CX_ROOT}/main.cc")
+    set(_src_ext "cc")
+    set(_hdr_ext "h")
+else()
+    set(_src_ext "cpp")
+    set(_hdr_ext "hpp")
+endif()
+
 # ---- discover project name ---------------------------------------------------
 
 file(READ "${CX_ROOT}/CMakeLists.txt" _cml)
@@ -111,9 +123,9 @@ string(REPLACE "-" "_" _PROJECT "${_PROJECT}")
 
 set(_hpp_dir  "${CX_ROOT}/include/${_subpath}")
 set(_cpp_dir  "${CX_ROOT}/src/${_subpath}")
-set(_hpp_path "${_hpp_dir}/${_snake}.hpp")
-set(_cpp_path "${_cpp_dir}/${_snake}.cpp")
-set(_rel_include "${_subpath}/${_snake}.hpp")
+set(_hpp_path "${_hpp_dir}/${_snake}.${_hdr_ext}")
+set(_cpp_path "${_cpp_dir}/${_snake}.${_src_ext}")
+set(_rel_include "${_subpath}/${_snake}.${_hdr_ext}")
 
 # ---- guard against overwrite -------------------------------------------------
 

@@ -24,6 +24,7 @@ newcpp bank_app --github-user dr3mro    # fill in the GitHub Pages docs link in 
 newcpp bank_app --author "Jane Doe"     # the name in main.cpp's header comment
 newcpp bank_app --no-git                # don't create a git repository
 newcpp bank_app --no-vcpkg              # no vcpkg: build the dependencies from their source
+newcpp bank_app --ext cc                # use .cc / .h instead of .cpp / .hpp
 ```
 
 Options can be combined: `newcpp bank_lib ~/dev/bank_lib --lib --std 20`.
@@ -48,9 +49,9 @@ pwsh -NoProfile -File scripts/new-project.ps1 bank_app -NoVcpkg
 ```
 
 Both wrappers accept both spellings: `--std 20`, `--std=20` and `-Std 20`;
-`--lib` and `-Lib`; `--no-git` and `-NoGit`; `--no-vcpkg` and `-NoVcpkg`;
-`--github-user <user>` and `-GitHubUser <user>`; `--author <name>` and
-`-Author <name>`. `-h` and `--help` print the usage.
+`--ext cc` and `-Ext cc`; `--lib` and `-Lib`; `--no-git` and `-NoGit`;
+`--no-vcpkg` and `-NoVcpkg`; `--github-user <user>` and `-GitHubUser <user>`;
+`--author <name>` and `-Author <name>`. `-h` and `--help` print the usage.
 
 ## Your own defaults
 
@@ -66,6 +67,7 @@ the generator reads first:
 set(AUTHOR "Jane Doe")
 set(GITHUB_USER "janedoe")
 set(STD 20)
+set(EXT "cc")
 set(NO_VCPKG ON)
 ```
 
