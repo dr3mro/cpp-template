@@ -78,7 +78,6 @@ it exits and reports what was left behind.
 ```bash
 ./cx leaks                  # build debug-nosan, then run the program under leaks
 ./cx leaks -- Amr           # arguments for the program
-./cx leaks release          # another preset (not one with AddressSanitizer)
 ```
 
 `cx leaks` runs `leaks -quiet -atExit -- build/Darwin/debug-nosan/myapp`,
@@ -117,6 +116,27 @@ leaks[52579]: [fatal] unable to inspect heap ranges of target process
 ```
 
 So use the `debug-nosan` preset (or `release`) for `leaks`, not `debug`.
+
+### `leaks` needs the `get-task-allow` entitlement
+
+macOS only lets `leaks` read the memory of a program signed with the
+`com.apple.security.get-task-allow` entitlement. Without it, `leaks` stops with:
+
+```text
+Process 91029 is not debuggable. Due to security restrictions, leaks can only
+show or save contents of readonly memory of restricted processes.
+```
+
+`cmake/DebugEntitlements.cmake` takes care of this: after every link of the
+app in a Debug configuration it re-signs the program ad hoc with that
+entitlement. Release builds are not signed this way, because the entitlement
+lets other processes read the program's memory. To check a Release build by
+hand, sign it first:
+
+```bash
+codesign -s - -f --entitlements build/Darwin/debug-nosan/debug.entitlements \
+    build/Darwin/release/myapp
+```
 
 ### It also cannot be combined with `-fsanitize=leak`
 

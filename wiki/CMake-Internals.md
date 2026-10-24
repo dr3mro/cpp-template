@@ -54,6 +54,7 @@ reads, so you can read any one of them on its own.
 | `cmake/Hardening.cmake`                                                       | security flags for release builds                                               |
 | `cmake/StdlibChecks.cmake`                                                    | the standard library's own checks (Debug too)                                   |
 | `cmake/Lto.cmake`                                                             | link-time optimisation for optimised app builds                                 |
+| `cmake/DebugEntitlements.cmake`                                               | macOS: signs Debug app builds with `get-task-allow` for `leaks`                 |
 | `cmake/Coverage.cmake`                                                        | coverage instrumentation and the `coverage` target                              |
 | `cmake/Ccache.cmake`                                                          | compiler caching with ccache                                                    |
 | `cmake/Version.cmake`, `WriteVersion.cmake`                                   | the generated `<name>/version.hpp` (version + git hash)                         |

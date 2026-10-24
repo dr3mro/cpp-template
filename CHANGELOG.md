@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- macOS Debug builds of the app are signed with the `get-task-allow`
+  entitlement (`cmake/DebugEntitlements.cmake`), so `cx leaks` no longer fails
+  with "process is not debuggable".
+
 ### Changed
 
 - Windows presets select the host MSVC architecture and matching vcpkg triplet

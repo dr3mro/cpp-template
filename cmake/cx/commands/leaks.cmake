@@ -49,6 +49,8 @@ if(NOT EXISTS "${_program}")
     _cx_fail("the program was not built: ${_program}")
 endif()
 
+# The build signs Debug programs with get-task-allow (cmake/DebugEntitlements.cmake);
+# without it leaks says the process "is not debuggable".
 _cx_run(leaks -quiet -atExit -- "${_program}" ${CX_PASSTHROUGH})
 if(NOT CX_RUN_RESULT EQUAL 0)
     _cx_fail("leaks reported a problem for '${_program}' (exit code ${CX_RUN_RESULT})")

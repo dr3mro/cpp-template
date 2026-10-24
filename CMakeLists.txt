@@ -89,6 +89,7 @@ add_subdirectory(src)       # ${PROJECT_NAME}_lib: all the real code
 if(NOT MYAPP_LIBRARY_MODE)
     add_executable(${PROJECT_NAME} main.cpp)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib ${PROJECT_NAME}_options)
+    include(DebugEntitlements)  # macOS: get-task-allow so `leaks` can inspect Debug builds
 endif()
 
 if(MYAPP_BUILD_TESTS)
