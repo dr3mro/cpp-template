@@ -181,20 +181,5 @@
       "problemMatcher": [],
       "presentation": { "reveal": "always" },
     },
-    {
-      "label": "new class",
-      "type": "shell",
-      "command": "./cx new-class ${input:classInput}",
-      "windows": { "command": ".\\cx.cmd new-class ${input:classInput}" },
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "focus": true },
-    },
-  ],
-  "inputs": [
-    {
-      "id": "classInput",
-      "type": "promptString",
-      "description": "e.g. parser/Parser  or  Parser myapp::io",
-    },
   ],
 }
