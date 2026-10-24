@@ -135,6 +135,7 @@ current operating system.
 
 | Command | Does |
 | --- | --- |
+| `cx new-class [path/]ClassName [namespace]` | create a paired `.hpp` / `.cpp` for a new class (see below) |
 | `cx fmt` | clang-format the sources in place |
 | `cx fmt --check` | fail if a source is not formatted |
 | `cx lint` | clang-tidy (`tidy` target) and `cmake-lint` |
@@ -152,6 +153,27 @@ current operating system.
 
 `cx version` reads `VERSION`; it does not need a build folder. `cx install`
 without `--prefix` installs to `build/<os>/install/<preset>/`.
+
+### Generating a class
+
+`cx new-class` creates a matched header and source file with the boilerplate
+already filled in: `#pragma once`, Doxygen stub, export macro, namespace and
+a default constructor/destructor pair.
+
+```bash
+./cx new-class Parser                    # include/myapp/parser.hpp + src/myapp/parser.cpp
+./cx new-class parser/Parser             # include/myapp/parser/parser.hpp
+./cx new-class core/network/HttpClient   # include/myapp/core/network/http_client.hpp
+./cx new-class parser/Parser myapp::io   # same files, but namespace myapp::io
+```
+
+The path before the last `/` becomes both the subdirectory under `include/`
+and `src/` and the namespace segments after the project name. An explicit
+namespace as a second argument overrides only the namespace, not the path.
+Both `/` and `::` are accepted as separators.
+
+After running the command, register the new `.cpp` in the nearest
+`CMakeLists.txt` (the command prints the file to edit).
 
 ## Options
 
@@ -193,10 +215,14 @@ The Zed and VS Code tasks run `cx` instead of spelling out CMake commands.
 In VS Code, **Terminal → Run Task...** has `build`, `build release`,
 `build debug-nosan`, `run`, `test`, `test ci`, `dev`, `dev run`,
 `coverage report`, `fuzz run`, `format`, `format check`, `cmake-lint`, `tidy`,
-`docs`, `clean` and `clean all`. The Windows variants use `cx.cmd`.
+`docs`, `clean`, `clean all` and `new class`. The Windows variants use
+`cx.cmd`. **new class** pops an input box; type `[path/]ClassName` or
+`[path/]ClassName namespace` and press Enter.
 
-In Zed, **task: spawn** lists the same names (`build`, `run debug`, `dev`,
-and so on). Formatting on save still uses `.clang-format` directly.
+In Zed, **task: spawn** (`Cmd+Shift+R`) lists the same names. **new class**
+opens a terminal and prompts for the class input. On Windows use
+**new class (Windows)**, which calls `cx.ps1` via `Read-Host`.
+Formatting on save still uses `.clang-format` directly.
 
 ## Requirements and exit status
 

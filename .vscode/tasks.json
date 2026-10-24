@@ -9,7 +9,7 @@
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
       "presentation": { "reveal": "always" },
-      "group": { "kind": "build", "isDefault": true }
+      "group": { "kind": "build", "isDefault": true },
     },
     {
       "label": "build release",
@@ -18,7 +18,7 @@
       "args": ["build", "release"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "build debug-nosan",
@@ -27,7 +27,7 @@
       "args": ["build", "nosan"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "run",
@@ -36,7 +36,11 @@
       "args": ["run"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+      },
     },
     {
       "label": "run debug",
@@ -45,7 +49,11 @@
       "args": ["run", "debug"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+      },
     },
     {
       "label": "test",
@@ -55,7 +63,7 @@
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
       "presentation": { "reveal": "always" },
-      "group": { "kind": "test", "isDefault": true }
+      "group": { "kind": "test", "isDefault": true },
     },
     {
       "label": "test ci",
@@ -64,7 +72,7 @@
       "args": ["test", "ci"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "dev",
@@ -73,7 +81,11 @@
       "args": ["dev"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+      },
     },
     {
       "label": "dev run",
@@ -82,7 +94,11 @@
       "args": ["dev", "--run"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+      },
     },
     {
       "label": "coverage report",
@@ -91,7 +107,7 @@
       "args": ["coverage"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "fuzz run",
@@ -100,7 +116,7 @@
       "args": ["fuzz"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "format",
@@ -109,7 +125,7 @@
       "args": ["fmt"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "format check",
@@ -118,7 +134,7 @@
       "args": ["fmt", "--check"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "cmake-lint",
@@ -127,7 +143,7 @@
       "args": ["lint"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "tidy",
@@ -136,7 +152,7 @@
       "args": ["build", "tidy"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": ["$gcc"],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "docs",
@@ -145,7 +161,7 @@
       "args": ["docs"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "clean",
@@ -154,7 +170,7 @@
       "args": ["clean"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always" }
+      "presentation": { "reveal": "always" },
     },
     {
       "label": "clean all",
@@ -163,7 +179,22 @@
       "args": ["clean", "--all"],
       "windows": { "command": ".\\cx.cmd" },
       "problemMatcher": [],
-      "presentation": { "reveal": "always" }
-    }
-  ]
+      "presentation": { "reveal": "always" },
+    },
+    {
+      "label": "new class",
+      "type": "shell",
+      "command": "./cx new-class ${input:classInput}",
+      "windows": { "command": ".\\cx.cmd new-class ${input:classInput}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "focus": true },
+    },
+  ],
+  "inputs": [
+    {
+      "id": "classInput",
+      "type": "promptString",
+      "description": "e.g. parser/Parser  or  Parser myapp::io",
+    },
+  ],
 }

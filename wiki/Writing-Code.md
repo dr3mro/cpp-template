@@ -14,7 +14,19 @@ A component is a header with its implementation and its tests. For a
 | `src/myapp/io/reader.cpp` | the implementation |
 | `tests/test_reader.cpp` | the unit tests |
 
-Create the three files and build; nothing else to register.
+The fastest way to create the first two is `cx new-class`:
+
+```bash
+./cx new-class io/Reader
+```
+
+That writes `include/myapp/io/reader.hpp` and `src/myapp/io/reader.cpp` with
+the namespace, export macro and constructor stub already in place. Then add
+`reader.cpp` to `src/myapp/io/CMakeLists.txt` (the command prints the file to
+edit) and create the test file by hand. See [The cx command](The-cx-Command)
+for the full syntax.
+
+You can also create the files by hand; nothing else to register.
 
 ### The header
 

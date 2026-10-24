@@ -33,4 +33,16 @@
   { "label": "docs", "command": "./cx docs", "hide": "never" },
   { "label": "clean", "command": "./cx clean", "hide": "never" },
   { "label": "clean all", "command": "./cx clean --all", "hide": "never" },
+  {
+    "label": "new class",
+    "command": "print -n 'Class (e.g. parser/Parser or Parser myapp::io): ' && read _cx_input && ./cx new-class $_cx_input",
+    "use_new_terminal": true,
+    "hide": "never",
+  },
+  {
+    "label": "new class (Windows)",
+    "command": "$name = Read-Host 'Class (e.g. parser/Parser or Parser myapp::io)'; .\\cx.ps1 new-class $name",
+    "use_new_terminal": true,
+    "hide": "never",
+  },
 ]
